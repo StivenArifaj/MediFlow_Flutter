@@ -20,9 +20,9 @@ class MediFlowApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       
       // Theme
-      theme: AppTheme.lightTheme,
+      theme: AppTheme.darkTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: themeMode,
+      themeMode: ThemeMode.dark,
       
       // Localization
       localizationsDelegates: const [

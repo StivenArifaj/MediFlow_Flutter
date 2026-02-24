@@ -1,20 +1,21 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../constants/app_colors.dart';
 
-/// Glassmorphism card with frosted-glass effect and subtle white border.
+/// Glassmorphism card — 5 % white fill, blurred backdrop, subtle border.
 class GlassCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
   final double borderRadius;
   final double blur;
+  final List<BoxShadow>? boxShadow;
 
   const GlassCard({
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(16),
-    this.borderRadius = 14,
+    this.borderRadius = 16,
     this.blur = 10,
+    this.boxShadow,
   });
 
   @override
@@ -25,8 +26,11 @@ class GlassCard extends StatelessWidget {
         filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
         child: Container(
           padding: padding,
-          decoration: AppColors.glassCardDecoration.copyWith(
+          decoration: BoxDecoration(
+            color: const Color(0x0DFFFFFF), // 5 % white
+            border: Border.all(color: const Color(0x1AFFFFFF)), // 10 % white
             borderRadius: BorderRadius.circular(borderRadius),
+            boxShadow: boxShadow,
           ),
           child: child,
         ),
@@ -35,7 +39,7 @@ class GlassCard extends StatelessWidget {
   }
 }
 
-/// Standard neon-bordered card (non-glass).
+/// Standard neon-bordered card — dark fill with cyan glow.
 class NeonCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
@@ -50,7 +54,18 @@ class NeonCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: padding,
-      decoration: AppColors.neonCardDecoration,
+      decoration: BoxDecoration(
+        color: const Color(0xFF0D1826),
+        border: Border.all(color: const Color(0x1A00E5FF)),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x1200E5FF),
+            blurRadius: 16,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
       child: child,
     );
   }

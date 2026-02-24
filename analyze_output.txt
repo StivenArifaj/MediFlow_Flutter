@@ -1,0 +1,9 @@
+﻿Analyzing lib...
+
+  error - core\theme\theme_provider.dart:6:27 - The function 'StateProvider' isn't defined. Try importing the library that defines 'StateProvider', correcting the name to the name of an existing function, or defining a function named 'StateProvider'. - undefined_function
+  error - data\repositories\auth_repository.dart:67:15 - The argument type 'String' can't be assigned to the parameter type 'Value<String>'.  - argument_type_not_assignable
+warning - data\database\daos\reminders_dao.dart:42:11 - The value of the local variable 'todayStr' isn't used. Try removing the variable or using it. - unused_local_variable
+warning - data\repositories\auth_repository.dart:7:8 - Unused import: '../database/tables/users_table.dart'. Try removing the import directive. - unused_import
+   info - features\auth\screens\onboarding_screen.dart:93:53 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+
+5 issues found.

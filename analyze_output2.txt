@@ -1,0 +1,5 @@
+Analyzing lib...
+
+warning - core\theme\theme_provider.dart:3:8 - Unused import: 'app_theme.dart'. Try removing the import directive. - unused_import
+
+1 issue found.

@@ -1,0 +1,8 @@
+﻿Analyzing lib...
+
+   info - features\reminders\screens\reminder_setup_screen.dart:447:13 - 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - features\reminders\screens\reminder_setup_screen.dart:451:13 - 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - features\reminders\screens\reminder_setup_screen.dart:466:13 - 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - features\reminders\screens\reminder_setup_screen.dart:470:13 - 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+
+4 issues found.

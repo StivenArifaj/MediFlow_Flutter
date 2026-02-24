@@ -3,14 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_typography.dart';
-import '../../../core/constants/app_dimensions.dart';
 import '../../../core/widgets/starfield_background.dart';
-import '../../../core/widgets/neon_button.dart';
 import '../../../data/database/app_database.dart';
-import '../../auth/providers/auth_provider.dart';
 import '../providers/medicines_provider.dart';
+import '../../auth/providers/auth_provider.dart'; // ← appDatabaseProvider lives here
 
 class MedicineDetailScreen extends ConsumerWidget {
   final int? medicineId;
@@ -18,49 +14,47 @@ class MedicineDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (medicineId == null) {
-      return Scaffold(
-        backgroundColor: AppColors.bgPrimary,
-        appBar: AppBar(backgroundColor: AppColors.bgPrimary),
-        body: const Center(child: Text('Medicine not found')),
-      );
-    }
-
+    if (medicineId == null) return const _ErrorScaffold(message: 'Medicine not found');
     final medAsync = ref.watch(medicineByIdProvider(medicineId!));
-
     return medAsync.when(
       loading: () => const Scaffold(
-        backgroundColor: AppColors.bgPrimary,
-        body: Center(child: CircularProgressIndicator(color: AppColors.neonCyan)),
+        backgroundColor: Color(0xFF070B12),
+        body: Center(child: CircularProgressIndicator(color: Color(0xFF00E5FF), strokeWidth: 2)),
       ),
-      error: (_, __) => Scaffold(
-        backgroundColor: AppColors.bgPrimary,
-        appBar: AppBar(backgroundColor: AppColors.bgPrimary),
-        body: const Center(child: Text('Error loading medicine')),
-      ),
+      error: (_, __) => const _ErrorScaffold(message: 'Error loading medicine'),
       data: (medicine) {
-        if (medicine == null) {
-          return Scaffold(
-            backgroundColor: AppColors.bgPrimary,
-            appBar: AppBar(backgroundColor: AppColors.bgPrimary),
-            body: const Center(child: Text('Medicine not found')),
-          );
-        }
-        return _MedicineDetailView(medicine: medicine);
+        if (medicine == null) return const _ErrorScaffold(message: 'Medicine not found');
+        return _DetailView(medicine: medicine);
       },
     );
   }
 }
 
-class _MedicineDetailView extends ConsumerStatefulWidget {
-  final Medicine medicine;
-  const _MedicineDetailView({required this.medicine});
-
+class _ErrorScaffold extends StatelessWidget {
+  final String message;
+  const _ErrorScaffold({required this.message});
   @override
-  ConsumerState<_MedicineDetailView> createState() => _MedicineDetailViewState();
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: const Color(0xFF070B12),
+    appBar: AppBar(
+      backgroundColor: Colors.transparent,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF00E5FF)),
+        onPressed: () => context.pop(),
+      ),
+    ),
+    body: Center(child: Text(message, style: const TextStyle(color: Colors.white))),
+  );
 }
 
-class _MedicineDetailViewState extends ConsumerState<_MedicineDetailView> {
+class _DetailView extends ConsumerStatefulWidget {
+  final Medicine medicine;
+  const _DetailView({required this.medicine});
+  @override
+  ConsumerState<_DetailView> createState() => _DetailViewState();
+}
+
+class _DetailViewState extends ConsumerState<_DetailView> {
   List<Reminder> _reminders = [];
   bool _loadingReminders = true;
 
@@ -80,19 +74,27 @@ class _MedicineDetailViewState extends ConsumerState<_MedicineDetailView> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgCard,
+        backgroundColor: const Color(0xFF0D1826),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-          side: const BorderSide(color: Color(0x1A00E5FF)),
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: const Color(0xFFFF4D6A).withOpacity(0.3)),
         ),
-        title: Text('Delete Medicine', style: AppTypography.titleLarge()),
+        title: const Text('Delete Medicine',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
         content: Text(
           'Are you sure you want to delete ${widget.medicine.verifiedName}? This cannot be undone.',
-          style: AppTypography.bodyMedium(),
+          style: const TextStyle(color: Color(0xFF8A9BB5)),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel', style: AppTypography.labelLarge(color: AppColors.textSecondary))),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('Delete', style: AppTypography.labelLarge(color: AppColors.error))),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel', style: TextStyle(color: Color(0xFF8A9BB5))),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete',
+                style: TextStyle(color: Color(0xFFFF4D6A), fontWeight: FontWeight.w700)),
+          ),
         ],
       ),
     );
@@ -110,217 +112,326 @@ class _MedicineDetailViewState extends ConsumerState<_MedicineDetailView> {
 
   IconData _formIcon(String? form) {
     switch (form?.toLowerCase()) {
-      case 'tablet': return Icons.medication_rounded;
-      case 'capsule': return Icons.medication_liquid_rounded;
-      case 'liquid': case 'syrup': return Icons.local_drink_rounded;
+      case 'tablet':    return Icons.medication_rounded;
+      case 'capsule':   return Icons.medication_liquid_rounded;
+      case 'liquid':    return Icons.local_drink_rounded;
       case 'injection': return Icons.vaccines_rounded;
-      case 'drops': return Icons.water_drop_rounded;
-      case 'inhaler': return Icons.air_rounded;
-      default: return Icons.medication_rounded;
+      case 'drops':     return Icons.water_drop_rounded;
+      case 'inhaler':   return Icons.air_rounded;
+      default:          return Icons.medication_rounded;
     }
+  }
+
+  Color _formColor(String? form) {
+    switch (form?.toLowerCase()) {
+      case 'tablet':    return const Color(0xFF00E5FF);
+      case 'capsule':   return const Color(0xFF8B5CF6);
+      case 'liquid':    return const Color(0xFF6B7FCC);
+      case 'injection': return const Color(0xFFFF4D6A);
+      case 'drops':     return const Color(0xFF00C896);
+      case 'inhaler':   return const Color(0xFFFFB800);
+      default:          return const Color(0xFF00E5FF);
+    }
+  }
+
+  String _monthName(int m) {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return months[m - 1];
   }
 
   @override
   Widget build(BuildContext context) {
     final m = widget.medicine;
+    final color = _formColor(m.form);
+
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
+      backgroundColor: const Color(0xFF070B12),
       body: StarfieldBackground(
-        child: Column(
-          children: [
-            // ── Gradient header ────────────────────────────────
-            Container(
-              decoration: const BoxDecoration(
-                gradient: AppColors.primaryGradient,
-                boxShadow: [AppColors.cyanGlow],
-              ),
-              child: SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.all(AppDimensions.md),
-                  child: Row(
-                    children: [
-                      IconButton(onPressed: () => context.pop(), icon: const Icon(Icons.arrow_back_ios_new_rounded), color: AppColors.bgPrimary),
-                      Expanded(child: Text(m.verifiedName, style: AppTypography.headlineMedium(color: AppColors.bgPrimary), overflow: TextOverflow.ellipsis)),
-                      IconButton(
-                        onPressed: () => context.push('/home/add-medicine', extra: {
-                          'verifiedName': m.verifiedName, 'brandName': m.brandName,
-                          'genericName': m.genericName, 'manufacturer': m.manufacturer,
-                          'strength': m.strength, 'form': m.form,
-                        }),
-                        icon: const Icon(Icons.edit_rounded),
-                        color: AppColors.bgPrimary,
-                      ),
-                    ],
+        child: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              pinned: true,
+              leading: GestureDetector(
+                onTap: () => context.pop(),
+                child: Container(
+                  margin: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0D1826),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFF00E5FF).withOpacity(0.2)),
                   ),
+                  child: const Icon(Icons.arrow_back_ios_new_rounded,
+                      color: Color(0xFF00E5FF), size: 18),
                 ),
               ),
+              actions: [
+                GestureDetector(
+                  onTap: () => context.push('/home/add-medicine', extra: {
+                    'verifiedName': m.verifiedName,
+                    'brandName': m.brandName,
+                    'genericName': m.genericName,
+                    'strength': m.strength,
+                    'form': m.form,
+                  }),
+                  child: Container(
+                    margin: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0D1826),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFF00E5FF).withOpacity(0.2)),
+                    ),
+                    child: const Row(children: [
+                      Icon(Icons.edit_rounded, color: Color(0xFF00E5FF), size: 16),
+                      SizedBox(width: 6),
+                      Text('Edit', style: TextStyle(
+                          color: Color(0xFF00E5FF), fontSize: 13, fontWeight: FontWeight.w600)),
+                    ]),
+                  ),
+                ),
+              ],
             ),
 
-            // ── Scrollable body ───────────────────────────────
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(AppDimensions.md),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Medicine card
-                    _InfoCard(
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: AppColors.neonCyan.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-                            ),
-                            child: Icon(_formIcon(m.form), color: AppColors.neonCyan, size: 32),
-                          ),
-                          const SizedBox(width: AppDimensions.md),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(m.verifiedName, style: AppTypography.titleLarge()),
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    if (m.form != null) _Badge(label: m.form!, color: AppColors.neonCyan),
-                                    const SizedBox(width: 4),
-                                    _Badge(
-                                      label: m.apiSource == 'manual' ? 'Manual' : 'OpenFDA ✓',
-                                      color: m.apiSource == 'manual' ? AppColors.textMuted : AppColors.success,
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 40),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+
+                  // ── Hero card ──────────────────────────────
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0D1826),
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(color: color.withOpacity(0.35), width: 1.5),
+                      boxShadow: [
+                        BoxShadow(color: color.withOpacity(0.2), blurRadius: 30, offset: const Offset(0, 8)),
+                      ],
+                    ),
+                    child: Row(children: [
+                      Container(
+                        width: 64, height: 64,
+                        decoration: BoxDecoration(
+                          color: color.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(18),
+                          boxShadow: [BoxShadow(color: color.withOpacity(0.35), blurRadius: 20, spreadRadius: 2)],
+                        ),
+                        child: Icon(_formIcon(m.form), color: color, size: 32),
                       ),
-                    ).animate().fadeIn(duration: 300.ms),
-
-                    const SizedBox(height: AppDimensions.md),
-
-                    _InfoCard(
-                      child: Column(
-                        children: [
-                          _DetailRow('Form', m.form),
-                          _DetailRow('Strength', m.strength),
-                          _DetailRow('Generic Name', m.genericName),
-                          _DetailRow('Brand Name', m.brandName),
-                          _DetailRow('Manufacturer', m.manufacturer),
-                          _DetailRow('Category', m.category),
-                          if (m.quantity != null) _DetailRow('Quantity', '${m.quantity} units'),
-                          if (m.expiryDate != null) _DetailRow('Expiry Date', '${m.expiryDate!.month}/${m.expiryDate!.year}'),
-                          _DetailRow('Added On', '${m.createdAt.day} ${_monthName(m.createdAt.month)} ${m.createdAt.year}'),
-                          _DetailRow('Source', m.apiSource == 'manual' ? 'Manually Added' : 'OpenFDA'),
-                        ],
-                      ),
-                    ).animate().fadeIn(delay: 100.ms, duration: 300.ms),
-
-                    const SizedBox(height: AppDimensions.md),
-
-                    _InfoCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('Reminders', style: AppTypography.titleMedium()),
-                              IconButton(
-                                onPressed: () => context.push('/home/reminder-setup?medicineId=${m.id}'),
-                                icon: const Icon(Icons.add_rounded, color: AppColors.neonCyan),
-                              ),
-                            ],
-                          ),
-                          if (_loadingReminders)
-                            const Center(child: CircularProgressIndicator(color: AppColors.neonCyan))
-                          else if (_reminders.isEmpty)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: AppDimensions.md),
-                              child: Text('No reminders set', style: AppTypography.bodySmall()),
-                            )
-                          else
-                            ..._reminders.map((r) => _ReminderTile(reminder: r, onDelete: () => _deleteReminder(r.id))),
-                        ],
-                      ),
-                    ).animate().fadeIn(delay: 200.ms, duration: 300.ms),
-
-                    if (m.notes != null && m.notes!.isNotEmpty) ...[
-                      const SizedBox(height: AppDimensions.md),
-                      _InfoCard(
+                      const SizedBox(width: 16),
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Notes', style: AppTypography.titleMedium()),
-                            const SizedBox(height: AppDimensions.xs),
-                            Text(m.notes!, style: AppTypography.bodyMedium()),
+                            Text(m.verifiedName,
+                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white)),
+                            if (m.brandName != null) ...[
+                              const SizedBox(height: 3),
+                              Text(m.brandName!,
+                                  style: const TextStyle(fontSize: 13, color: Color(0xFF8A9BB5))),
+                            ],
+                            const SizedBox(height: 10),
+                            Wrap(spacing: 8, runSpacing: 6, children: [
+                              if (m.form != null) _Badge(m.form!, color: color),
+                              if (m.strength != null) _Badge(m.strength!, color: const Color(0xFF8B5CF6)),
+                              _Badge(
+                                m.apiSource == 'openFDA' ? 'OpenFDA ✓' : 'Manual',
+                                color: m.apiSource == 'openFDA'
+                                    ? const Color(0xFF00C896)
+                                    : const Color(0xFF4A5A72),
+                              ),
+                            ]),
                           ],
                         ),
-                      ).animate().fadeIn(delay: 250.ms, duration: 300.ms),
-                    ],
-
-                    const SizedBox(height: AppDimensions.md),
-
-                    Container(
-                      padding: const EdgeInsets.all(AppDimensions.md),
-                      decoration: BoxDecoration(
-                        color: AppColors.warning.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-                        border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
                       ),
-                      child: Text('⚠️ MediFlow is a medication organization tool only. Always follow your doctor\'s instructions.',
-                          style: AppTypography.bodySmall(color: AppColors.warning)),
-                    ),
+                    ]),
+                  ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.1),
 
-                    const SizedBox(height: AppDimensions.lg),
+                  const SizedBox(height: 20),
 
-                    NeonButton(
-                      label: 'Set Reminder',
-                      icon: Icons.alarm_rounded,
-                      onPressed: () => context.push('/home/reminder-setup?medicineId=${m.id}'),
-                    ),
+                  // ── Details card ───────────────────────────
+                  _SectionHeader(title: 'Medicine Details'),
+                  const SizedBox(height: 10),
+                  _InfoCard(children: [
+                    if (m.genericName != null) _DetailRow('Generic Name', m.genericName!),
+                    if (m.manufacturer != null) _DetailRow('Manufacturer', m.manufacturer!),
+                    if (m.category != null) _DetailRow('Category', m.category!),
+                    if (m.quantity != null) _DetailRow('Quantity', '${m.quantity} units'),
+                    if (m.expiryDate != null)
+                      _DetailRow(
+                        'Expiry Date',
+                        '${_monthName(m.expiryDate!.month)} ${m.expiryDate!.year}',
+                        valueColor: m.expiryDate!.isBefore(DateTime.now())
+                            ? const Color(0xFFFF4D6A) : null,
+                      ),
+                    _DetailRow('Added On',
+                        '${_monthName(m.createdAt.month)} ${m.createdAt.day}, ${m.createdAt.year}'),
+                    _DetailRow('Source', m.apiSource == 'openFDA' ? 'OpenFDA' : 'Manually Added'),
+                  ]).animate().fadeIn(delay: 80.ms, duration: 300.ms),
 
-                    const SizedBox(height: AppDimensions.sm),
+                  const SizedBox(height: 20),
 
-                    NeonOutlineButton(
-                      label: 'Edit Medicine',
-                      icon: Icons.edit_rounded,
-                      onPressed: () => context.push('/home/add-medicine', extra: {
-                        'verifiedName': m.verifiedName, 'brandName': m.brandName,
-                        'genericName': m.genericName, 'strength': m.strength, 'form': m.form,
-                      }),
-                    ),
-
-                    const SizedBox(height: AppDimensions.sm),
-
-                    // Danger delete button
-                    GestureDetector(
-                      onTap: _deleteMedicine,
+                  // ── Reminders card ─────────────────────────
+                  _SectionHeader(
+                    title: 'Reminders',
+                    trailing: GestureDetector(
+                      onTap: () => context.push('/home/reminder-setup?medicineId=${m.id}'),
                       child: Container(
-                        height: AppDimensions.buttonHeight,
-                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: AppColors.error.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
-                          border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
+                          color: const Color(0xFF00E5FF).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(100),
+                          border: Border.all(color: const Color(0xFF00E5FF).withOpacity(0.4)),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.delete_rounded, color: AppColors.error, size: 20),
-                            const SizedBox(width: AppDimensions.sm),
-                            Text('Delete Medicine', style: AppTypography.titleMedium(color: AppColors.error)),
-                          ],
-                        ),
+                        child: const Row(children: [
+                          Icon(Icons.add_rounded, color: Color(0xFF00E5FF), size: 14),
+                          SizedBox(width: 4),
+                          Text('Add', style: TextStyle(
+                              color: Color(0xFF00E5FF), fontSize: 12, fontWeight: FontWeight.w600)),
+                        ]),
                       ),
                     ),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0D1826),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFF00E5FF).withOpacity(0.1)),
+                    ),
+                    child: _loadingReminders
+                        ? const Padding(
+                            padding: EdgeInsets.all(20),
+                            child: Center(child: CircularProgressIndicator(
+                                color: Color(0xFF00E5FF), strokeWidth: 2)),
+                          )
+                        : _reminders.isEmpty
+                            ? const Padding(
+                                padding: EdgeInsets.all(24),
+                                child: Column(children: [
+                                  Icon(Icons.alarm_off_rounded, color: Color(0xFF2A3A4A), size: 36),
+                                  SizedBox(height: 10),
+                                  Text('No reminders set',
+                                      style: TextStyle(color: Color(0xFF8A9BB5), fontSize: 14)),
+                                  SizedBox(height: 4),
+                                  Text('Tap + Add to create one',
+                                      style: TextStyle(color: Color(0xFF4A5A72), fontSize: 12)),
+                                ]),
+                              )
+                            : Column(
+                                children: _reminders.asMap().entries.map((entry) {
+                                  return Column(children: [
+                                    if (entry.key > 0)
+                                      Container(height: 1,
+                                          color: const Color(0xFF00E5FF).withOpacity(0.06)),
+                                    _ReminderRow(
+                                      reminder: entry.value,
+                                      onDelete: () => _deleteReminder(entry.value.id),
+                                    ),
+                                  ]);
+                                }).toList(),
+                              ),
+                  ).animate().fadeIn(delay: 160.ms, duration: 300.ms),
 
-                    const SizedBox(height: AppDimensions.xl),
+                  // ── Notes ──────────────────────────────────
+                  if (m.notes != null && m.notes!.isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    _SectionHeader(title: 'Notes'),
+                    const SizedBox(height: 10),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0D1826),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFF00E5FF).withOpacity(0.1)),
+                      ),
+                      child: Text(m.notes!,
+                          style: const TextStyle(fontSize: 14, color: Color(0xFFB0C4D8), height: 1.6)),
+                    ).animate().fadeIn(delay: 200.ms, duration: 300.ms),
                   ],
-                ),
+
+                  const SizedBox(height: 20),
+
+                  // ── Disclaimer ─────────────────────────────
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFB800).withOpacity(0.06),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFFFB800).withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Icon(Icons.warning_amber_rounded, color: Color(0xFFFFB800), size: 18),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            '⚠️ MediFlow is a medication organization tool only. Always follow your doctor\'s instructions.',
+                            style: TextStyle(fontSize: 12, color: Color(0xFFFFB800), height: 1.5),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ).animate().fadeIn(delay: 240.ms, duration: 300.ms),
+
+                  const SizedBox(height: 24),
+
+                  // ── Set Reminder ───────────────────────────
+                  GestureDetector(
+                    onTap: () => context.push('/home/reminder-setup?medicineId=${m.id}'),
+                    child: Container(
+                      width: double.infinity, height: 54,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                            colors: [Color(0xFF00E5FF), Color(0xFF0055FF)]),
+                        borderRadius: BorderRadius.circular(100),
+                        boxShadow: [
+                          BoxShadow(color: const Color(0xFF00E5FF).withOpacity(0.4),
+                              blurRadius: 20, offset: const Offset(0, 6)),
+                        ],
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.alarm_rounded, color: Color(0xFF070B12), size: 20),
+                          SizedBox(width: 8),
+                          Text('Set Reminder', style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF070B12))),
+                        ],
+                      ),
+                    ),
+                  ).animate().fadeIn(delay: 280.ms, duration: 300.ms),
+
+                  const SizedBox(height: 12),
+
+                  // ── Delete ─────────────────────────────────
+                  GestureDetector(
+                    onTap: _deleteMedicine,
+                    child: Container(
+                      width: double.infinity, height: 54,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF4D6A).withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(100),
+                        border: Border.all(color: const Color(0xFFFF4D6A).withOpacity(0.4)),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.delete_rounded, color: Color(0xFFFF4D6A), size: 20),
+                          SizedBox(width: 8),
+                          Text('Delete Medicine', style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFFFF4D6A))),
+                        ],
+                      ),
+                    ),
+                  ).animate().fadeIn(delay: 300.ms, duration: 300.ms),
+
+                  const SizedBox(height: 40),
+                ]),
               ),
             ),
           ],
@@ -328,87 +439,139 @@ class _MedicineDetailViewState extends ConsumerState<_MedicineDetailView> {
       ),
     );
   }
+}
 
-  String _monthName(int m) {
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    return months[(m - 1).clamp(0, 11)];
+// ── Section Header ────────────────────────────────────────────────────────────
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final Widget? trailing;
+  const _SectionHeader({required this.title, this.trailing});
+  @override
+  Widget build(BuildContext context) {
+    return Row(children: [
+      Container(width: 3, height: 18,
+          decoration: BoxDecoration(color: const Color(0xFF00E5FF),
+              borderRadius: BorderRadius.circular(2))),
+      const SizedBox(width: 8),
+      Expanded(child: Text(title, style: const TextStyle(
+          fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF00E5FF)))),
+      if (trailing != null) trailing!,
+    ]);
   }
 }
 
-// ── Common widgets ────────────────────────────────────────────────────────────
-
+// ── Info Card ─────────────────────────────────────────────────────────────────
 class _InfoCard extends StatelessWidget {
-  final Widget child;
-  const _InfoCard({required this.child});
-
+  final List<Widget> children;
+  const _InfoCard({required this.children});
   @override
   Widget build(BuildContext context) {
+    if (children.isEmpty) return const SizedBox.shrink();
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppDimensions.md),
-      decoration: AppColors.neonCardDecoration,
-      child: child,
+      decoration: BoxDecoration(
+        color: const Color(0xFF0D1826),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF00E5FF).withOpacity(0.1)),
+      ),
+      child: Column(
+        children: children.asMap().entries.map((entry) => Column(children: [
+          if (entry.key > 0)
+            Container(height: 1, color: const Color(0xFF00E5FF).withOpacity(0.06)),
+          entry.value,
+        ])).toList(),
+      ),
     );
   }
 }
 
+// ── Detail Row ────────────────────────────────────────────────────────────────
+class _DetailRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color? valueColor;
+  const _DetailRow(this.label, this.value, {this.valueColor});
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(children: [
+        Text(label, style: const TextStyle(fontSize: 13, color: Color(0xFF8A9BB5))),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(value,
+            textAlign: TextAlign.right,
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
+                color: valueColor ?? Colors.white),
+          ),
+        ),
+      ]),
+    );
+  }
+}
+
+// ── Badge ─────────────────────────────────────────────────────────────────────
 class _Badge extends StatelessWidget {
   final String label;
   final Color color;
-  const _Badge({required this.label, required this.color});
-
+  const _Badge(this.label, {required this.color});
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(100),
+        border: Border.all(color: color.withOpacity(0.4)),
       ),
-      child: Text(label, style: AppTypography.bodySmall(color: color)),
+      child: Text(label, style: TextStyle(
+          fontSize: 11, fontWeight: FontWeight.w600, color: color)),
     );
   }
 }
 
-class _DetailRow extends StatelessWidget {
-  final String label;
-  final String? value;
-  const _DetailRow(this.label, this.value);
-
-  @override
-  Widget build(BuildContext context) {
-    if (value == null || value!.isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(width: 130, child: Text(label, style: AppTypography.bodySmall(color: AppColors.textMuted))),
-          Expanded(child: Text(value!, style: AppTypography.bodyMedium(color: AppColors.textPrimary))),
-        ],
-      ),
-    );
-  }
-}
-
-class _ReminderTile extends StatelessWidget {
+// ── Reminder Row ──────────────────────────────────────────────────────────────
+class _ReminderRow extends StatelessWidget {
   final Reminder reminder;
   final VoidCallback onDelete;
-  const _ReminderTile({required this.reminder, required this.onDelete});
-
+  const _ReminderRow({required this.reminder, required this.onDelete});
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          const Icon(Icons.alarm_rounded, color: AppColors.neonCyan, size: 18),
-          const SizedBox(width: AppDimensions.sm),
-          Expanded(child: Text('${reminder.time} — ${reminder.frequency == 'daily' ? 'Every day' : reminder.frequency}', style: AppTypography.bodyMedium(color: AppColors.textPrimary))),
-          IconButton(onPressed: onDelete, icon: const Icon(Icons.close_rounded, color: AppColors.textMuted, size: 18), padding: EdgeInsets.zero, constraints: const BoxConstraints()),
-        ],
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(children: [
+        Container(
+          width: 40, height: 40,
+          decoration: BoxDecoration(
+            color: const Color(0xFF00E5FF).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(Icons.alarm_rounded, color: Color(0xFF00E5FF), size: 20),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(reminder.time,
+                  style: const TextStyle(
+                      fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
+              Text(reminder.frequency ?? 'Every day',
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF8A9BB5))),
+            ],
+          ),
+        ),
+        GestureDetector(
+          onTap: onDelete,
+          child: Container(
+            width: 32, height: 32,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFF4D6A).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.close_rounded, color: Color(0xFFFF4D6A), size: 16),
+          ),
+        ),
+      ]),
     );
   }
 }
