@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'app.dart';
 import 'data/services/firebase_service.dart';
 import 'features/auth/providers/auth_provider.dart';
+import 'package:mediflow/data/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,6 +23,7 @@ void main() async {
 
   // Firebase — app works offline if this fails
   await initFirebase();
+  await NotificationService.init();
 
   final prefs = await SharedPreferences.getInstance();
   runApp(
