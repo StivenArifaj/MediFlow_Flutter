@@ -20,7 +20,7 @@ class ReminderSetupScreen extends ConsumerStatefulWidget {
   const ReminderSetupScreen({
     super.key,
     required this.medicineId,
-    required this.medicineName,
+    this.medicineName = '',
   });
 
   @override
@@ -65,7 +65,7 @@ class _ReminderSetupScreenState extends ConsumerState<ReminderSetupScreen> {
       _snack('Maximum 5 reminder times allowed.');
       return;
     }
-    setState(() => _times.add(t)..sort());
+    setState(() { _times.add(t); _times.sort(); });
   }
 
   Future<void> _pickCustomTime() async {
@@ -79,7 +79,7 @@ class _ReminderSetupScreenState extends ConsumerState<ReminderSetupScreen> {
         ));
     if (picked == null) return;
     final formatted = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
-    if (!_times.contains(formatted)) setState(() => _times.add(formatted)..sort());
+    if (!_times.contains(formatted)) setState(() { _times.add(formatted); _times.sort(); });
   }
 
   Future<void> _pickEndDate() async {

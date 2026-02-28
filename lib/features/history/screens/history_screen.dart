@@ -32,6 +32,48 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   String _dateFilter = '30';
   String _statusFilter = 'all';
 
+  int _calculateStreak(List<HistoryEntry> allEntries) {
+    if (allEntries.isEmpty) return 0;
+
+    final byDay = <String, List<HistoryEntry>>{};
+    for (final e in allEntries) {
+      final dayKey = '${e.scheduledTime.year}-${e.scheduledTime.month}-${e.scheduledTime.day}';
+      byDay.putIfAbsent(dayKey, () => []).add(e);
+    }
+
+    int streak = 0;
+    DateTime day = DateTime.now();
+
+    for (int i = 0; i < 365; i++) {
+      final key = '${day.year}-${day.month}-${day.day}';
+      final dayEntries = byDay[key];
+
+      if (dayEntries == null) {
+        if (i == 0) {
+          day = day.subtract(const Duration(days: 1));
+          continue;
+        }
+        break;
+      }
+
+      final hasMissed = dayEntries.any((e) => e.status == 'missed');
+      if (hasMissed) break;
+
+      streak++;
+      day = day.subtract(const Duration(days: 1));
+    }
+
+    return streak;
+  }
+
+  String _encouragementMessage(double pct, int streak) {
+    if (pct >= 90) return '🏆 Outstanding! You\'re a medicine hero!';
+    if (pct >= 75) return '🌟 Great job keeping up with your health!';
+    if (pct >= 50) return '💪 Good effort! Keep going, you can do it!';
+    if (pct > 0) return '🌱 Every dose matters. Small steps, big results!';
+    return '💊 Start tracking to build your streak!';
+  }
+
   @override
   Widget build(BuildContext context) {
     final repo = ref.read(authRepositoryProvider);
@@ -173,6 +215,52 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                                   count: missed,
                                   color: const Color(0xFFFF3B5C)),
                             ],
+                          ),
+                          const SizedBox(height: 14),
+                          // Streak
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFB800).withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: const Color(0xFFFFB800).withOpacity(0.2)),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Text('🔥', style: TextStyle(fontSize: 20)),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Current Streak: ${_calculateStreak(history)} days',
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFFFFB800),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          // Encouragement
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF00C896).withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: const Color(0xFF00C896).withOpacity(0.2)),
+                            ),
+                            child: Text(
+                              _encouragementMessage(pct.toDouble(), _calculateStreak(history)),
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF00C896),
+                              ),
+                            ),
                           ),
                         ],
                       ),

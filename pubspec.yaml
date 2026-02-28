@@ -39,6 +39,8 @@ dependencies:
 
   # Notifications
   flutter_local_notifications: ^20.1.0
+  timezone: any
+  flutter_timezone: any
 
   # UI & Design
   google_fonts: ^8.0.2

@@ -13,6 +13,7 @@ import '../../features/medicines/screens/scan_screen.dart';
 import '../../features/medicines/screens/add_medicine_screen.dart';
 import '../../features/medicines/screens/medicine_detail_screen.dart';
 import '../../features/reminders/screens/reminder_setup_screen.dart';
+import '../../features/health/screens/health_detail_screen.dart';
 import '../../features/profile/screens/caregiver_dashboard_screen.dart';
 import '../../features/profile/screens/data_export_screen.dart';
 import '../../features/profile/screens/about_screen.dart';
@@ -97,8 +98,20 @@ final appRouter = GoRouter(
           builder: (context, state) {
             final medicineId = state.uri.queryParameters['medicineId'];
             final id = medicineId != null ? int.tryParse(medicineId) : null;
-            return ReminderSetupScreen(medicineId: id);
+            return ReminderSetupScreen(medicineId: id ?? 0);
           },
+        ),
+        GoRoute(
+          path: 'health-detail',
+          builder: (context, state) {
+            final type = state.uri.queryParameters['type'] ?? 'Weight';
+            final unit = state.uri.queryParameters['unit'] ?? '';
+            return HealthDetailScreen(type: type, unit: unit);
+          },
+        ),
+        GoRoute(
+          path: 'caregiver-dashboard',
+          builder: (context, state) => const CaregiverDashboardScreen(),
         ),
       ],
     ),

@@ -1,10 +1,13 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
@@ -228,6 +231,75 @@ class ProfileScreen extends ConsumerWidget {
 
                         const SizedBox(height: AppDimensions.sm),
 
+                        // ── MY PATIENT (Caregiver only) ─────────────
+                        if (user.role == 'caregiver') ...[
+                          _SettingsSection(
+                            title: 'My Patient',
+                            children: [
+                              _SettingsTile(
+                                icon: Icons.link_rounded,
+                                iconColor: const Color(0xFF8B5CF6),
+                                label: 'Invite Code',
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      ref.watch(sharedPreferencesProvider).getString('caregiver_invite_code') ?? 'Not set',
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.neonCyan,
+                                        fontFamily: 'monospace',
+                                        letterSpacing: 2,
+                                      ),
+                                    ),
+                                    const SizedBox(width: AppDimensions.xs),
+                                    const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
+                                  ],
+                                ),
+                                onTap: () => _showInviteCodeSheet(context, ref),
+                              ),
+                              _SettingsTile(
+                                icon: Icons.person_rounded,
+                                iconColor: const Color(0xFF8B5CF6),
+                                label: 'Patient Status',
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      ref.watch(sharedPreferencesProvider).getString('linked_patient_name') ?? 'Not linked',
+                                      style: AppTypography.bodySmall(
+                                        color: ref.watch(sharedPreferencesProvider).getString('linked_patient_name') != null
+                                            ? Colors.white
+                                            : AppColors.textMuted,
+                                      ),
+                                    ),
+                                    const SizedBox(width: AppDimensions.xs),
+                                    const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
+                                  ],
+                                ),
+                                onTap: () => context.push('/caregiver-dashboard'),
+                              ),
+                              _SettingsTile(
+                                icon: Icons.refresh_rounded,
+                                iconColor: AppColors.warning,
+                                label: 'Regenerate Invite Code',
+                                onTap: () => _regenerateCode(context, ref),
+                              ),
+                              if (ref.watch(sharedPreferencesProvider).getString('linked_patient_name') != null)
+                                _SettingsTile(
+                                  icon: Icons.link_off_rounded,
+                                  iconColor: AppColors.error,
+                                  label: 'Unlink Patient',
+                                  labelColor: AppColors.error,
+                                  onTap: () => _unlinkPatient(context, ref),
+                                ),
+                            ],
+                          ).animate().fadeIn(delay: 460.ms, duration: 300.ms),
+
+                          const SizedBox(height: AppDimensions.sm),
+                        ],
+
                         // ── Account ────────────────────────────────
                         _SettingsSection(
                           title: 'Account',
@@ -395,7 +467,7 @@ class ProfileScreen extends ConsumerWidget {
     ref.invalidate(currentUserProvider);
 
     if (!enabled) {
-      await NotificationService.instance.cancelAll();
+      await NotificationService.cancelAll();
     }
   }
 
@@ -557,7 +629,7 @@ class ProfileScreen extends ConsumerWidget {
     final db = ref.read(appDatabaseProvider);
     final prefs = ref.read(sharedPreferencesProvider);
 
-    await NotificationService.instance.cancelAll();
+    await NotificationService.cancelAll();
     // Delete all table data
     await db.customStatement('DELETE FROM health_measurements');
     await db.customStatement('DELETE FROM history_entries');
@@ -569,7 +641,227 @@ class ProfileScreen extends ConsumerWidget {
     if (context.mounted) context.go('/welcome');
   }
 
-  // ── 5. My Role (read-only modal) ───────────────────────────────────
+  // ── 5. Invite Code Sheet ──────────────────────────────────────────
+  void _showInviteCodeSheet(BuildContext context, WidgetRef ref) {
+    final code = ref.read(sharedPreferencesProvider).getString('caregiver_invite_code') ?? '';
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.bgCard,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimensions.radiusXl)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(AppDimensions.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Your Invite Code', style: AppTypography.headlineMedium()),
+            const SizedBox(height: AppDimensions.lg),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              decoration: BoxDecoration(
+                color: const Color(0xFF8B5CF6).withOpacity(0.08),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.3)),
+              ),
+              child: Center(
+                child: Text(
+                  code,
+                  style: const TextStyle(
+                    fontSize: 48,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.neonCyan,
+                    fontFamily: 'monospace',
+                    letterSpacing: 8,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: AppDimensions.lg),
+            Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      SharePlus.instance.share(ShareParams(
+                        text: "Hi! I've set up MediFlow to manage your medicines. Download MediFlow and enter this code: $code to get started.",
+                      ));
+                    },
+                    child: Container(
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: AppColors.primaryGradient,
+                        borderRadius: BorderRadius.circular(100),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.share_rounded, color: Colors.white, size: 18),
+                          SizedBox(width: 8),
+                          Text('Share Code', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      Clipboard.setData(ClipboardData(text: code));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Code copied to clipboard!')),
+                      );
+                    },
+                    child: Container(
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: AppColors.bgInput,
+                        borderRadius: BorderRadius.circular(100),
+                        border: Border.all(color: AppColors.neonCyan.withOpacity(0.3)),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.copy_rounded, color: AppColors.neonCyan, size: 18),
+                          SizedBox(width: 8),
+                          Text('Copy', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.neonCyan)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppDimensions.md),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('Close', style: AppTypography.labelLarge(color: AppColors.textSecondary)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── 6. Regenerate Code ──────────────────────────────────────────────
+  void _regenerateCode(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgCard,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+          side: const BorderSide(color: Color(0x1A00E5FF)),
+        ),
+        title: Text('Regenerate Code?', style: AppTypography.titleLarge()),
+        content: Text(
+          'This will invalidate the old code. Your patient will need the new code to reconnect.',
+          style: AppTypography.bodyMedium(color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel', style: AppTypography.labelLarge(color: AppColors.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final newCode = _generateCode();
+              final prefs = ref.read(sharedPreferencesProvider);
+              await prefs.setString('caregiver_invite_code', newCode);
+
+              // Update Firestore if possible
+              final uid = prefs.getString('firebase_uid');
+              if (uid != null) {
+                try {
+                  await FirebaseFirestore.instance
+                      .collection('caregivers')
+                      .doc(uid)
+                      .set({'inviteCode': newCode}, SetOptions(merge: true));
+                } catch (_) {}
+              }
+
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('New code generated: $newCode'),
+                    backgroundColor: AppColors.success,
+                  ),
+                );
+              }
+            },
+            child: Text('Regenerate', style: AppTypography.labelLarge(color: AppColors.warning)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── 7. Unlink Patient ───────────────────────────────────────────────
+  void _unlinkPatient(BuildContext context, WidgetRef ref) {
+    final patientName = ref.read(sharedPreferencesProvider).getString('linked_patient_name') ?? 'patient';
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgCard,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+          side: const BorderSide(color: Color(0x1A00E5FF)),
+        ),
+        title: Text('Unlink $patientName?', style: AppTypography.titleLarge()),
+        content: Text(
+          'They will lose access to your managed medicines and reminders.',
+          style: AppTypography.bodyMedium(color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel', style: AppTypography.labelLarge(color: AppColors.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final prefs = ref.read(sharedPreferencesProvider);
+              await prefs.remove('linked_patient_name');
+              await prefs.remove('linked_patient_uid');
+
+              // Update Firestore
+              final uid = prefs.getString('firebase_uid');
+              if (uid != null) {
+                try {
+                  await FirebaseFirestore.instance
+                      .collection('caregivers')
+                      .doc(uid)
+                      .update({'patientName': FieldValue.delete(), 'patientUid': FieldValue.delete()});
+                } catch (_) {}
+              }
+
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Patient unlinked'),
+                    backgroundColor: AppColors.warning,
+                  ),
+                );
+              }
+            },
+            child: Text('Unlink', style: AppTypography.labelLarge(color: AppColors.error)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Code Generator ──────────────────────────────────────────────────
+  String _generateCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no ambiguous chars
+    final rand = Random();
+    return List.generate(6, (_) => chars[rand.nextInt(chars.length)]).join();
+  }
+
+  // ── 8. My Role (read-only modal) ───────────────────────────────────
   void _showRoleInfoModal(BuildContext context, User user) {
     final roleName = user.role == 'caregiver' ? 'Caregiver' : 'Patient';
     final roleDesc = user.role == 'caregiver'

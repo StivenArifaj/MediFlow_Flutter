@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/widgets/starfield_background.dart';
 import '../../../data/database/app_database.dart';
@@ -189,7 +190,14 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
                         return _MetricCard(
                           metric: metric,
                           measurement: m,
-                          onTap: () => _openSheet(metric, m, userId),
+                          onTap: () {
+                            if (m != null) {
+                              context.push('/home/health-detail?type=${Uri.encodeComponent(metric.type)}&unit=${Uri.encodeComponent(metric.unit)}');
+                            } else {
+                              _openSheet(metric, m, userId);
+                            }
+                          },
+                          onLongPress: () => _openSheet(metric, m, userId),
                         )
                             .animate()
                             .fadeIn(delay: Duration(milliseconds: i * 45), duration: 300.ms)
@@ -230,8 +238,9 @@ class _MetricCard extends StatelessWidget {
   final _Metric metric;
   final HealthMeasurement? measurement;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
 
-  const _MetricCard({required this.metric, this.measurement, required this.onTap});
+  const _MetricCard({required this.metric, this.measurement, required this.onTap, this.onLongPress});
 
   String get _displayValue {
     if (measurement == null) return '';
@@ -245,6 +254,7 @@ class _MetricCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
+      onLongPress: onLongPress,
       child: Container(
         decoration: BoxDecoration(
           color: const Color(0xFF0D1826),
