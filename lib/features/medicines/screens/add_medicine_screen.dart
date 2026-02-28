@@ -232,7 +232,14 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF070B12),
-      body: StarfieldBackground(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment(0, -0.6),
+            radius: 1.5,
+            colors: [Color(0xFF0D1F35), Color(0xFF070B12)],
+          ),
+        ),
         child: Column(children: [
           // ── AppBar ───────────────────────────────────────────────────────
           SafeArea(

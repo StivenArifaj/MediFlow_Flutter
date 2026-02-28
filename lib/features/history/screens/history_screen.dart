@@ -84,7 +84,14 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFF070B12),
-      body: StarfieldBackground(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment(0, -0.6),
+            radius: 1.5,
+            colors: [Color(0xFF0D1F35), Color(0xFF070B12)],
+          ),
+        ),
         child: histAsync.when(
           loading: () => const Center(
               child: CircularProgressIndicator(
@@ -171,14 +178,13 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                         children: [
                           // Ring
                           Container(
-                            decoration: BoxDecoration(
+                            decoration: const BoxDecoration(
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFF00E5FF)
-                                      .withOpacity(0.15),
-                                  blurRadius: 60,
-                                  spreadRadius: 18,
+                                  color: Color(0x3000E5FF),
+                                  blurRadius: 40,
+                                  spreadRadius: 2,
                                 ),
                               ],
                             ),
@@ -197,23 +203,22 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                           ),
                           const SizedBox(height: 20),
 
-                          // Stat chips row
                           Row(
                             children: [
                               _StatChip(
                                   label: 'Taken',
                                   count: taken,
-                                  color: const Color(0xFF00E5FF)),
+                                  color: const Color(0xFF10B981)),
                               const SizedBox(width: 10),
                               _StatChip(
                                   label: 'Skipped',
                                   count: skipped,
-                                  color: const Color(0xFF6B7FCC)),
+                                  color: const Color(0xFF6366F1)),
                               const SizedBox(width: 10),
                               _StatChip(
                                   label: 'Missed',
                                   count: missed,
-                                  color: const Color(0xFFFF3B5C)),
+                                  color: const Color(0xFFEF4444)),
                             ],
                           ),
                           const SizedBox(height: 14),
@@ -480,26 +485,19 @@ class _FilterChip extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         margin: const EdgeInsets.only(right: 8),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
-          color: active ? const Color(0xFF00E5FF) : Colors.transparent,
+          color: active ? null : const Color(0xFF0D1826),
+          gradient: active ? const LinearGradient(colors: [Color(0xFF00E5FF), Color(0xFF0088FF)]) : null,
           borderRadius: BorderRadius.circular(100),
-          border: Border.all(
-            color: active
-                ? const Color(0xFF00E5FF)
-                : const Color(0xFF2A3A4A),
-          ),
+          border: active ? null : Border.all(color: const Color(0x3300E5FF)),
         ),
         child: Text(
           label,
           style: TextStyle(
             fontSize: 13,
-            fontWeight:
-                active ? FontWeight.w600 : FontWeight.w400,
-            color: active
-                ? const Color(0xFF070B12)
-                : const Color(0xFF8A9BB5),
+            fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+            color: active ? Colors.white : const Color(0xFF8A9BB5),
           ),
         ),
       ),

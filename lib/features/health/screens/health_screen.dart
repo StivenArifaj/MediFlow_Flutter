@@ -139,7 +139,14 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFF070B12),
-      body: StarfieldBackground(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment(0, -0.6),
+            radius: 1.5,
+            colors: [Color(0xFF0D1F35), Color(0xFF070B12)],
+          ),
+        ),
         child: measAsync.when(
           loading: () => const Center(
               child: CircularProgressIndicator(color: Color(0xFF00E5FF), strokeWidth: 2)),
@@ -181,7 +188,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
                       crossAxisCount: 3,
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
-                      childAspectRatio: 0.85,
+                      mainAxisExtent: 110,
                     ),
                     delegate: SliverChildBuilderDelegate(
                       (ctx, i) {
@@ -210,6 +217,25 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
               ],
             );
           },
+        ),
+      ),
+      floatingActionButton: Container(
+        width: 56, height: 56,
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(colors: [Color(0xFF00E5FF), Color(0xFF0088FF)]),
+          boxShadow: [
+            BoxShadow(color: Color(0x6000E5FF), blurRadius: 20, spreadRadius: 2)
+          ],
+        ),
+        child: FloatingActionButton(
+          onPressed: () {
+            // FAB action placeholder
+          },
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          highlightElevation: 0,
+          child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
         ),
       ),
     );
@@ -243,7 +269,7 @@ class _MetricCard extends StatelessWidget {
   const _MetricCard({required this.metric, this.measurement, required this.onTap, this.onLongPress});
 
   String get _displayValue {
-    if (measurement == null) return '';
+    if (measurement == null) return '—';
     final v = measurement!.value;
     return v % 1 == 0 ? v.toInt().toString() : v.toStringAsFixed(1);
   }
@@ -258,36 +284,48 @@ class _MetricCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: const Color(0xFF0D1826),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: hasData
-                ? metric.color.withOpacity(0.4)
-                : const Color(0xFF1A2840),
-            width: hasData ? 1.5 : 1,
+            color: const Color(0x1A00E5FF),
+            width: 1,
           ),
-          boxShadow: hasData
-              ? [BoxShadow(color: metric.color.withOpacity(0.15), blurRadius: 20, offset: const Offset(0, 4))]
-              : null,
+          boxShadow: const [
+            BoxShadow(color: Color(0x1200E5FF), blurRadius: 16, offset: Offset(0, 4))
+          ],
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Stack(
+          alignment: Alignment.center,
           children: [
-            // Big icon with glow
-            Container(
-              width: 58,
-              height: 58,
-              decoration: BoxDecoration(
-                color: metric.color.withOpacity(hasData ? 0.18 : 0.08),
-                borderRadius: BorderRadius.circular(18),
+            if (hasData)
+              Positioned(
+                top: 8, right: 8,
+                child: Container(
+                  width: 8, height: 8,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF00E5FF),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Big icon with glow
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: metric.color.withValues(alpha: hasData ? 0.18 : 0.08),
+                borderRadius: BorderRadius.circular(16),
                 boxShadow: hasData
-                    ? [BoxShadow(color: metric.color.withOpacity(0.35), blurRadius: 20, spreadRadius: 2)]
+                    ? [BoxShadow(color: metric.color.withValues(alpha: 0.35), blurRadius: 20, spreadRadius: 2)]
                     : null,
               ),
               child: Icon(metric.icon,
-                  color: hasData ? metric.color : metric.color.withOpacity(0.45),
-                  size: 30),
+                  color: hasData ? metric.color : metric.color.withValues(alpha: 0.45),
+                  size: 24),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             // Name
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 6),
@@ -310,7 +348,7 @@ class _MetricCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: metric.color.withOpacity(0.18),
+                  color: metric.color.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(100),
                 ),
                 child: Text(
@@ -321,18 +359,16 @@ class _MetricCard extends StatelessWidget {
                 ),
               )
             else
-              Container(
-                width: 22,
-                height: 22,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1A2840),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFF2A3A4A)),
+              Text(
+                '—',
+                style: const TextStyle(
+                  fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF8A9BB5),
                 ),
-                child: const Icon(Icons.add_rounded, color: Color(0xFF4A5A72), size: 14),
               ),
           ],
         ),
+        ],
+      ),
       ),
     );
   }

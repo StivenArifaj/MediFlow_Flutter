@@ -123,7 +123,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.bgPrimary,
-      body: StarfieldBackground(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment(0, -0.6),
+            radius: 1.5,
+            colors: [Color(0xFF0D1F35), Color(0xFF070B12)],
+          ),
+        ),
         child: Stack(children: [
           CustomScrollView(slivers: [
             SliverToBoxAdapter(child: _buildHeader(user)),
@@ -134,6 +141,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: AppDimensions.lg),
+
+                    // ── Stats Row ──────────────────────────────
+                    if (userId != null)
+                      _StatsRow(userId: userId),
+                    
+                    if (userId != null)
+                      const SizedBox(height: AppDimensions.lg),
 
                     // ── Adherence Ring ──────────────────────────────
                     if (userId == null)
@@ -585,7 +599,26 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(title, style: AppTypography.titleLarge(color: AppColors.textPrimary));
+    return Row(
+      children: [
+        Container(
+          width: 3, height: 18,
+          decoration: BoxDecoration(
+            color: const Color(0xFF00E5FF),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          title.replaceAll('💊 ', '').replaceAll('🤝 ', '').replaceAll('🔗 ', ''),
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF00E5FF),
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -602,32 +635,35 @@ class _EmptySchedule extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: AppColors.neonCardDecoration,
       child: Column(children: [
-        const Text('�', style: TextStyle(fontSize: 40)),
+        const Icon(Icons.calendar_today_rounded, size: 40, color: Color(0xFF334155)),
         const SizedBox(height: 12),
-        Text('No medicines scheduled today',
-            style: AppTypography.titleMedium(color: AppColors.textSecondary)),
+        const Text('Nothing scheduled for today',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
         const SizedBox(height: 4),
-        Text('Add a medicine and set a reminder to get started',
-            style: AppTypography.bodySmall(color: AppColors.textMuted),
+        const Text('Add a medicine and set a reminder to see it here',
+            style: TextStyle(fontSize: 13, color: Color(0xFF8A9BB5)),
             textAlign: TextAlign.center),
         const SizedBox(height: 16),
-        GestureDetector(
-          onTap: onAdd,
-          child: Container(
-            width: 200,
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            decoration: BoxDecoration(
-              gradient: AppColors.primaryGradient,
-              borderRadius: BorderRadius.circular(100),
-              boxShadow: const [AppColors.cyanGlow],
-            ),
-            child: Center(
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.add_rounded, color: Color(0xFF08090F), size: 18),
-                const SizedBox(width: 6),
-                Text('Add Medicine',
-                    style: AppTypography.bodySmall(color: const Color(0xFF08090F))),
-              ]),
+        Container(
+          width: double.infinity,
+          height: 48,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(colors: [Color(0xFF00E5FF), Color(0xFF0088FF)]),
+            borderRadius: BorderRadius.circular(50),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onAdd,
+              borderRadius: BorderRadius.circular(50),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Icon(Icons.add_rounded, color: Colors.white, size: 20),
+                  SizedBox(width: 8),
+                  Text('Add Medicine', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                ],
+              ),
             ),
           ),
         ),
@@ -667,6 +703,121 @@ class _EmptyMedicines extends StatelessWidget {
           ]),
         ),
       ]),
+    );
+  }
+}
+
+// ── Stats Row ──────────────────────────────────────────────────────────────────
+
+class _StatsRow extends ConsumerWidget {
+  final int userId;
+  const _StatsRow({required this.userId});
+
+  int _calculateStreak(List<HistoryEntry> allEntries) {
+    if (allEntries.isEmpty) return 0;
+    final byDay = <String, List<HistoryEntry>>{};
+    for (final e in allEntries) {
+      final key = '${e.scheduledTime.year}-${e.scheduledTime.month}-${e.scheduledTime.day}';
+      byDay.putIfAbsent(key, () => []).add(e);
+    }
+    int streak = 0;
+    DateTime day = DateTime.now();
+    for (int i = 0; i < 365; i++) {
+      final key = '${day.year}-${day.month}-${day.day}';
+      final dayEntries = byDay[key];
+      if (dayEntries == null) {
+        if (i == 0) {
+          day = day.subtract(const Duration(days: 1));
+          continue;
+        }
+        break;
+      }
+      if (dayEntries.any((e) => e.status == 'missed')) break;
+      streak++;
+      day = day.subtract(const Duration(days: 1));
+    }
+    return streak;
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final db = ref.read(appDatabaseProvider);
+    
+    return FutureBuilder(
+      future: Future.wait([
+        db.medicinesDao.getAllMedicines(userId),
+        db.remindersDao.getRemindersForToday(userId),
+        db.historyDao.getHistoryForUser(userId),
+      ]),
+      builder: (ctx, snap) {
+        int meds = 0, today = 0, streak = 0;
+        if (snap.hasData) {
+          meds = (snap.data![0] as List<Medicine>).length;
+          today = (snap.data![1] as List<Reminder>).length;
+          streak = _calculateStreak(snap.data![2] as List<HistoryEntry>);
+        }
+        return Row(
+          children: [
+            _StatChip(
+              icon: Icons.medication_rounded,
+              iconColor: const Color(0xFF00E5FF),
+              value: '$meds',
+              label: 'Medicines',
+            ),
+            const SizedBox(width: 8),
+            _StatChip(
+              icon: Icons.calendar_today_rounded,
+              iconColor: const Color(0xFF00E5FF),
+              value: '$today',
+              label: 'Today',
+            ),
+            const SizedBox(width: 8),
+            _StatChip(
+              icon: Icons.local_fire_department_rounded,
+              iconColor: const Color(0xFFFFB800),
+              value: '$streak',
+              label: 'Streak',
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _StatChip extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String value;
+  final String label;
+
+  const _StatChip({
+    required this.icon,
+    required this.iconColor,
+    required this.value,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0D1826),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0x1A00E5FF)),
+          boxShadow: const [BoxShadow(color: Color(0x1200E5FF), blurRadius: 16, offset: Offset(0, 4))],
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: iconColor, size: 24),
+            const SizedBox(height: 6),
+            Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+            Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF8A9BB5))),
+          ],
+        ),
+      ),
     );
   }
 }

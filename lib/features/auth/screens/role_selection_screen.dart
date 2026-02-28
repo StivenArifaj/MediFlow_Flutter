@@ -212,7 +212,7 @@ class _RoleCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Center(
-                child: Text(emoji, style: const TextStyle(fontSize: 28)),
+                child: Icon(icon, color: accentColor, size: 28),
               ),
             ),
             const SizedBox(width: AppDimensions.md),

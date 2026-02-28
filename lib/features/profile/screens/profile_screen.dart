@@ -35,7 +35,14 @@ class ProfileScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.bgPrimary,
-      body: StarfieldBackground(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment(0, -0.6),
+            radius: 1.5,
+            colors: [Color(0xFF0D1F35), Color(0xFF070B12)],
+          ),
+        ),
         child: userAsync.when(
           loading: () => const Center(child: CircularProgressIndicator(color: AppColors.neonCyan)),
           error: (_, __) => const Center(child: Text('Error loading profile')),
@@ -59,14 +66,14 @@ class ProfileScreen extends ConsumerWidget {
                           width: 80,
                           height: 80,
                           decoration: const BoxDecoration(
-                            gradient: AppColors.primaryGradient,
+                            gradient: LinearGradient(colors: [Color(0xFF00E5FF), Color(0xFF0055FF)]),
                             shape: BoxShape.circle,
-                            boxShadow: [AppColors.cyanGlowStrong],
+                            boxShadow: [BoxShadow(color: Color(0x6000E5FF), blurRadius: 30, spreadRadius: 4)],
                           ),
                           child: Center(
                             child: Text(
                               user.name.isNotEmpty ? user.name[0].toUpperCase() : 'M',
-                              style: AppTypography.displayMedium(color: AppColors.bgPrimary),
+                              style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF0D1826)),
                             ),
                           ),
                         ).animate().fadeIn(duration: 300.ms).scale(begin: const Offset(0.8, 0.8)),
@@ -962,11 +969,11 @@ class _PremiumCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppDimensions.md),
       decoration: BoxDecoration(
-        gradient: AppColors.premiumGradient,
+        gradient: const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFFE81CFF)]),
         borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
         boxShadow: [
           BoxShadow(
-            color: AppColors.premiumFrom.withValues(alpha: 0.3),
+            color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -1074,10 +1081,10 @@ class _SettingsTile extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                width: 36, height: 36,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1A2535),
-                  borderRadius: BorderRadius.circular(10),
+                  color: iconColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, color: iconColor, size: 18),
               ),

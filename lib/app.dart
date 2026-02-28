@@ -8,7 +8,6 @@ import 'core/theme/theme_provider.dart';
 import 'core/locale/locale_provider.dart';
 import 'core/services/missed_dose_service.dart';
 import 'features/auth/providers/auth_provider.dart';
-import 'data/database/app_database.dart';
 
 class MediFlowApp extends ConsumerStatefulWidget {
   const MediFlowApp({super.key});
