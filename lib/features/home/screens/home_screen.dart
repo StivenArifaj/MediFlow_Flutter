@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
@@ -495,40 +496,84 @@ class _SnoozeSheet extends StatelessWidget {
 class _MyPatientCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
-      child: Row(children: [
-        Container(
-          width: 42, height: 42,
-          decoration: BoxDecoration(
-            color: const Color(0xFF8B5CF6).withOpacity(0.15),
-            borderRadius: BorderRadius.circular(12),
+    return FutureBuilder<Map<String, String?>>(
+      future: _loadPatientData(),
+      builder: (context, snap) {
+        final patientName = snap.data?['patientName'];
+        final inviteCode = snap.data?['inviteCode'];
+        final hasPatient = patientName != null && patientName.isNotEmpty;
+
+        return GlassCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                Container(
+                  width: 42, height: 42,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF8B5CF6).withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.person_rounded, color: Color(0xFF8B5CF6), size: 22),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('My Patient', style: AppTypography.titleMedium(color: AppColors.textPrimary)),
+                    Text(
+                      hasPatient ? patientName : 'No patient linked yet',
+                      style: AppTypography.bodySmall(color: AppColors.textSecondary),
+                    ),
+                  ]),
+                ),
+                GestureDetector(
+                  onTap: () => context.push('/caregiver-dashboard'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF8B5CF6).withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.4)),
+                    ),
+                    child: Text(hasPatient ? 'View Report →' : 'Dashboard →',
+                        style: const TextStyle(color: Color(0xFF8B5CF6),
+                            fontSize: 12, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ]),
+              if (inviteCode != null && inviteCode.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.neonCyan.withOpacity(0.06),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.neonCyan.withOpacity(0.2)),
+                  ),
+                  child: Row(children: [
+                    const Icon(Icons.vpn_key_rounded, color: AppColors.neonCyan, size: 14),
+                    const SizedBox(width: 8),
+                    Text('Invite Code: ', style: AppTypography.bodySmall(color: AppColors.textSecondary)),
+                    Text(inviteCode, style: const TextStyle(
+                      fontFamily: 'monospace', fontSize: 14,
+                      fontWeight: FontWeight.w700, color: AppColors.neonCyan, letterSpacing: 2,
+                    )),
+                  ]),
+                ),
+              ],
+            ],
           ),
-          child: const Icon(Icons.person_rounded, color: Color(0xFF8B5CF6), size: 22),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('My Patient', style: AppTypography.titleMedium(color: AppColors.textPrimary)),
-            Text('Linked patient monitoring',
-                style: AppTypography.bodySmall(color: AppColors.textSecondary)),
-          ]),
-        ),
-        GestureDetector(
-          onTap: () => context.push('/home/caregiver-dashboard'),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFF8B5CF6).withOpacity(0.15),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.4)),
-            ),
-            child: const Text('View Report →',
-                style: TextStyle(color: Color(0xFF8B5CF6),
-                    fontSize: 12, fontWeight: FontWeight.w600)),
-          ),
-        ),
-      ]),
+        );
+      },
     );
+  }
+
+  Future<Map<String, String?>> _loadPatientData() async {
+    final prefs = await SharedPreferences.getInstance();
+    return {
+      'patientName': prefs.getString('linked_patient_name'),
+      'inviteCode': prefs.getString('caregiver_invite_code'),
+    };
   }
 }
 
@@ -557,7 +602,7 @@ class _EmptySchedule extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: AppColors.neonCardDecoration,
       child: Column(children: [
-        const Text('💊🍽️', style: TextStyle(fontSize: 40)),
+        const Text('�', style: TextStyle(fontSize: 40)),
         const SizedBox(height: 12),
         Text('No medicines scheduled today',
             style: AppTypography.titleMedium(color: AppColors.textSecondary)),

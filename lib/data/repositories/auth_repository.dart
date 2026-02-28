@@ -106,7 +106,8 @@ class AuthRepository {
 
   Future<void> logout() async {
     await _prefs.remove(_keyUserId);
-    // Keep selectedRole and hasSeenOnboarding
+    await _prefs.remove(_keySelectedRole);
+    // Keep hasSeenOnboarding (user has seen the slides, no need to show again)
   }
 
   Future<User?> getCurrentUser() async {

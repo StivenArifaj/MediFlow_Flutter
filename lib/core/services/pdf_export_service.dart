@@ -184,14 +184,24 @@ class PdfExportService {
     );
 
     final bytes = await pdf.save();
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File(
-        '${dir.path}/mediflow_report_${now.millisecondsSinceEpoch}.pdf');
+    final now2 = DateTime.now();
+    final fileName = 'mediflow_report_${now2.year}${now2.month.toString().padLeft(2, '0')}${now2.day.toString().padLeft(2, '0')}.pdf';
+
+    Directory? dir;
+    try {
+      if (Platform.isAndroid) {
+        dir = await getExternalStorageDirectory();
+      }
+    } catch (_) {}
+    dir ??= await getTemporaryDirectory();
+
+    final file = File('${dir.path}/$fileName');
     await file.writeAsBytes(bytes);
 
     await SharePlus.instance.share(ShareParams(
-      files: [XFile(file.path, mimeType: 'application/pdf')],
+      files: [XFile(file.path, mimeType: 'application/pdf', name: fileName)],
       subject: 'MediFlow Health Report — $userName',
+      text: 'Your MediFlow medication report generated on ${fmt.format(now2)}',
     ));
   }
 

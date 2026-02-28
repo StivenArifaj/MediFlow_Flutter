@@ -84,7 +84,7 @@ class WelcomeScreen extends StatelessWidget {
                 
                 NeonButton(
                   label: l10n.auth_createAccount,
-                  onPressed: () => context.go('/register'),
+                  onPressed: () => context.go('/role-selection'),
                 )
                     .animate()
                     .fadeIn(delay: 500.ms, duration: 500.ms)

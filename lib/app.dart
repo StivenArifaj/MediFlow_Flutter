@@ -62,9 +62,9 @@ class _MediFlowAppState extends ConsumerState<MediFlowApp>
       debugShowCheckedModeBanner: false,
 
       // Theme
-      theme: AppTheme.darkTheme,
+      theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.dark,
+      themeMode: themeMode,
 
       // Localization
       localizationsDelegates: const [

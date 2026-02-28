@@ -7,7 +7,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
@@ -772,17 +772,6 @@ class ProfileScreen extends ConsumerWidget {
               final prefs = ref.read(sharedPreferencesProvider);
               await prefs.setString('caregiver_invite_code', newCode);
 
-              // Update Firestore if possible
-              final uid = prefs.getString('firebase_uid');
-              if (uid != null) {
-                try {
-                  await FirebaseFirestore.instance
-                      .collection('caregivers')
-                      .doc(uid)
-                      .set({'inviteCode': newCode}, SetOptions(merge: true));
-                } catch (_) {}
-              }
-
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -826,17 +815,6 @@ class ProfileScreen extends ConsumerWidget {
               final prefs = ref.read(sharedPreferencesProvider);
               await prefs.remove('linked_patient_name');
               await prefs.remove('linked_patient_uid');
-
-              // Update Firestore
-              final uid = prefs.getString('firebase_uid');
-              if (uid != null) {
-                try {
-                  await FirebaseFirestore.instance
-                      .collection('caregivers')
-                      .doc(uid)
-                      .update({'patientName': FieldValue.delete(), 'patientUid': FieldValue.delete()});
-                } catch (_) {}
-              }
 
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(

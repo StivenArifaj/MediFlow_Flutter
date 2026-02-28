@@ -1,8 +1,10 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mediflow/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
@@ -107,11 +109,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       );
       if (!mounted) return;
       if (role == 'caregiver') {
-        final user = await repo.getCurrentUser();
-        context.pushReplacement('/invite-patient', extra: {
-          'inviteCode': user?.firebaseUid ?? '------',
-          'patientName': null,
-        });
+        // Generate invite code for caregiver
+        final code = _generateInviteCode();
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('caregiver_invite_code', code);
+        if (mounted) {
+          context.pushReplacement('/invite-patient', extra: {
+            'inviteCode': code,
+            'patientName': null,
+          });
+        }
       } else {
         context.go('/home');
       }
@@ -133,6 +140,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (score >= 2) return 2;
     if (score >= 1 || p.length >= 8) return 1;
     return 0;
+  }
+
+  String _generateInviteCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    final rand = math.Random();
+    return List.generate(6, (_) => chars[rand.nextInt(chars.length)]).join();
   }
 
   @override
