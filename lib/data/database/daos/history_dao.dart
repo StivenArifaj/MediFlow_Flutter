@@ -46,3 +46,5 @@ class HistoryDao extends DatabaseAccessor<AppDatabase> with _$HistoryDaoMixin {
         .get();
   }
 }
+
+

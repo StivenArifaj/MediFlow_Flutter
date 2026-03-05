@@ -130,4 +130,80 @@ class AppColors {
     blurRadius: 30,
     offset: Offset(0, 6),
   );
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // THEME-AWARE COLOR HELPERS
+  // Use these in screens so they work in both dark and light mode.
+  // Example: color: AppColors.cardBg(context)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  static bool _dark(BuildContext ctx) =>
+      Theme.of(ctx).brightness == Brightness.dark;
+
+  // Backgrounds
+  static Color scaffoldBg(BuildContext ctx) =>
+      _dark(ctx) ? const Color(0xFF060E1B) : const Color(0xFFF0F9FA);
+
+  static Color cardBg(BuildContext ctx) =>
+      _dark(ctx) ? const Color(0xFF0D1826) : const Color(0xFFFFFFFF);
+
+  static Color cardBorder(BuildContext ctx) =>
+      _dark(ctx) ? const Color(0x1A00E5FF) : const Color(0xFF00B4B4).withValues(alpha: 0.2);
+
+  static Color inputBg(BuildContext ctx) =>
+      _dark(ctx) ? const Color(0xFF111927) : const Color(0xFFE8F5F5);
+
+  // Text
+  static Color textH(BuildContext ctx) =>
+      _dark(ctx) ? const Color(0xFFFFFFFF) : const Color(0xFF0D2535);
+
+  static Color textBody(BuildContext ctx) =>
+      _dark(ctx) ? const Color(0xFFCDD8E8) : const Color(0xFF2A4055);
+
+  static Color textHint(BuildContext ctx) =>
+      _dark(ctx) ? const Color(0xFF4A5A72) : const Color(0xFF7A9AAA);
+
+  static Color textSub(BuildContext ctx) =>
+      _dark(ctx) ? const Color(0xFF8A9BB5) : const Color(0xFF4A6070);
+
+  // Accent — teal stays teal, just slightly darker in light mode for contrast
+  static Color accent(BuildContext ctx) =>
+      _dark(ctx) ? const Color(0xFF00E5FF) : const Color(0xFF0099BB);
+
+  // Section dividers
+  static Color divider(BuildContext ctx) =>
+      _dark(ctx) ? const Color(0x1AFFFFFF) : const Color(0x1A000000);
+
+  // Nav bar
+  static Color navBg(BuildContext ctx) =>
+      _dark(ctx) ? const Color(0xFF0A1520) : const Color(0xFFFFFFFF);
+
+  static Color navSelected(BuildContext ctx) =>
+      _dark(ctx) ? const Color(0xFF00E5FF) : const Color(0xFF0099BB);
+
+  static Color navUnselected(BuildContext ctx) =>
+      _dark(ctx) ? const Color(0xFF4A5A72) : const Color(0xFF9AB0BB);
+
+  // Card shadow
+  static List<BoxShadow> cardShadow(BuildContext ctx) => _dark(ctx)
+      ? const [
+          BoxShadow(color: Color(0x1200E5FF), blurRadius: 16, offset: Offset(0, 4)),
+        ]
+      : [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ];
+
+  /// Convenience: full card BoxDecoration using theme-aware colors.
+  static BoxDecoration cardDecoration(BuildContext ctx) => BoxDecoration(
+        color: cardBg(ctx),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cardBorder(ctx), width: 1),
+        boxShadow: cardShadow(ctx),
+      );
 }
+
+

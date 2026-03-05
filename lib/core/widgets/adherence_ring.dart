@@ -76,7 +76,7 @@ class _AdherenceRingState extends State<AdherenceRing>
                   color: Colors.transparent,
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF00E5FF).withOpacity(0.18),
+                      color: const Color(0xFF00E5FF).withValues(alpha: 0.18),
                       blurRadius: 44,
                       spreadRadius: 6,
                     ),
@@ -156,8 +156,8 @@ class _RingPainter extends CustomPainter {
         startAngle: -pi / 2,
         endAngle: -pi / 2 + 2 * pi,
         colors: [
-          const Color(0xFF00E5FF).withOpacity(0.45),
-          const Color(0xFF0066FF).withOpacity(0.25),
+          const Color(0xFF00E5FF).withValues(alpha: 0.45),
+          const Color(0xFF0066FF).withValues(alpha: 0.25),
           Colors.transparent,
         ],
         stops: [0.0, percent / 100 * 0.6, percent / 100],
@@ -207,7 +207,7 @@ class _RingPainter extends CustomPainter {
         Offset(dotX, dotY),
         strokeWidth * 0.9,
         Paint()
-          ..color = const Color(0xFF00E5FF).withOpacity(0.4)
+          ..color = const Color(0xFF00E5FF).withValues(alpha: 0.4)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
       );
       // Bright dot
@@ -223,3 +223,4 @@ class _RingPainter extends CustomPainter {
   bool shouldRepaint(_RingPainter old) =>
       old.percent != percent || old.size != size;
 }
+

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/app_background.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -9,7 +10,6 @@ import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/widgets/starfield_background.dart';
 import '../../../core/widgets/adherence_ring.dart';
 import '../../../data/database/app_database.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -138,8 +138,8 @@ class _CaregiverDashboardScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
-      body: StarfieldBackground(
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
         child: _loading
             ? const Center(
                 child: CircularProgressIndicator(
@@ -177,7 +177,7 @@ class _CaregiverDashboardScreenState
                             Container(
                               width: 40, height: 40,
                               decoration: BoxDecoration(
-                                color: _indigo.withOpacity(0.15),
+                                color: _indigo.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Icon(Icons.people_rounded,
@@ -230,7 +230,7 @@ class _CaregiverDashboardScreenState
                                 borderRadius: BorderRadius.circular(100),
                                 boxShadow: [
                                   BoxShadow(
-                                      color: _indigo.withOpacity(0.4),
+                                      color: _indigo.withValues(alpha: 0.4),
                                       blurRadius: 20,
                                       offset: const Offset(0, 6)),
                                 ],
@@ -274,10 +274,10 @@ class _CaregiverDashboardScreenState
         border: Border.all(
             color: hasPatient
                 ? const Color(0x3310B981)
-                : _indigo.withOpacity(0.3)),
+                : _indigo.withValues(alpha: 0.3)),
         boxShadow: [
           BoxShadow(
-              color: _indigo.withOpacity(0.08),
+              color: _indigo.withValues(alpha: 0.08),
               blurRadius: 16,
               offset: const Offset(0, 4)),
         ],
@@ -321,7 +321,7 @@ class _CaregiverDashboardScreenState
                       color: const Color(0xFF070B12),
                       borderRadius: BorderRadius.circular(12),
                       border:
-                          Border.all(color: _indigo.withOpacity(0.3)),
+                          Border.all(color: _indigo.withValues(alpha: 0.3)),
                     ),
                     child: Text(
                       _inviteCode!,
@@ -345,10 +345,10 @@ class _CaregiverDashboardScreenState
                   child: Container(
                     width: 48, height: 48,
                     decoration: BoxDecoration(
-                      color: _indigo.withOpacity(0.15),
+                      color: _indigo.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                          color: _indigo.withOpacity(0.3)),
+                          color: _indigo.withValues(alpha: 0.3)),
                     ),
                     child: const Icon(Icons.share_rounded,
                         color: _indigo, size: 20),
@@ -464,7 +464,7 @@ class _CaregiverDashboardScreenState
                     Container(
                       width: 36, height: 36,
                       decoration: BoxDecoration(
-                        color: _indigo.withOpacity(0.12),
+                        color: _indigo.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(Icons.medication_rounded,
@@ -487,7 +487,7 @@ class _CaregiverDashboardScreenState
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: _statusColor(item.status).withOpacity(0.12),
+                        color: _statusColor(item.status).withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(item.status,
@@ -563,7 +563,7 @@ class _CaregiverDashboardScreenState
                     Container(
                       width: 36, height: 36,
                       decoration: BoxDecoration(
-                        color: _indigo.withOpacity(0.12),
+                        color: _indigo.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(Icons.medication_rounded,
@@ -588,7 +588,7 @@ class _CaregiverDashboardScreenState
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: AppColors.neonCyan.withOpacity(0.1),
+                          color: AppColors.neonCyan.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(m.category!,
@@ -683,7 +683,7 @@ class _CaregiverDashboardScreenState
 
               return Container(
                 decoration: BoxDecoration(
-                  color: cellColor.withOpacity(data != null ? 0.25 : 1),
+                  color: cellColor.withValues(alpha: data != null ? 0.25 : 1),
                   borderRadius: BorderRadius.circular(6),
                   border: isToday
                       ? Border.all(color: _indigo, width: 2)
@@ -725,9 +725,9 @@ class _CaregiverDashboardScreenState
         Container(
           width: 10, height: 10,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.3),
+            color: color.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(3),
-            border: Border.all(color: color.withOpacity(0.6)),
+            border: Border.all(color: color.withValues(alpha: 0.6)),
           ),
         ),
         const SizedBox(width: 4),
@@ -808,3 +808,9 @@ class _ScheduleItem {
     required this.status,
   });
 }
+
+
+
+
+
+

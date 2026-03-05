@@ -98,7 +98,7 @@ class _EnterCodeScreenState extends ConsumerState<EnterCodeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Container(
         decoration: const BoxDecoration(
           gradient: RadialGradient(
@@ -281,3 +281,8 @@ class UpperCaseTextFormatter extends TextInputFormatter {
     return newValue.copyWith(text: newValue.text.toUpperCase());
   }
 }
+
+
+
+
+

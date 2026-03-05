@@ -84,3 +84,5 @@ class AppTypography {
         color: color ?? AppColors.primary,
       );
 }
+
+

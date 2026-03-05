@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/app_background.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -7,7 +8,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/widgets/starfield_background.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../data/database/app_database.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -127,6 +127,12 @@ class _ReminderSetupScreenState extends ConsumerState<ReminderSetupScreen> {
       final userId = repo.currentUserId;
       if (userId == null) { _snack('Not logged in'); return; }
 
+      // Fetch medicine name from DB for reliable display in notifications
+      final medicine = await db.medicinesDao.getMedicineById(widget.medicineId);
+      final medicineName = medicine?.verifiedName ?? widget.medicineName;
+
+
+
       final durationDays = _durationType == 'for_days'
           ? int.tryParse(_daysController.text.trim())
           : null;
@@ -135,7 +141,7 @@ class _ReminderSetupScreenState extends ConsumerState<ReminderSetupScreen> {
       for (final time in _times) {
         final notifId = DateTime.now().millisecondsSinceEpoch % 100000 + _times.indexOf(time);
 
-        final reminderId = await db.remindersDao.insertReminder(
+        await db.remindersDao.insertReminder(
           RemindersCompanion.insert(
             medicineId: widget.medicineId,
             userId: userId,
@@ -151,16 +157,16 @@ class _ReminderSetupScreenState extends ConsumerState<ReminderSetupScreen> {
             createdAt: DateTime.now(),
           ),
         );
-
-        // Schedule the actual notification
-        if (_soundEnabled || _vibrationEnabled) {
-          await NotificationService.scheduleReminder(
-            notificationId: notifId,
-            medicineName: widget.medicineName,
-            time: time,
-          );
-        }
       }
+
+      // Schedule notifications for each saved reminder time
+      await NotificationService.instance.scheduleRemindersForMedicine(
+        medicineId: widget.medicineId,
+        medicineName: medicineName,
+        times: _times,
+        frequency: _frequency,
+        days: _selectedDays.map((d) => _dayNameToInt(d)).toList(),
+      );
 
       if (mounted) {
         _snack('✅ Reminders saved & scheduled!');
@@ -177,7 +183,7 @@ class _ReminderSetupScreenState extends ConsumerState<ReminderSetupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF070B12),
-      body: StarfieldBackground(
+      body: AppBackground(
         child: SafeArea(
           child: Column(
             children: [
@@ -186,13 +192,14 @@ class _ReminderSetupScreenState extends ConsumerState<ReminderSetupScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                 child: Row(children: [
                   GestureDetector(
+                    
                     onTap: () => context.pop(),
                     child: Container(
                       width: 40, height: 40,
                       decoration: BoxDecoration(
                         color: const Color(0xFF0D1826),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFF00E5FF).withOpacity(0.2)),
+                        border: Border.all(color: const Color(0xFF00E5FF).withValues(alpha: 0.2)),
                       ),
                       child: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF00E5FF), size: 18),
                     ),
@@ -279,8 +286,8 @@ class _ReminderSetupScreenState extends ConsumerState<ReminderSetupScreen> {
                             label: Text(t, style: const TextStyle(color: Color(0xFF00E5FF), fontSize: 13)),
                             deleteIcon: const Icon(Icons.close, size: 14, color: Color(0xFF8A9BB5)),
                             onDeleted: () => setState(() => _times.remove(t)),
-                            backgroundColor: const Color(0xFF00E5FF).withOpacity(0.08),
-                            side: BorderSide(color: const Color(0xFF00E5FF).withOpacity(0.3)),
+                            backgroundColor: const Color(0xFF00E5FF).withValues(alpha: 0.08),
+                            side: BorderSide(color: const Color(0xFF00E5FF).withValues(alpha: 0.3)),
                             shape: const StadiumBorder(),
                           )).toList(),
                         ),
@@ -313,7 +320,7 @@ class _ReminderSetupScreenState extends ConsumerState<ReminderSetupScreen> {
                             decoration: BoxDecoration(
                               color: const Color(0xFF0D1826),
                               borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: const Color(0xFF00E5FF).withOpacity(0.2)),
+                              border: Border.all(color: const Color(0xFF00E5FF).withValues(alpha: 0.2)),
                             ),
                             child: Row(children: [
                               const Icon(Icons.calendar_today_rounded, color: Color(0xFF00E5FF), size: 18),
@@ -338,7 +345,7 @@ class _ReminderSetupScreenState extends ConsumerState<ReminderSetupScreen> {
                           decoration: BoxDecoration(
                             color: const Color(0xFF0D1826),
                             borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: const Color(0xFF00E5FF).withOpacity(0.12)),
+                            border: Border.all(color: const Color(0xFF00E5FF).withValues(alpha: 0.12)),
                           ),
                           child: TextField(
                             controller: _daysController,
@@ -384,12 +391,12 @@ class _ReminderSetupScreenState extends ConsumerState<ReminderSetupScreen> {
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                   decoration: BoxDecoration(
                                     color: _snoozeDuration == m
-                                        ? const Color(0xFF00E5FF).withOpacity(0.15)
+                                        ? const Color(0xFF00E5FF).withValues(alpha: 0.15)
                                         : const Color(0xFF1A2535),
                                     borderRadius: BorderRadius.circular(100),
                                     border: Border.all(
                                       color: _snoozeDuration == m
-                                          ? const Color(0xFF00E5FF).withOpacity(0.5)
+                                          ? const Color(0xFF00E5FF).withValues(alpha: 0.5)
                                           : Colors.transparent,
                                     ),
                                   ),
@@ -437,7 +444,7 @@ class _ReminderSetupScreenState extends ConsumerState<ReminderSetupScreen> {
                             color: _isLoading ? const Color(0xFF1A2535) : null,
                             borderRadius: BorderRadius.circular(100),
                             boxShadow: _isLoading ? [] : [
-                              BoxShadow(color: const Color(0xFF00E5FF).withOpacity(0.4),
+                              BoxShadow(color: const Color(0xFF00E5FF).withValues(alpha: 0.4),
                                   blurRadius: 20, offset: const Offset(0, 6)),
                             ],
                           ),
@@ -472,6 +479,11 @@ class _ReminderSetupScreenState extends ConsumerState<ReminderSetupScreen> {
       Text(text, style: const TextStyle(color: Color(0xFF00E5FF), fontSize: 14, fontWeight: FontWeight.w600)),
     ]);
   }
+
+  int _dayNameToInt(String day) {
+    const map = {'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6, 'Sun': 7};
+    return map[day] ?? 1;
+  }
 }
 
 // ── Choice Chip ───────────────────────────────────────────────────────────────
@@ -492,9 +504,9 @@ class _ChoiceChip extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
         decoration: BoxDecoration(
-          color: selected ? color.withOpacity(0.15) : const Color(0xFF0D1826),
+          color: selected ? color.withValues(alpha: 0.15) : const Color(0xFF0D1826),
           borderRadius: BorderRadius.circular(100),
-          border: Border.all(color: selected ? color.withOpacity(0.5) : const Color(0x1A00E5FF)),
+          border: Border.all(color: selected ? color.withValues(alpha: 0.5) : const Color(0x1A00E5FF)),
         ),
         child: Text(label,
             style: TextStyle(
@@ -524,7 +536,7 @@ class _OptionRow extends StatelessWidget {
         Container(
           width: 36, height: 36,
           decoration: BoxDecoration(
-            color: const Color(0xFF00E5FF).withOpacity(0.08),
+            color: const Color(0xFF00E5FF).withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, color: const Color(0xFF00E5FF), size: 18),
@@ -539,10 +551,15 @@ class _OptionRow extends StatelessWidget {
           onChanged: onChanged,
           activeColor: const Color(0xFF00E5FF),
           trackColor: WidgetStateProperty.all(
-            value ? const Color(0xFF00E5FF).withOpacity(0.2) : const Color(0xFF1A2535),
+            value ? const Color(0xFF00E5FF).withValues(alpha: 0.2) : const Color(0xFF1A2535),
           ),
         ),
       ]),
     );
   }
 }
+
+
+
+
+

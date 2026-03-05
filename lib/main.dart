@@ -23,7 +23,7 @@ void main() async {
 
   // Firebase — app works offline if this fails
   await initFirebase();
-  await NotificationService.init();
+await NotificationService.init();
 
   final prefs = await SharedPreferences.getInstance();
   runApp(
@@ -35,3 +35,5 @@ void main() async {
     ),
   );
 }
+
+

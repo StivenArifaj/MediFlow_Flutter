@@ -44,3 +44,5 @@ class AppDimensions {
   static const double cardPadding = 16.0;
   static const double inputPadding = 16.0;
 }
+
+

@@ -216,3 +216,5 @@ Future<Map<String, dynamic>?> getLinkedPatientForCaregiver(
   if (snap.docs.isEmpty) return null;
   return {'uid': snap.docs.first.id, ...snap.docs.first.data()};
 }
+
+

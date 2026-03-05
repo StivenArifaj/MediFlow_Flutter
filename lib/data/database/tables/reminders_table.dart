@@ -18,3 +18,5 @@ class Reminders extends Table {
   IntColumn get notificationId => integer().nullable()();
   DateTimeColumn get createdAt => dateTime()();
 }
+
+

@@ -13,7 +13,6 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/theme_provider.dart';
-import '../../../core/widgets/starfield_background.dart';
 import '../../../core/widgets/glass_card.dart';
 
 import '../../auth/providers/auth_provider.dart';
@@ -34,7 +33,7 @@ class ProfileScreen extends ConsumerWidget {
     final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Container(
         decoration: const BoxDecoration(
           gradient: RadialGradient(
@@ -668,9 +667,9 @@ class ProfileScreen extends ConsumerWidget {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 24),
               decoration: BoxDecoration(
-                color: const Color(0xFF8B5CF6).withOpacity(0.08),
+                color: const Color(0xFF8B5CF6).withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.3)),
+                border: Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.3)),
               ),
               child: Center(
                 child: Text(
@@ -726,7 +725,7 @@ class ProfileScreen extends ConsumerWidget {
                       decoration: BoxDecoration(
                         color: AppColors.bgInput,
                         borderRadius: BorderRadius.circular(100),
-                        border: Border.all(color: AppColors.neonCyan.withOpacity(0.3)),
+                        border: Border.all(color: AppColors.neonCyan.withValues(alpha: 0.3)),
                       ),
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -1104,3 +1103,9 @@ class _SettingsTile extends StatelessWidget {
     );
   }
 }
+
+
+
+
+
+

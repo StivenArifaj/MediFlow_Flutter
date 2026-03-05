@@ -14,3 +14,5 @@ class RemindersDaoManager {
   $$RemindersTableTableManager get reminders =>
       $$RemindersTableTableManager(_db.attachedDatabase, _db.reminders);
 }
+
+

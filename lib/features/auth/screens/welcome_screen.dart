@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/app_background.dart';
 import 'package:mediflow/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -6,7 +7,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/widgets/starfield_background.dart';
 import '../../../core/widgets/neon_button.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -17,8 +17,8 @@ class WelcomeScreen extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
-      body: StarfieldBackground(
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(AppDimensions.lg),
@@ -146,3 +146,9 @@ class _FeatureChip extends StatelessWidget {
     );
   }
 }
+
+
+
+
+
+

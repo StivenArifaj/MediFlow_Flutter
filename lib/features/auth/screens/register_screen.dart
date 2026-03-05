@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/app_background.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mediflow/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
@@ -9,7 +10,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/widgets/starfield_background.dart';
 import '../providers/auth_provider.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../core/utils/validators.dart';
@@ -160,7 +160,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFF070B12),
-      body: StarfieldBackground(
+      body: AppBackground(
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -178,7 +178,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       decoration: BoxDecoration(
                         color: const Color(0xFF0D1826),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFF00E5FF).withOpacity(0.2)),
+                        border: Border.all(color: const Color(0xFF00E5FF).withValues(alpha: 0.2)),
                       ),
                       child: const Icon(Icons.arrow_back_ios_new_rounded,
                           color: Color(0xFF00E5FF), size: 18),
@@ -202,15 +202,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
-                    color: roleColor.withOpacity(0.08),
+                    color: roleColor.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: roleColor.withOpacity(0.3)),
+                    border: Border.all(color: roleColor.withValues(alpha: 0.3)),
                   ),
                   child: Row(children: [
                     Container(
                       width: 36, height: 36,
                       decoration: BoxDecoration(
-                        color: roleColor.withOpacity(0.15),
+                        color: roleColor.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(roleIcon, color: roleColor, size: 20),
@@ -293,9 +293,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFF4D6A).withOpacity(0.08),
+                      color: const Color(0xFFFF4D6A).withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFFF4D6A).withOpacity(0.3)),
+                      border: Border.all(color: const Color(0xFFFF4D6A).withValues(alpha: 0.3)),
                     ),
                     child: Row(children: [
                       const Icon(Icons.error_outline_rounded, color: Color(0xFFFF4D6A), size: 16),
@@ -320,7 +320,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       color: _isLoading ? const Color(0xFF1A2535) : null,
                       borderRadius: BorderRadius.circular(100),
                       boxShadow: _isLoading ? [] : [
-                        BoxShadow(color: const Color(0xFF00E5FF).withOpacity(0.4),
+                        BoxShadow(color: const Color(0xFF00E5FF).withValues(alpha: 0.4),
                             blurRadius: 20, offset: const Offset(0, 6)),
                       ],
                     ),
@@ -395,8 +395,8 @@ class _RegField extends StatelessWidget {
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: hasError
-                  ? const Color(0xFFFF4D6A).withOpacity(0.6)
-                  : const Color(0xFF00E5FF).withOpacity(0.12),
+                  ? const Color(0xFFFF4D6A).withValues(alpha: 0.6)
+                  : const Color(0xFF00E5FF).withValues(alpha: 0.12),
               width: hasError ? 1.5 : 1,
             ),
           ),
@@ -460,3 +460,8 @@ class _PasswordStrengthBar extends StatelessWidget {
     ]);
   }
 }
+
+
+
+
+

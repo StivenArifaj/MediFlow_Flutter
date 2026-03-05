@@ -14,3 +14,5 @@ class UsersDaoManager {
   $$UsersTableTableManager get users =>
       $$UsersTableTableManager(_db.attachedDatabase, _db.users);
 }
+
+

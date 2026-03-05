@@ -6,3 +6,8 @@ final currentUserProvider = FutureProvider<User?>((ref) async {
   final repo = ref.watch(authRepositoryProvider);
   return repo.getCurrentUser();
 });
+
+
+
+
+

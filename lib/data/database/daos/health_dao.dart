@@ -60,3 +60,5 @@ class HealthDao extends DatabaseAccessor<AppDatabase> with _$HealthDaoMixin {
     return (query..orderBy([(h) => OrderingTerm.asc(h.recordedAt)])).get();
   }
 }
+
+

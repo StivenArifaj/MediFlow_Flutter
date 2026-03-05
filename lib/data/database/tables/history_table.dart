@@ -14,3 +14,5 @@ class HistoryEntries extends Table {
   TextColumn get notes => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
 }
+
+

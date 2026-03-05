@@ -28,3 +28,5 @@ class UsersDao extends DatabaseAccessor<AppDatabase> with _$UsersDaoMixin {
     return update(users).replace(user);
   }
 }
+
+

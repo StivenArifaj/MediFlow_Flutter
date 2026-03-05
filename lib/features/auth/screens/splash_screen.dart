@@ -54,7 +54,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Container(
         decoration: const BoxDecoration(
           gradient: RadialGradient(
@@ -112,3 +112,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     );
   }
 }
+
+
+
+
+

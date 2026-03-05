@@ -4242,3 +4242,5 @@ class $AppDatabaseManager {
   $$HealthMeasurementsTableTableManager get healthMeasurements =>
       $$HealthMeasurementsTableTableManager(_db, _db.healthMeasurements);
 }
+
+

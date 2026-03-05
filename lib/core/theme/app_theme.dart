@@ -123,11 +123,11 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      scaffoldBackgroundColor: AppColors.bgLight,
+      scaffoldBackgroundColor: const Color(0xFFF0FAFA),
       colorScheme: const ColorScheme.light(
         primary: AppColors.primary,
         secondary: AppColors.primaryDark,
-        surface: AppColors.bgCardLight_lm,
+        surface: Colors.white,
         error: AppColors.error,
         onPrimary: AppColors.textPrimary,
         onSecondary: AppColors.textPrimary,
@@ -232,3 +232,5 @@ class AppTheme {
     );
   }
 }
+
+

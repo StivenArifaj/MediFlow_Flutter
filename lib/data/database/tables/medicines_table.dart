@@ -19,3 +19,5 @@ class Medicines extends Table {
   DateTimeColumn get createdAt => dateTime()();
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
 }
+
+

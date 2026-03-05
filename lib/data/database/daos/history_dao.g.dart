@@ -15,3 +15,5 @@ class HistoryDaoManager {
       $$HistoryEntriesTableTableManager(
           _db.attachedDatabase, _db.historyEntries);
 }
+
+

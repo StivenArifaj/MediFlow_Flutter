@@ -11,3 +11,5 @@ class HealthMeasurements extends Table {
   DateTimeColumn get recordedAt => dateTime()();
   DateTimeColumn get createdAt => dateTime()();
 }
+
+

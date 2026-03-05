@@ -16,3 +16,5 @@ class HealthDaoManager {
       $$HealthMeasurementsTableTableManager(
           _db.attachedDatabase, _db.healthMeasurements);
 }
+
+

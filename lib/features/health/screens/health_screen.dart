@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/widgets/starfield_background.dart';
 import '../../../data/database/app_database.dart';
 import '../../auth/providers/auth_provider.dart';
 
@@ -545,9 +544,9 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
               Container(
                 width: 50, height: 50,
                 decoration: BoxDecoration(
-                  color: widget.metric.color.withOpacity(0.15),
+                  color: widget.metric.color.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(15),
-                  boxShadow: [BoxShadow(color: widget.metric.color.withOpacity(0.3), blurRadius: 18)],
+                  boxShadow: [BoxShadow(color: widget.metric.color.withValues(alpha: 0.3), blurRadius: 18)],
                 ),
                 child: Icon(widget.metric.icon, color: widget.metric.color, size: 26),
               ),
@@ -577,7 +576,7 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
                     colors: [widget.metric.color, const Color(0xFF0044DD)]),
                 borderRadius: BorderRadius.circular(100),
                 boxShadow: [
-                  BoxShadow(color: widget.metric.color.withOpacity(0.45), blurRadius: 20, offset: const Offset(0, 6))
+                  BoxShadow(color: widget.metric.color.withValues(alpha: 0.45), blurRadius: 20, offset: const Offset(0, 6))
                 ],
               ),
               child: Center(
@@ -702,9 +701,9 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 20),
         decoration: BoxDecoration(
-          color: widget.metric.color.withOpacity(0.07),
+          color: widget.metric.color.withValues(alpha: 0.07),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: widget.metric.color.withOpacity(0.25)),
+          border: Border.all(color: widget.metric.color.withValues(alpha: 0.25)),
         ),
         child: Column(children: [
           Text(
@@ -733,9 +732,9 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                   decoration: BoxDecoration(
-                    color: widget.metric.color.withOpacity(0.1),
+                    color: widget.metric.color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(100),
-                    border: Border.all(color: widget.metric.color.withOpacity(0.4)),
+                    border: Border.all(color: widget.metric.color.withValues(alpha: 0.4)),
                   ),
                   child: Text('+$v',
                       style: TextStyle(fontSize: 13, color: widget.metric.color, fontWeight: FontWeight.w600)),
@@ -762,17 +761,17 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
       style: TextStyle(fontSize: 48, fontWeight: FontWeight.w800, color: widget.metric.color),
       decoration: InputDecoration(
         hintText: '0',
-        hintStyle: TextStyle(color: widget.metric.color.withOpacity(0.25), fontSize: 48),
+        hintStyle: TextStyle(color: widget.metric.color.withValues(alpha: 0.25), fontSize: 48),
         suffixText: widget.metric.unit,
         suffixStyle: const TextStyle(fontSize: 18, color: Color(0xFF8A9BB5)),
         filled: true,
-        fillColor: widget.metric.color.withOpacity(0.06),
+        fillColor: widget.metric.color.withValues(alpha: 0.06),
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(18),
-            borderSide: BorderSide(color: widget.metric.color.withOpacity(0.3))),
+            borderSide: BorderSide(color: widget.metric.color.withValues(alpha: 0.3))),
         enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(18),
-            borderSide: BorderSide(color: widget.metric.color.withOpacity(0.3))),
+            borderSide: BorderSide(color: widget.metric.color.withValues(alpha: 0.3))),
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(18),
             borderSide: BorderSide(color: widget.metric.color, width: 2)),
@@ -795,7 +794,7 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
             padding: const EdgeInsets.only(top: 4),
             child: Text(' / ',
                 style: TextStyle(fontSize: 36, fontWeight: FontWeight.w300,
-                    color: widget.metric.color.withOpacity(0.6))),
+                    color: widget.metric.color.withValues(alpha: 0.6))),
           ),
           Expanded(child: _bpField(_number2Ctrl, 'Diastolic', '80')),
         ],
@@ -817,13 +816,13 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
         style: TextStyle(fontSize: 36, fontWeight: FontWeight.w700, color: widget.metric.color),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: TextStyle(color: widget.metric.color.withOpacity(0.3), fontSize: 36),
+          hintStyle: TextStyle(color: widget.metric.color.withValues(alpha: 0.3), fontSize: 36),
           filled: true,
-          fillColor: widget.metric.color.withOpacity(0.06),
+          fillColor: widget.metric.color.withValues(alpha: 0.06),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: widget.metric.color.withOpacity(0.3))),
+              borderSide: BorderSide(color: widget.metric.color.withValues(alpha: 0.3))),
           enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: widget.metric.color.withOpacity(0.3))),
+              borderSide: BorderSide(color: widget.metric.color.withValues(alpha: 0.3))),
           focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide(color: widget.metric.color, width: 2)),
           contentPadding: const EdgeInsets.symmetric(vertical: 12),
@@ -909,9 +908,9 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
           Container(
             height: 50,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(13),
-              border: Border.all(color: color.withOpacity(0.4)),
+              border: Border.all(color: color.withValues(alpha: 0.4)),
             ),
           ),
           picker,
@@ -923,7 +922,7 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter, end: Alignment.bottomCenter,
-                  colors: [const Color(0xFF0A1628), const Color(0xFF0A1628).withOpacity(0)],
+                  colors: [const Color(0xFF0A1628), const Color(0xFF0A1628).withValues(alpha: 0)],
                 ),
               ),
             ),
@@ -936,7 +935,7 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter, end: Alignment.topCenter,
-                  colors: [const Color(0xFF0A1628), const Color(0xFF0A1628).withOpacity(0)],
+                  colors: [const Color(0xFF0A1628), const Color(0xFF0A1628).withValues(alpha: 0)],
                 ),
               ),
             ),
@@ -952,13 +951,18 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
       child: Container(
         width: 54, height: 54,
         decoration: BoxDecoration(
-          color: color.withOpacity(0.12),
+          color: color.withValues(alpha: 0.12),
           shape: BoxShape.circle,
-          border: Border.all(color: color.withOpacity(0.5)),
-          boxShadow: [BoxShadow(color: color.withOpacity(0.2), blurRadius: 12)],
+          border: Border.all(color: color.withValues(alpha: 0.5)),
+          boxShadow: [BoxShadow(color: color.withValues(alpha: 0.2), blurRadius: 12)],
         ),
         child: Icon(icon, color: color, size: 28),
       ),
     );
   }
 }
+
+
+
+
+

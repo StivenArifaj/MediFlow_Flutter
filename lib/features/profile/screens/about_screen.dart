@@ -12,7 +12,7 @@ class AboutScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Container(
         decoration: const BoxDecoration(
           gradient: RadialGradient(
@@ -203,3 +203,8 @@ class _LinkTile extends StatelessWidget {
     );
   }
 }
+
+
+
+
+

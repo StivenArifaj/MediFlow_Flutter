@@ -62,7 +62,7 @@ class _StarfieldPainter extends CustomPainter {
       canvas.drawCircle(
         Offset(star.x * size.width, star.y * size.height),
         star.radius,
-        Paint()..color = Colors.white.withOpacity(star.opacity),
+        Paint()..color = Colors.white.withValues(alpha: star.opacity),
       );
     }
   }
@@ -84,3 +84,4 @@ class _Star {
     required this.opacity,
   });
 }
+

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/app_background.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -9,7 +10,6 @@ import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/widgets/starfield_background.dart';
 import '../../../core/services/pdf_export_service.dart';
 import '../../auth/providers/auth_provider.dart';
 
@@ -117,8 +117,8 @@ class _DataExportScreenState extends ConsumerState<DataExportScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
-      body: StarfieldBackground(
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
         child: SafeArea(
           child: Column(
             children: [
@@ -178,9 +178,9 @@ class _DataExportScreenState extends ConsumerState<DataExportScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.warning.withOpacity(0.08),
+                          color: AppColors.warning.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: AppColors.warning.withOpacity(0.2)),
+                          border: Border.all(color: AppColors.warning.withValues(alpha: 0.2)),
                         ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -241,7 +241,7 @@ class _ExportCard extends StatelessWidget {
         border: Border.all(color: const Color(0x1A00E5FF)),
         boxShadow: [
           BoxShadow(
-            color: iconColor.withOpacity(0.06),
+            color: iconColor.withValues(alpha: 0.06),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -256,7 +256,7 @@ class _ExportCard extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.12),
+                  color: iconColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: iconColor, size: 22),
@@ -290,7 +290,7 @@ class _ExportCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(100),
                 boxShadow: [
                   BoxShadow(
-                    color: iconColor.withOpacity(0.3),
+                    color: iconColor.withValues(alpha: 0.3),
                     blurRadius: 16,
                     offset: const Offset(0, 4),
                   ),
@@ -319,3 +319,9 @@ class _ExportCard extends StatelessWidget {
     );
   }
 }
+
+
+
+
+
+

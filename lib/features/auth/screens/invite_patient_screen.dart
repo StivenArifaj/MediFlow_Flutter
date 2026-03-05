@@ -42,7 +42,7 @@ class InvitePatientScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Container(
         decoration: const BoxDecoration(
           gradient: RadialGradient(
@@ -187,3 +187,8 @@ class InvitePatientScreen extends ConsumerWidget {
     );
   }
 }
+
+
+
+
+

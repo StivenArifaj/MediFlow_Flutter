@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/app_background.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -9,7 +10,6 @@ import 'package:drift/drift.dart' show Value;
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/widgets/starfield_background.dart';
 import '../../../data/database/app_database.dart';
 import '../../auth/providers/auth_provider.dart';
 
@@ -97,8 +97,8 @@ class _HealthDetailScreenState extends ConsumerState<HealthDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
-      body: StarfieldBackground(
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
         child: _loading
             ? const Center(child: CircularProgressIndicator(color: AppColors.neonCyan, strokeWidth: 2))
             : CustomScrollView(
@@ -136,9 +136,9 @@ class _HealthDetailScreenState extends ConsumerState<HealthDetailScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
-                                color: AppColors.neonCyan.withOpacity(0.1),
+                                color: AppColors.neonCyan.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
-                                border: Border.all(color: AppColors.neonCyan.withOpacity(0.3)),
+                                border: Border.all(color: AppColors.neonCyan.withValues(alpha: 0.3)),
                               ),
                               child: Text(
                                 '${_measurements.length} entries',
@@ -163,7 +163,7 @@ class _HealthDetailScreenState extends ConsumerState<HealthDetailScreen> {
                           border: Border.all(color: const Color(0x1A00E5FF)),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.neonCyan.withOpacity(0.06),
+                              color: AppColors.neonCyan.withValues(alpha: 0.06),
                               blurRadius: 20,
                               offset: const Offset(0, 4),
                             ),
@@ -187,7 +187,7 @@ class _HealthDetailScreenState extends ConsumerState<HealthDetailScreen> {
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Icon(Icons.show_chart_rounded,
-                                              color: AppColors.neonCyan.withOpacity(0.3), size: 48),
+                                              color: AppColors.neonCyan.withValues(alpha: 0.3), size: 48),
                                           const SizedBox(height: 12),
                                           Text(
                                             'Add more entries to see your trend',
@@ -239,7 +239,7 @@ class _HealthDetailScreenState extends ConsumerState<HealthDetailScreen> {
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppColors.neonCyan.withOpacity(0.15),
+                                    color: AppColors.neonCyan.withValues(alpha: 0.15),
                                     blurRadius: 40,
                                     spreadRadius: 15,
                                   ),
@@ -374,8 +374,8 @@ class _HealthDetailScreenState extends ConsumerState<HealthDetailScreen> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  AppColors.neonCyan.withOpacity(0.2),
-                  AppColors.neonCyan.withOpacity(0.0),
+                  AppColors.neonCyan.withValues(alpha: 0.2),
+                  AppColors.neonCyan.withValues(alpha: 0.0),
                 ],
               ),
             ),
@@ -455,7 +455,7 @@ class _EntryRow extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.only(right: 20),
         decoration: BoxDecoration(
-          color: AppColors.error.withOpacity(0.15),
+          color: AppColors.error.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(14),
         ),
         child: const Icon(Icons.delete_rounded, color: AppColors.error),
@@ -518,7 +518,7 @@ class _EntryRow extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: AppColors.info.withOpacity(0.1),
+                      color: AppColors.info.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: const Icon(Icons.notes_rounded, color: AppColors.info, size: 16),
@@ -627,20 +627,20 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
             decoration: InputDecoration(
               hintText: '0',
               hintStyle: TextStyle(
-                color: AppColors.neonCyan.withOpacity(0.25),
+                color: AppColors.neonCyan.withValues(alpha: 0.25),
                 fontSize: 42,
               ),
               suffixText: widget.unit,
               suffixStyle: const TextStyle(fontSize: 18, color: Color(0xFF8A9BB5)),
               filled: true,
-              fillColor: AppColors.neonCyan.withOpacity(0.06),
+              fillColor: AppColors.neonCyan.withValues(alpha: 0.06),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(18),
-                borderSide: BorderSide(color: AppColors.neonCyan.withOpacity(0.3)),
+                borderSide: BorderSide(color: AppColors.neonCyan.withValues(alpha: 0.3)),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(18),
-                borderSide: BorderSide(color: AppColors.neonCyan.withOpacity(0.3)),
+                borderSide: BorderSide(color: AppColors.neonCyan.withValues(alpha: 0.3)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(18),
@@ -660,7 +660,7 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
                 borderRadius: BorderRadius.circular(100),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.neonCyan.withOpacity(0.4),
+                    color: AppColors.neonCyan.withValues(alpha: 0.4),
                     blurRadius: 20,
                     offset: const Offset(0, 6),
                   ),
@@ -683,3 +683,9 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
     );
   }
 }
+
+
+
+
+
+

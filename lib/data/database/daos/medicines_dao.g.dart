@@ -14,3 +14,5 @@ class MedicinesDaoManager {
   $$MedicinesTableTableManager get medicines =>
       $$MedicinesTableTableManager(_db.attachedDatabase, _db.medicines);
 }
+
+

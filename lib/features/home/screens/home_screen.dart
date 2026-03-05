@@ -9,7 +9,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/widgets/starfield_background.dart';
 import '../../../core/widgets/adherence_ring.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../data/database/app_database.dart';
@@ -122,7 +121,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final db = ref.read(appDatabaseProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Container(
         decoration: const BoxDecoration(
           gradient: RadialGradient(
@@ -368,8 +367,8 @@ class _ScheduleCard extends StatelessWidget {
           width: 42, height: 42,
           decoration: BoxDecoration(
             color: acted
-                ? const Color(0xFF00C896).withOpacity(0.12)
-                : AppColors.neonCyan.withOpacity(0.1),
+                ? const Color(0xFF00C896).withValues(alpha: 0.12)
+                : AppColors.neonCyan.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Center(
@@ -408,7 +407,7 @@ class _ScheduleCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFF00C896).withOpacity(0.12),
+              color: const Color(0xFF00C896).withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(20),
             ),
             child: const Text('Done',
@@ -433,9 +432,9 @@ class _ActionBtn extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.12),
+          color: color.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Text(label,
             style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600)),
@@ -525,7 +524,7 @@ class _MyPatientCard extends StatelessWidget {
                 Container(
                   width: 42, height: 42,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF8B5CF6).withOpacity(0.15),
+                    color: const Color(0xFF8B5CF6).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(Icons.person_rounded, color: Color(0xFF8B5CF6), size: 22),
@@ -545,9 +544,9 @@ class _MyPatientCard extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF8B5CF6).withOpacity(0.15),
+                      color: const Color(0xFF8B5CF6).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.4)),
+                      border: Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.4)),
                     ),
                     child: Text(hasPatient ? 'View Report →' : 'Dashboard →',
                         style: const TextStyle(color: Color(0xFF8B5CF6),
@@ -560,9 +559,9 @@ class _MyPatientCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: AppColors.neonCyan.withOpacity(0.06),
+                    color: AppColors.neonCyan.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.neonCyan.withOpacity(0.2)),
+                    border: Border.all(color: AppColors.neonCyan.withValues(alpha: 0.2)),
                   ),
                   child: Row(children: [
                     const Icon(Icons.vpn_key_rounded, color: AppColors.neonCyan, size: 14),
@@ -689,7 +688,7 @@ class _EmptyMedicines extends StatelessWidget {
           width: 48, height: 48,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: AppColors.neonCyan.withOpacity(0.08),
+            color: AppColors.neonCyan.withValues(alpha: 0.08),
           ),
           child: const Center(child: Text('💊', style: TextStyle(fontSize: 22))),
         ),
@@ -853,7 +852,7 @@ class _MedicineCard extends StatelessWidget {
           Container(
             width: 40, height: 40,
             decoration: BoxDecoration(
-              color: AppColors.neonCyan.withOpacity(0.1),
+              color: AppColors.neonCyan.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(_icon(), color: AppColors.neonCyan, size: 20),
@@ -1025,3 +1024,8 @@ class _MiniOption extends StatelessWidget {
     );
   }
 }
+
+
+
+
+

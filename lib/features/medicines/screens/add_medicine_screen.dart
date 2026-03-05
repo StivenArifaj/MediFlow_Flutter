@@ -8,7 +8,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/widgets/starfield_background.dart';
 import '../../../data/database/app_database.dart';
 import '../../auth/providers/auth_provider.dart';
 
@@ -253,7 +252,7 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
                     decoration: BoxDecoration(
                       color: const Color(0xFF0D1826),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.neonCyan.withOpacity(0.2)),
+                      border: Border.all(color: AppColors.neonCyan.withValues(alpha: 0.2)),
                     ),
                     child: const Icon(Icons.arrow_back_ios_new_rounded,
                         color: AppColors.neonCyan, size: 18),
@@ -307,7 +306,7 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
                                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                                 decoration: BoxDecoration(
                                   color: selected
-                                      ? AppColors.neonCyan.withOpacity(0.15)
+                                      ? AppColors.neonCyan.withValues(alpha: 0.15)
                                       : const Color(0xFF0D1826),
                                   borderRadius: BorderRadius.circular(100),
                                   border: Border.all(
@@ -316,7 +315,7 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
                                         : const Color(0xFF2A3A4A),
                                   ),
                                   boxShadow: selected
-                                      ? [BoxShadow(color: AppColors.neonCyan.withOpacity(0.3),
+                                      ? [BoxShadow(color: AppColors.neonCyan.withValues(alpha: 0.3),
                                             blurRadius: 10)]
                                       : null,
                                 ),
@@ -404,7 +403,7 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
                                 padding: const EdgeInsets.symmetric(vertical: 10),
                                 decoration: BoxDecoration(
                                   color: added
-                                      ? AppColors.neonCyan.withOpacity(0.12)
+                                      ? AppColors.neonCyan.withValues(alpha: 0.12)
                                       : const Color(0xFF111C2A),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
@@ -446,9 +445,9 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
                           children: _reminderTimes.map((t) => Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: AppColors.neonCyan.withOpacity(0.1),
+                              color: AppColors.neonCyan.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(100),
-                              border: Border.all(color: AppColors.neonCyan.withOpacity(0.5)),
+                              border: Border.all(color: AppColors.neonCyan.withValues(alpha: 0.5)),
                             ),
                             child: Row(mainAxisSize: MainAxisSize.min, children: [
                               Text(t, style: const TextStyle(
@@ -494,7 +493,7 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                 decoration: BoxDecoration(
                                   color: selected
-                                      ? AppColors.neonCyan.withOpacity(0.15)
+                                      ? AppColors.neonCyan.withValues(alpha: 0.15)
                                       : const Color(0xFF111C2A),
                                   borderRadius: BorderRadius.circular(100),
                                   border: Border.all(
@@ -618,7 +617,7 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
                                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
                                       decoration: BoxDecoration(
                                         color: sel
-                                            ? AppColors.neonCyan.withOpacity(0.15)
+                                            ? AppColors.neonCyan.withValues(alpha: 0.15)
                                             : const Color(0xFF111C2A),
                                         borderRadius: BorderRadius.circular(100),
                                         border: Border.all(
@@ -659,9 +658,9 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFB800).withOpacity(0.06),
+                        color: const Color(0xFFFFB800).withValues(alpha: 0.06),
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFFFFB800).withOpacity(0.3)),
+                        border: Border.all(color: const Color(0xFFFFB800).withValues(alpha: 0.3)),
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -688,7 +687,7 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter, end: Alignment.bottomCenter,
-            colors: [const Color(0xFF070B12).withOpacity(0), const Color(0xFF070B12)],
+            colors: [const Color(0xFF070B12).withValues(alpha: 0), const Color(0xFF070B12)],
           ),
         ),
         padding: EdgeInsets.fromLTRB(16, 12, 16, MediaQuery.of(context).padding.bottom + 16),
@@ -703,7 +702,7 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
               color: _isLoading ? const Color(0xFF1E2F40) : null,
               borderRadius: BorderRadius.circular(100),
               boxShadow: _isLoading ? null : [
-                BoxShadow(color: const Color(0xFF00E5FF).withOpacity(0.4),
+                BoxShadow(color: const Color(0xFF00E5FF).withValues(alpha: 0.4),
                     blurRadius: 20, offset: const Offset(0, 6)),
               ],
             ),
@@ -728,7 +727,7 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFF0D1826),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF00E5FF).withOpacity(0.1)),
+        border: Border.all(color: const Color(0xFF00E5FF).withValues(alpha: 0.1)),
       ),
       child: Column(children: children),
     ),
@@ -828,7 +827,7 @@ class _ReminderStepCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: const Color(0xFF0D1826),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFF00E5FF).withOpacity(0.1)),
+          border: Border.all(color: const Color(0xFF00E5FF).withValues(alpha: 0.1)),
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
@@ -962,7 +961,7 @@ class _ToggleRow extends StatelessWidget {
           value: value,
           onChanged: onChanged,
           activeColor: AppColors.neonCyan,
-          activeTrackColor: AppColors.neonCyan.withOpacity(0.3),
+          activeTrackColor: AppColors.neonCyan.withValues(alpha: 0.3),
           inactiveTrackColor: const Color(0xFF1E2F40),
           inactiveThumbColor: const Color(0xFF4A5A72),
         ),
@@ -970,3 +969,8 @@ class _ToggleRow extends StatelessWidget {
     );
   }
 }
+
+
+
+
+

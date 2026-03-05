@@ -38,3 +38,5 @@ final themeModeProvider = NotifierProvider<ThemeModeNotifier, ThemeMode>(
 final themeProvider = Provider<ThemeMode>((ref) {
   return ref.watch(themeModeProvider);
 });
+
+

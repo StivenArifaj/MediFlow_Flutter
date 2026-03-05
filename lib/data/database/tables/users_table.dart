@@ -13,3 +13,5 @@ class Users extends Table {
   DateTimeColumn get createdAt => dateTime()();
   TextColumn get firebaseUid => text().nullable()();
 }
+
+

@@ -10,3 +10,5 @@ class AppValidators {
     return _emailRegex.hasMatch(value.trim());
   }
 }
+
+
