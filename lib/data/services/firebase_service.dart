@@ -26,7 +26,6 @@ fa.FirebaseAuth? get firebaseAuth {
   if (!_firebaseReady) return null;
   return _auth ?? fa.FirebaseAuth.instance;
 }
-}
 
 FirebaseFirestore get _fs => FirebaseFirestore.instance;
 
