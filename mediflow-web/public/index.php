@@ -1,125 +1,163 @@
 <?php
 
-// MediFlow Web Dashboard - Entry Point
-
-// Start session
 session_start();
 
-// Load configuration and functions
-require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/firebase.php';
 require_once __DIR__ . '/../config/functions.php';
 require_once __DIR__ . '/../services/AuthService.php';
 require_once __DIR__ . '/../services/FirebaseService.php';
 
-// Initialize services
 $authService = new AuthService();
-$firebaseService = new FirebaseService();
+$dataService = new DataService();
 
-// Get current page
 $page = $_GET['page'] ?? 'dashboard';
 $action = $_GET['action'] ?? 'index';
 
-// Route handling
+if ($authService->isLoggedIn()) {
+    $user = $authService->getCurrentUser();
+    $dataService->setIdToken($_SESSION['firebase_token'] ?? null);
+    $dataService->setCaregiverUid($user['uid'] ?? $user['firebase_uid'] ?? null);
+}
+
 switch ($page) {
     case 'auth':
+        if ($authService->isLoggedIn()) {
+            redirect(APP_URL . '/?page=dashboard');
+        }
         require_once __DIR__ . '/../views/auth/login.php';
         break;
-    
+
+    case 'login':
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $email = sanitize($_POST['email'] ?? '');
+            $password = $_POST['password'] ?? '';
+
+            if (empty($email) || empty($password)) {
+                $error = 'Please enter both email and password';
+                require_once __DIR__ . '/../views/auth/login.php';
+            } else {
+                $result = $authService->login($email, $password);
+
+                if ($result) {
+                    redirect(APP_URL . '/?page=dashboard');
+                } else {
+                    $error = 'Invalid email or password';
+                    require_once __DIR__ . '/../views/auth/login.php';
+                }
+            }
+        } else {
+            redirect(APP_URL . '/?page=auth');
+        }
+        break;
+
+    case 'register':
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $name = sanitize($_POST['name'] ?? '');
+            $email = sanitize($_POST['email'] ?? '');
+            $password = $_POST['password'] ?? '';
+
+            if (empty($name) || empty($email) || empty($password)) {
+                $error = 'Please fill in all fields';
+                require_once __DIR__ . '/../views/auth/login.php';
+            } else {
+                $result = $authService->register($email, $password, $name, 'patient');
+
+                if (isset($result['success']) && $result['success']) {
+                    redirect(APP_URL . '/?page=dashboard');
+                } else {
+                    $error = $result['error'] ?? 'Registration failed';
+                    require_once __DIR__ . '/../views/auth/login.php';
+                }
+            }
+        } else {
+            redirect(APP_URL . '/?page=auth');
+        }
+        break;
+
     case 'logout':
         $authService->logout();
-        redirect(APP_URL . '/views/auth/login.php');
+        redirect(APP_URL . '/?page=auth');
         break;
-    
+
     case 'dashboard':
         $authService->requireLogin();
         $user = $authService->getCurrentUser();
+
+        $stats = $dataService->getStats();
+        $todayHistory = $dataService->getTodayHistory();
+        $medicines = $dataService->getMedicines();
+
         require_once __DIR__ . '/../views/dashboard/index.php';
         break;
-    
+
     case 'medicines':
         $authService->requireLogin();
         $user = $authService->getCurrentUser();
+        $medicines = $dataService->getMedicines();
+
         require_once __DIR__ . '/../views/medicines/index.php';
         break;
-    
+
     case 'history':
         $authService->requireLogin();
         $user = $authService->getCurrentUser();
+        $history = $dataService->getHistory(200);
+
         require_once __DIR__ . '/../views/history/index.php';
         break;
-    
+
     case 'health':
         $authService->requireLogin();
         $user = $authService->getCurrentUser();
+
         require_once __DIR__ . '/../views/health/index.php';
         break;
-    
+
     case 'api':
-        // API endpoints
         header('Content-Type: application/json');
-        
         $authService->requireLogin();
-        $user = $authService->getCurrentUser();
-        
-        // Get Firebase token from session if available
-        $idToken = $_SESSION['id_token'] ?? null;
-        $firebaseService->setIdToken($idToken);
-        
+
+        $idToken = $_SESSION['firebase_token'] ?? null;
+        $dataService->setIdToken($idToken);
+        $dataService->setCaregiverUid($user['uid'] ?? null);
+
         $apiAction = $_GET['api_action'] ?? '';
-        
+
         switch ($apiAction) {
             case 'medicines':
-                $medicines = $firebaseService->getCaregiverMedicines($user['firebase_uid'] ?? 'demo-caregiver-uid');
-                jsonResponse(['success' => true, 'data' => $medicines]);
+                jsonResponse(['success' => true, 'data' => $dataService->getMedicines()]);
                 break;
-            
+
             case 'reminders':
-                $reminders = $firebaseService->getCaregiverReminders($user['firebase_uid'] ?? 'demo-caregiver-uid');
-                jsonResponse(['success' => true, 'data' => $reminders]);
+                jsonResponse(['success' => true, 'data' => $dataService->getReminders()]);
                 break;
-            
+
             case 'history':
-                $history = $firebaseService->getCaregiverHistory($user['firebase_uid'] ?? 'demo-caregiver-uid');
-                jsonResponse(['success' => true, 'data' => $history]);
+                jsonResponse(['success' => true, 'data' => $dataService->getHistory()]);
                 break;
-            
+
             case 'today_history':
-                $history = $firebaseService->getCaregiverTodayHistory($user['firebase_uid'] ?? 'demo-caregiver-uid');
-                jsonResponse(['success' => true, 'data' => $history]);
+                jsonResponse(['success' => true, 'data' => $dataService->getTodayHistory()]);
                 break;
-            
+
             case 'stats':
-                $history = $firebaseService->getCaregiverHistory($user['firebase_uid'] ?? 'demo-caregiver-uid');
-                $taken = count(array_filter($history, fn($h) => ($h['status'] ?? '') === 'taken'));
-                $skipped = count(array_filter($history, fn($h) => ($h['status'] ?? '') === 'skipped'));
-                $missed = count(array_filter($history, fn($h) => ($h['status'] ?? '') === 'missed'));
-                $total = count($history);
-                $adherence = $total > 0 ? round(($taken / $total) * 100) : 0;
-                jsonResponse([
-                    'success' => true,
-                    'data' => [
-                        'taken' => $taken,
-                        'skipped' => $skipped,
-                        'missed' => $missed,
-                        'total' => $total,
-                        'adherence' => $adherence
-                    ]
-                ]);
+                jsonResponse(['success' => true, 'data' => $dataService->getStats()]);
                 break;
-            
+
             case 'linked_patient':
-                $patient = $firebaseService->getLinkedPatientForCaregiver($user['firebase_uid'] ?? 'demo-caregiver-uid');
-                jsonResponse(['success' => true, 'data' => $patient]);
+                jsonResponse(['success' => true, 'data' => $dataService->getLinkedPatient()]);
                 break;
-            
+
             default:
                 jsonResponse(['success' => false, 'message' => 'Unknown API action'], 404);
         }
         break;
-    
+
     default:
-        $authService->requireLogin();
-        $user = $authService->getCurrentUser();
-        require_once __DIR__ . '/../views/dashboard/index.php';
+        if ($authService->isLoggedIn()) {
+            redirect(APP_URL . '/?page=dashboard');
+        } else {
+            redirect(APP_URL . '/?page=auth');
+        }
         break;
 }

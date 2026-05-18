@@ -1067,4 +1067,118 @@ h6 { font-size: 1rem; }
 .opacity-50 { opacity: 0.5; }
 .opacity-75 { opacity: 0.75; }
 
+/* ============ MEDICINE STOCK BADGES ============ */
+.medicine-stock {
+    margin-left: auto;
+}
+
+.stock-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.stock-badge.in-stock {
+    background: rgba(0, 200, 150, 0.15);
+    color: #00C896;
+}
+
+.stock-badge.low-stock {
+    background: rgba(255, 184, 0, 0.15);
+    color: #FFB800;
+}
+
+.stock-badge.out-of-stock {
+    background: rgba(255, 59, 92, 0.15);
+    color: #FF3B5C;
+}
+
+/* ============ LOADING STATES ============ */
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xl);
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--bg-card-light);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ============ CHART CONTAINERS ============ */
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+.chart-container-sm {
+    position: relative;
+    height: 200px;
+    width: 100%;
+}
+
+/* ============ HEALTH METRICS GRID ============ */
+.health-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.health-metric {
+    background: var(--bg-card);
+    border: 1px solid var(--bg-card-light);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+.health-metric:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
+.health-metric-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--spacing-md);
+}
+
+.health-metric-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.health-metric-name {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.health-metric-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.health-metric-unit {
+    font-size: 0.875rem;
+    font-weight: 400;
+    opacity: 0.7;
+}
+
 .transition { transition: all 0.2s ease; }
