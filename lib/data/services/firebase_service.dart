@@ -171,6 +171,58 @@ Future<void> logDoseAction({
   });
 }
 
+// ── Patient Data Sync ─────────────────────────────────────────────────────
+
+/// Push a medicine to patient's Firestore collection.
+Future<void> syncPatientMedicineToFirestore({
+  required String patientUid,
+  required String medicineId,
+  required Map<String, dynamic> data,
+}) async {
+  if (!_firebaseReady) return;
+  await _fs
+      .collection('patients')
+      .doc(patientUid)
+      .collection('medicines')
+      .doc(medicineId)
+      .set(data, SetOptions(merge: true));
+}
+
+/// Push a reminder to patient's Firestore collection.
+Future<void> syncPatientReminderToFirestore({
+  required String patientUid,
+  required String reminderId,
+  required Map<String, dynamic> data,
+}) async {
+  if (!_firebaseReady) return;
+  await _fs
+      .collection('patients')
+      .doc(patientUid)
+      .collection('reminders')
+      .doc(reminderId)
+      .set(data, SetOptions(merge: true));
+}
+
+/// Log a dose action for patient.
+Future<void> logPatientDoseAction({
+  required String patientUid,
+  required String status,
+  required String medicineId,
+  required String medicineName,
+}) async {
+  if (!_firebaseReady) return;
+  await _fs
+      .collection('patients')
+      .doc(patientUid)
+      .collection('history')
+      .add({
+    'status': status,
+    'medicineId': medicineId,
+    'medicineName': medicineName,
+    'timestamp': FieldValue.serverTimestamp(),
+  });
+}
+
 /// Stream today's medicines for a linked patient (from caregiver).
 Stream<List<Map<String, dynamic>>> streamCaregiverMedicines(
     String caregiverUid) {

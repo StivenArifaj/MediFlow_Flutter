@@ -12,6 +12,7 @@ import '../../../core/constants/app_dimensions.dart';
 import '../../../core/widgets/adherence_ring.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../data/database/app_database.dart';
+import '../../../data/services/firebase_service.dart';
 import '../../../features/auth/providers/current_user_provider.dart';
 import '../../medicines/providers/medicines_provider.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -62,6 +63,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       actualTime: Value(now),
       createdAt: now,
     ));
+
+    // Sync to Firestore
+    final role = ref.read(authRepositoryProvider).selectedRole;
+    if (role == 'caregiver') {
+      await logDoseAction(
+        caregiverUid: userId,
+        status: 'taken',
+        medicineId: m.id.toString(),
+        medicineName: m.verifiedName,
+      );
+    } else {
+      await logPatientDoseAction(
+        patientUid: userId,
+        status: 'taken',
+        medicineId: m.id.toString(),
+        medicineName: m.verifiedName,
+      );
+    }
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('✅  ${m.verifiedName} marked as taken'),
@@ -87,6 +107,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       scheduledTime: _todayAt(r.time),
       actualTime: Value(now),
       createdAt: now,
+    ));
+
+    // Sync to Firestore
+    final role = ref.read(authRepositoryProvider).selectedRole;
+    if (role == 'caregiver') {
+      await logDoseAction(
+        caregiverUid: userId,
+        status: 'skipped',
+        medicineId: m.id.toString(),
+        medicineName: m.verifiedName,
+      );
+    } else {
+      await logPatientDoseAction(
+        patientUid: userId,
+        status: 'skipped',
+        medicineId: m.id.toString(),
+        medicineName: m.verifiedName,
+      );
+    }
     ));
   }
 

@@ -9,6 +9,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../data/database/app_database.dart';
+import '../../../data/services/firebase_service.dart';
 import '../../auth/providers/auth_provider.dart';
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
@@ -166,6 +167,33 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
         ),
       );
 
+      // Sync to Firestore
+      final role = repo.selectedRole;
+      final medicineData = {
+        'verifiedName': _nameCtrl.text.trim(),
+        'brandName': _brandCtrl.text.trim().isNotEmpty ? _brandCtrl.text.trim() : null,
+        'strength': _strengthCtrl.text.trim().isNotEmpty ? _strengthCtrl.text.trim() : null,
+        'form': _selectedForm,
+        'quantity': quantity,
+        'notes': _notesCtrl.text.trim().isNotEmpty ? _notesCtrl.text.trim() : null,
+        'isActive': true,
+        'createdAt': DateTime.now().toIso8601String(),
+      };
+
+      if (role == 'caregiver') {
+        await syncMedicineToFirestore(
+          caregiverUid: userId,
+          medicineId: medId.toString(),
+          data: medicineData,
+        );
+      } else {
+        await syncPatientMedicineToFirestore(
+          patientUid: userId,
+          medicineId: medId.toString(),
+          data: medicineData,
+        );
+      }
+
       // Save reminders if any times were set
       if (_reminderTimes.isNotEmpty) {
         final days = _frequency == 'specific' ? _selectedDays.join(',') : null;
@@ -189,6 +217,35 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
               createdAt: DateTime.now(),
             ),
           );
+
+          // Sync reminder to Firestore
+          final reminderData = {
+            'medicineId': medId.toString(),
+            'time': t,
+            'frequency': _frequency,
+            'days': days,
+            'intervalDays': interval,
+            'durationType': _durationType,
+            'endDate': end?.toIso8601String(),
+            'durationDays': dur,
+            'snoozeDuration': _snoozeDuration,
+            'isActive': true,
+            'createdAt': DateTime.now().toIso8601String(),
+          };
+
+          if (role == 'caregiver') {
+            await syncReminderToFirestore(
+              caregiverUid: userId,
+              reminderId: '${medId}_$t',
+              data: reminderData,
+            );
+          } else {
+            await syncPatientReminderToFirestore(
+              patientUid: userId,
+              reminderId: '${medId}_$t',
+              data: reminderData,
+            );
+          }
         }
       }
 
