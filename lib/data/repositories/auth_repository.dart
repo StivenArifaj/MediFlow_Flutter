@@ -174,16 +174,20 @@ class AuthRepository {
   }
 
   Future<void> logout() async {
-    final auth = firebaseAuth;
-    if (auth != null) {
-      try {
+    try {
+      final auth = firebaseAuth;
+      if (auth != null && auth.currentUser != null) {
         await auth.signOut();
-      } catch (e) {
-        // Ignore
       }
+    } catch (e) {
+      // Ignore Firebase logout errors
     }
-    await _prefs.remove(_keyUserId);
-    await _prefs.remove(_keySelectedRole);
+    try {
+      await _prefs.remove(_keyUserId);
+      await _prefs.remove(_keySelectedRole);
+    } catch (e) {
+      // Ignore prefs errors
+    }
   }
 
   Future<User?> getCurrentUser() async {

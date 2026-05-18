@@ -392,9 +392,13 @@ class ProfileScreen extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(ctx);
-              await ref.read(authRepositoryProvider).logout();
-              if (context.mounted) context.go('/welcome');
+              try {
+                Navigator.pop(ctx);
+                await ref.read(authRepositoryProvider).logout();
+                if (ctx.mounted) ctx.go('/welcome');
+              } catch (e) {
+                // Handle error silently
+              }
             },
             child: Text('Log Out', style: AppTypography.labelLarge(color: AppColors.error)),
           ),
