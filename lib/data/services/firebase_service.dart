@@ -1,20 +1,31 @@
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fa;
 
 /// Whether Firebase initialised successfully.
 bool _firebaseReady = false;
 bool get isFirebaseReady => _firebaseReady;
 
-/// Safe Firebase init — app continues offline if it fails.
+fa.FirebaseAuth? _auth;
+
+/// Safe Firebase init — app continues offline if this fails.
 Future<void> initFirebase() async {
   try {
     await Firebase.initializeApp();
     _firebaseReady = true;
+    _auth = fa.FirebaseAuth.instance;
   } catch (e) {
     _firebaseReady = false;
     // ignore — app works fully offline with SQLite
   }
+}
+
+/// Get Firebase Auth instance - only after initFirebase() completes
+fa.FirebaseAuth? get firebaseAuth {
+  if (!_firebaseReady) return null;
+  return _auth ?? fa.FirebaseAuth.instance;
+}
 }
 
 FirebaseFirestore get _fs => FirebaseFirestore.instance;

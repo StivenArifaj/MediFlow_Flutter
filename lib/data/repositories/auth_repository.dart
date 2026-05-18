@@ -2,8 +2,10 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../database/app_database.dart';
+import '../services/firebase_service.dart';
 
 const _keyUserId = 'mediflow_user_id';
 const _keyHasSeenOnboarding = 'mediflow_has_seen_onboarding';
@@ -61,6 +63,7 @@ class AuthRepository {
     required String role,
     bool isDarkMode = true,
   }) async {
+    // First create local user
     final existing = await _db.usersDao.emailExists(email);
     if (existing) {
       throw AuthException('Email already registered');
@@ -80,9 +83,62 @@ class AuthRepository {
       ),
     );
 
+    // Try to also create Firebase Auth account if Firebase is ready
+    final auth = firebaseAuth;
+    if (auth != null) {
+      try {
+        final credential = await auth.createUserWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+        
+        if (credential.user != null) {
+          // Update local user with Firebase UID
+          final user = await _db.usersDao.getUserById(id);
+          if (user != null) {
+            await _db.usersDao.updateUser(
+              user.copyWithCompanion(UsersCompanion(firebaseUid: Value(credential.user!.uid))),
+            );
+          }
+          
+          // Create Firestore profile
+          await FirebaseFirestore.instance.collection('users').doc(credential.user!.uid).set({
+            'name': name,
+            'email': email,
+            'role': role,
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+          
+          // Create caregiver profile if needed
+          if (role == 'caregiver') {
+            await _createCaregiverProfile(credential.user!.uid, name, email);
+          }
+        }
+      } catch (e) {
+        // Continue with local auth even if Firebase fails
+      }
+    }
+
     await _prefs.setInt(_keyUserId, id);
     await _prefs.setString(_keySelectedRole, role);
     return id;
+  }
+
+  Future<void> _createCaregiverProfile(String uid, String name, String email) async {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    final rng = DateTime.now().millisecondsSinceEpoch;
+    final code = List.generate(6, (i) => chars[(rng + i) % chars.length]).join();
+
+    try {
+      await FirebaseFirestore.instance.collection('caregivers').doc(uid).set({
+        'profile': {'name': name, 'email': email, 'role': 'caregiver'},
+        'inviteCode': code,
+        'patientName': '',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      // Ignore Firestore errors
+    }
   }
 
   Future<int> login({
@@ -99,12 +155,33 @@ class AuthRepository {
       throw AuthException('Invalid email or password');
     }
 
+    // Try Firebase login if available
+    final auth = firebaseAuth;
+    if (auth != null) {
+      try {
+        await auth.signInWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+      } catch (e) {
+        // Continue with local login
+      }
+    }
+
     await _prefs.setInt(_keyUserId, user.id);
     await _prefs.setString(_keySelectedRole, user.role);
     return user.id;
   }
 
   Future<void> logout() async {
+    final auth = firebaseAuth;
+    if (auth != null) {
+      try {
+        await auth.signOut();
+      } catch (e) {
+        // Ignore
+      }
+    }
     await _prefs.remove(_keyUserId);
     await _prefs.remove(_keySelectedRole);
   }
@@ -113,6 +190,12 @@ class AuthRepository {
     final userId = currentUserId;
     if (userId == null) return null;
     return _db.usersDao.getUserById(userId);
+  }
+
+  /// Get Firebase UID if user logged in with Firebase
+  String? getFirebaseUid() {
+    final auth = firebaseAuth;
+    return auth?.currentUser?.uid;
   }
 }
 
