@@ -39,7 +39,7 @@ class AuthService {
     public function register($email, $password, $name = null, $role = 'patient') {
         $result = $this->firebaseService->signUp($email, $password);
 
-        if ($result['success']) {
+        if (isset($result['success']) && $result['success']) {
             $user = [
                 'uid' => $result['localId'],
                 'email' => $result['email'],
@@ -54,7 +54,7 @@ class AuthService {
             $_SESSION['firebase_token'] = $result['idToken'];
             $_SESSION['refresh_token'] = $result['refreshToken'];
 
-            return $user;
+            return ['success' => true, 'user' => $user];
         }
 
         return ['success' => false, 'error' => $result['error'] ?? 'Registration failed'];

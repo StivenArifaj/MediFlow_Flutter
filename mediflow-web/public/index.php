@@ -61,11 +61,16 @@ switch ($page) {
                 require_once __DIR__ . '/../views/auth/login.php';
             } else {
                 $result = $authService->register($email, $password, $name, 'patient');
+                
+                error_log("Registration result: " . json_encode($result));
 
                 if (isset($result['success']) && $result['success']) {
                     redirect(APP_URL . '/?page=dashboard');
                 } else {
                     $error = $result['error'] ?? 'Registration failed';
+                    if (isset($result['raw_response'])) {
+                        error_log("Raw response: " . json_encode($result['raw_response']));
+                    }
                     require_once __DIR__ . '/../views/auth/login.php';
                 }
             }
