@@ -5,11 +5,13 @@ require_once __DIR__ . '/../config/firebase.php';
 class DataService {
     private $firebaseService;
     private $idToken;
-    private $caregiverUid;
+    private $userUid;
+    private $userRole;
 
-    public function __construct($firebaseService = null, $caregiverUid = null) {
+    public function __construct($firebaseService = null, $userUid = null, $userRole = 'patient') {
         $this->firebaseService = $firebaseService ?? new FirebaseService();
-        $this->caregiverUid = $caregiverUid;
+        $this->userUid = $userUid;
+        $this->userRole = $userRole;
     }
 
     public function setIdToken($token) {
@@ -17,16 +19,25 @@ class DataService {
         $this->firebaseService->setIdToken($token);
     }
 
-    public function setCaregiverUid($uid) {
-        $this->caregiverUid = $uid;
+    public function setUser($uid, $role) {
+        $this->userUid = $uid;
+        $this->userRole = $role;
+    }
+
+    private function getCollectionPrefix() {
+        if ($this->userRole == 'caregiver') {
+            return 'caregivers';
+        }
+        return 'patients';
     }
 
     public function getMedicines() {
-        if (!$this->caregiverUid) {
+        if (!$this->userUid) {
             return $this->getDemoMedicines();
         }
 
-        $medicines = $this->firebaseService->getCaregiverMedicines($this->caregiverUid);
+        $collection = $this->getCollectionPrefix();
+        $medicines = $this->firebaseService->getCollectionDocuments($collection, $this->userUid, 'medicines');
 
         if (empty($medicines)) {
             return $this->getDemoMedicines();
@@ -36,11 +47,12 @@ class DataService {
     }
 
     public function getReminders() {
-        if (!$this->caregiverUid) {
+        if (!$this->userUid) {
             return $this->getDemoReminders();
         }
 
-        $reminders = $this->firebaseService->getCaregiverReminders($this->caregiverUid);
+        $collection = $this->getCollectionPrefix();
+        $reminders = $this->firebaseService->getCollectionDocuments($collection, $this->userUid, 'reminders');
 
         if (empty($reminders)) {
             return $this->getDemoReminders();
@@ -50,11 +62,12 @@ class DataService {
     }
 
     public function getHistory($limit = 100) {
-        if (!$this->caregiverUid) {
+        if (!$this->userUid) {
             return $this->getDemoHistory();
         }
 
-        $history = $this->firebaseService->getCaregiverHistory($this->caregiverUid, $limit);
+        $collection = $this->getCollectionPrefix();
+        $history = $this->firebaseService->getCollectionDocuments($collection, $this->userUid, 'history', $limit);
 
         if (empty($history)) {
             return $this->getDemoHistory();
@@ -100,20 +113,13 @@ class DataService {
         ];
     }
 
-    public function getLinkedPatient() {
-        if (!$this->caregiverUid) {
+    public function getUserProfile() {
+        if (!$this->userUid) {
             return null;
         }
 
-        return $this->firebaseService->getLinkedPatient($this->caregiverUid);
-    }
-
-    public function getCaregiverProfile() {
-        if (!$this->caregiverUid) {
-            return null;
-        }
-
-        return $this->firebaseService->getCaregiverProfile($this->caregiverUid);
+        $collection = $this->getCollectionPrefix();
+        return $this->firebaseService->getDocument($collection, $this->userUid);
     }
 
     private function getDemoMedicines() {
@@ -121,8 +127,6 @@ class DataService {
             ['id' => '1', 'verifiedName' => 'Aspirin', 'brandName' => 'Bayer', 'strength' => '100mg', 'form' => 'Tablet', 'apiSource' => 'openFDA', 'quantity' => 30, 'isActive' => true],
             ['id' => '2', 'verifiedName' => 'Metformin', 'brandName' => 'Glucophage', 'strength' => '500mg', 'form' => 'Tablet', 'apiSource' => 'manual', 'quantity' => 45, 'isActive' => true],
             ['id' => '3', 'verifiedName' => 'Lisinopril', 'brandName' => 'Zestril', 'strength' => '10mg', 'form' => 'Tablet', 'apiSource' => 'manual', 'quantity' => 20, 'isActive' => true],
-            ['id' => '4', 'verifiedName' => 'Atorvastatin', 'brandName' => 'Lipitor', 'strength' => '20mg', 'form' => 'Tablet', 'apiSource' => 'openFDA', 'quantity' => 15, 'isActive' => true],
-            ['id' => '5', 'verifiedName' => 'Omeprazole', 'brandName' => 'Prilosec', 'strength' => '20mg', 'form' => 'Capsule', 'apiSource' => 'manual', 'quantity' => 25, 'isActive' => true]
         ];
     }
 
@@ -131,8 +135,6 @@ class DataService {
             ['id' => '1', 'medicineId' => '1', 'time' => '08:00', 'frequency' => 'daily', 'isActive' => true],
             ['id' => '2', 'medicineId' => '2', 'time' => '08:00', 'frequency' => 'daily', 'isActive' => true],
             ['id' => '3', 'medicineId' => '2', 'time' => '20:00', 'frequency' => 'daily', 'isActive' => true],
-            ['id' => '4', 'medicineId' => '3', 'time' => '09:00', 'frequency' => 'daily', 'isActive' => true],
-            ['id' => '5', 'medicineId' => '4', 'time' => '22:00', 'frequency' => 'daily', 'isActive' => true]
         ];
     }
 
@@ -145,10 +147,8 @@ class DataService {
             ['id' => '2', 'medicineId' => '2', 'medicineName' => 'Metformin', 'status' => 'taken', 'timestamp' => date('Y-m-d\TH:i:s', strtotime($today . ' 08:30'))],
             ['id' => '3', 'medicineId' => '2', 'medicineName' => 'Metformin', 'status' => 'taken', 'timestamp' => date('Y-m-d\TH:i:s', strtotime($today . ' 20:00'))],
             ['id' => '4', 'medicineId' => '3', 'medicineName' => 'Lisinopril', 'status' => 'skipped', 'timestamp' => date('Y-m-d\TH:i:s', strtotime($today . ' 09:00'))],
-            ['id' => '5', 'medicineId' => '4', 'medicineName' => 'Atorvastatin', 'status' => 'missed', 'timestamp' => date('Y-m-d\TH:i:s', strtotime($today . ' 22:00'))],
-            ['id' => '6', 'medicineId' => '1', 'medicineName' => 'Aspirin', 'status' => 'taken', 'timestamp' => date('Y-m-d\TH:i:s', strtotime($yesterday . ' 08:00'))],
-            ['id' => '7', 'medicineId' => '2', 'medicineName' => 'Metformin', 'status' => 'taken', 'timestamp' => date('Y-m-d\TH:i:s', strtotime($yesterday . ' 08:30'))],
-            ['id' => '8', 'medicineId' => '3', 'medicineName' => 'Lisinopril', 'status' => 'taken', 'timestamp' => date('Y-m-d\TH:i:s', strtotime($yesterday . ' 09:00'))]
+            ['id' => '5', 'medicineId' => '1', 'medicineName' => 'Aspirin', 'status' => 'taken', 'timestamp' => date('Y-m-d\TH:i:s', strtotime($yesterday . ' 08:00'))],
+            ['id' => '6', 'medicineId' => '2', 'medicineName' => 'Metformin', 'status' => 'taken', 'timestamp' => date('Y-m-d\TH:i:s', strtotime($yesterday . ' 08:30'))],
         ];
     }
 }

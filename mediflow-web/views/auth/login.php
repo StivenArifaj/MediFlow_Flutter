@@ -282,10 +282,10 @@ $isRegisterPage = strpos($fullUrl, 'register') !== false || $isRegister;
                 </button>
             </form>
 
-            <div class="divider"><span>or</span></div>
-
-            <div class="login-footer">
-                <p>Don't have an account? <a href="?page=auth&register=1">Create one</a></p>
+            <div class="login-footer" style="margin-top: 20px;">
+                <p style="font-size: 0.8rem; color: var(--text-secondary);">
+                    Use the MediFlow mobile app to create an account.
+                </p>
             </div>
             <?php endif; ?>
         </div>

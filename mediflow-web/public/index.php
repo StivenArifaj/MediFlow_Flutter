@@ -16,7 +16,9 @@ $action = $_GET['action'] ?? 'index';
 if ($authService->isLoggedIn()) {
     $user = $authService->getCurrentUser();
     $dataService->setIdToken($_SESSION['firebase_token'] ?? null);
-    $dataService->setCaregiverUid($user['uid'] ?? $user['firebase_uid'] ?? null);
+    $userUid = $user['uid'] ?? $user['firebase_uid'] ?? null;
+    $userRole = $user['role'] ?? 'patient';
+    $dataService->setUser($userUid, $userRole);
 }
 
 switch ($page) {

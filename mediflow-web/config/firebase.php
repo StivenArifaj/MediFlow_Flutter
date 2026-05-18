@@ -303,4 +303,31 @@ class FirebaseService {
 
         return null;
     }
+
+    // Generic methods for accessing any collection
+    public function getCollectionDocuments($collection, $docId, $subcollection, $limit = 100) {
+        $url = $this->firestoreUrl . '/' . $collection . '/' . $docId . '/' . $subcollection . '?limit=' . $limit;
+        $result = $this->makeRequest($url, 'GET', null, true);
+
+        if ($result['code'] === 200 && isset($result['data']['documents'])) {
+            $docs = [];
+            foreach ($result['data']['documents'] as $doc) {
+                $docs[] = $this->parseFirestoreDocument($doc);
+            }
+            return $docs;
+        }
+
+        return [];
+    }
+
+    public function getDocument($collection, $docId) {
+        $url = $this->firestoreUrl . '/' . $collection . '/' . $docId;
+        $result = $this->makeRequest($url, 'GET', null, true);
+
+        if ($result['code'] === 200 && isset($result['data']['fields'])) {
+            return $this->parseFirestoreDocument($result['data']);
+        }
+
+        return null;
+    }
 }
