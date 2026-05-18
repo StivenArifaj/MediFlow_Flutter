@@ -57,12 +57,10 @@ class AuthService {
             return $user;
         }
 
-        return ['success' => false, 'error' => $result['error']];
+        return ['success' => false, 'error' => $result['error'] ?? 'Registration failed'];
     }
 
     public function logout() {
-        $this->firebaseService->setIdToken($_SESSION['firebase_token'] ?? null);
-
         session_destroy();
         return true;
     }

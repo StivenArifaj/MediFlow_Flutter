@@ -36,6 +36,8 @@ class FirebaseService {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
 
         if ($method === 'POST') {
             curl_setopt($ch, CURLOPT_POST, true);
@@ -47,13 +49,21 @@ class FirebaseService {
         }
 
         $response = curl_exec($ch);
+        $errno = curl_errno($ch);
+        $error = curl_error($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        return [
+        $result = [
             'code' => $httpCode,
             'data' => json_decode($response, true)
         ];
+
+        if ($errno) {
+            error_log("cURL Error ($errno): $error");
+        }
+
+        return $result;
     }
 
     public function signIn($email, $password) {
@@ -79,7 +89,8 @@ class FirebaseService {
 
         return [
             'success' => false,
-            'error' => $result['data']['error']['message'] ?? 'Authentication failed'
+            'error' => $result['data']['error']['message'] ?? 'Authentication failed',
+            'debug' => $result['data'] ?? null
         ];
     }
 
@@ -91,7 +102,12 @@ class FirebaseService {
             'returnSecureToken' => true
         ];
 
+        error_log("Firebase SignUp URL: " . $url);
+        error_log("Firebase SignUp Data: " . json_encode($data));
+
         $result = $this->makeRequest($url, 'POST', $data);
+        
+        error_log("Firebase SignUp Response: " . json_encode($result));
 
         if ($result['code'] === 200 && isset($result['data']['idToken'])) {
             return [
@@ -106,7 +122,9 @@ class FirebaseService {
 
         return [
             'success' => false,
-            'error' => $result['data']['error']['message'] ?? 'Registration failed'
+            'error' => $result['data']['error']['message'] ?? 'Registration failed',
+            'http_code' => $result['code'],
+            'raw_response' => $result['data']
         ];
     }
 
