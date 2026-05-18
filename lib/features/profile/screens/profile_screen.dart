@@ -19,9 +19,7 @@ import '../../auth/providers/auth_provider.dart';
 import '../../auth/providers/current_user_provider.dart';
 import '../../medicines/providers/medicines_provider.dart';
 import '../../../core/locale/locale_provider.dart';
-import '../../../data/database/app_database.dart';
 import '../../../data/services/notification_service.dart';
-import 'package:drift/drift.dart' show Value;
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});

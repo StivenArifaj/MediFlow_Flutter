@@ -55,8 +55,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         password: _passwordController.text,
       );
       if (!mounted) return;
-      final user = await repo.getCurrentUser();
-      if (user?.role == 'linked_patient') {
+      
+      // Get user role from SharedPreferences
+      final role = repo.selectedRole;
+      if (role == 'linked_patient') {
         context.go('/linked-patient-home');
       } else {
         context.go('/home');

@@ -1,35 +1,26 @@
-import 'dart:convert';
-import 'package:crypto/crypto.dart';
-import 'package:drift/drift.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fa;
 import 'package:cloud_firestore/cloud_firestore.dart';
-
-import '../database/app_database.dart';
-import '../services/firebase_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const _keyUserId = 'mediflow_user_id';
 const _keyHasSeenOnboarding = 'mediflow_has_seen_onboarding';
 const _keySelectedRole = 'mediflow_selected_role';
-
-String _hashPassword(String password) {
-  final bytes = utf8.encode(password);
-  final digest = sha256.convert(bytes);
-  return digest.toString();
-}
+const _keyFirebaseUid = 'mediflow_firebase_uid';
 
 class AuthRepository {
   AuthRepository({
-    required AppDatabase database,
     required SharedPreferences prefs,
-  })  : _db = database,
-        _prefs = prefs;
+  }) : _prefs = prefs;
 
-  final AppDatabase _db;
   final SharedPreferences _prefs;
 
-  int? get currentUserId => _prefs.getInt(_keyUserId);
+  final _faAuth = fa.FirebaseAuth.instance;
+  final _fs = FirebaseFirestore.instance;
+
+  String? get currentUserId => _prefs.getString(_keyFirebaseUid);
   bool get hasSeenOnboarding => _prefs.getBool(_keyHasSeenOnboarding) ?? false;
   String? get selectedRole => _prefs.getString(_keySelectedRole);
+  String? get firebaseUid => _prefs.getString(_keyFirebaseUid);
 
   Future<void> setHasSeenOnboarding(bool value) async {
     await _prefs.setBool(_keyHasSeenOnboarding, value);
@@ -40,166 +31,182 @@ class AuthRepository {
   }
 
   Future<bool> hasValidSession() async {
-    final userId = currentUserId;
-    if (userId == null) return false;
-    final user = await _db.usersDao.getUserById(userId);
+    final user = _faAuth.currentUser;
     return user != null;
   }
 
-  Future<void> updateUserRole(int userId, String role) async {
-    await setSelectedRole(role);
-    final user = await _db.usersDao.getUserById(userId);
-    if (user != null) {
-      await _db.usersDao.updateUser(
-        user.copyWithCompanion(UsersCompanion(role: Value(role))),
-      );
-    }
-  }
-
-  Future<int> register({
+  Future<String> register({
     required String name,
     required String email,
     required String password,
     required String role,
-    bool isDarkMode = true,
   }) async {
-    // First create local user
-    final existing = await _db.usersDao.emailExists(email);
-    if (existing) {
-      throw AuthException('Email already registered');
-    }
-
-    final hash = _hashPassword(password);
-    final now = DateTime.now();
-    final id = await _db.usersDao.insertUser(
-      UsersCompanion.insert(
-        name: name,
+    try {
+      // Create user in Firebase Auth
+      final credential = await _faAuth.createUserWithEmailAndPassword(
         email: email,
-        passwordHash: hash,
-        role: Value(role),
-        isDarkMode: Value(isDarkMode),
-        notificationsEnabled: const Value(true),
-        createdAt: now,
-      ),
-    );
+        password: password,
+      );
 
-    // Try to also create Firebase Auth account if Firebase is ready
-    final auth = firebaseAuth;
-    if (auth != null) {
-      try {
-        final credential = await auth.createUserWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
-        
-        if (credential.user != null) {
-          // Update local user with Firebase UID
-          final user = await _db.usersDao.getUserById(id);
-          if (user != null) {
-            await _db.usersDao.updateUser(
-              user.copyWithCompanion(UsersCompanion(firebaseUid: Value(credential.user!.uid))),
-            );
-          }
-          
-          // Create Firestore profile
-          await FirebaseFirestore.instance.collection('users').doc(credential.user!.uid).set({
-            'name': name,
-            'email': email,
-            'role': role,
-            'createdAt': FieldValue.serverTimestamp(),
-          });
-          
-          // Create caregiver profile if needed
-          if (role == 'caregiver') {
-            await _createCaregiverProfile(credential.user!.uid, name, email);
-          }
-        }
-      } catch (e) {
-        // Continue with local auth even if Firebase fails
+      final user = credential.user;
+      if (user == null) {
+        throw AuthException('Failed to create user');
       }
-    }
 
-    await _prefs.setInt(_keyUserId, id);
-    await _prefs.setString(_keySelectedRole, role);
-    return id;
+      // Update display name
+      await user.updateDisplayName(name);
+
+      // Store Firebase UID
+      await _prefs.setString(_keyFirebaseUid, user.uid);
+      await _prefs.setString(_keySelectedRole, role);
+
+      // Create user profile in appropriate Firestore collection
+      await _createFirestoreProfile(user.uid, name, email, role);
+
+      return user.uid;
+    } on fa.FirebaseAuthException catch (e) {
+      throw AuthException(_getFirebaseErrorMessage(e));
+    }
   }
 
-  Future<void> _createCaregiverProfile(String uid, String name, String email) async {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    final rng = DateTime.now().millisecondsSinceEpoch;
-    final code = List.generate(6, (i) => chars[(rng + i) % chars.length]).join();
+  Future<void> _createFirestoreProfile(String uid, String name, String email, String role) async {
+    final now = FieldValue.serverTimestamp();
 
-    try {
-      await FirebaseFirestore.instance.collection('caregivers').doc(uid).set({
+    if (role == 'caregiver') {
+      // Create caregiver profile with invite code
+      final code = _generateInviteCode();
+      await _fs.collection('caregivers').doc(uid).set({
         'profile': {'name': name, 'email': email, 'role': 'caregiver'},
         'inviteCode': code,
-        'patientName': '',
-        'createdAt': FieldValue.serverTimestamp(),
+        'linkedPatientName': '',
+        'createdAt': now,
       });
-    } catch (e) {
-      // Ignore Firestore errors
+    } else if (role == 'linked_patient') {
+      // Create linked patient profile (minimal - will be linked to caregiver)
+      await _fs.collection('linkedPatients').doc(uid).set({
+        'name': name,
+        'email': email,
+        'role': 'linked_patient',
+        'caregiverUid': '',
+        'linkedAt': now,
+      });
+    } else {
+      // Regular patient
+      await _fs.collection('patients').doc(uid).set({
+        'name': name,
+        'email': email,
+        'role': 'patient',
+        'createdAt': now,
+      });
+    }
+
+    // Also create in general users collection for lookup
+    await _fs.collection('users').doc(uid).set({
+      'name': name,
+      'email': email,
+      'role': role,
+      'createdAt': now,
+    });
+  }
+
+  String _generateInviteCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    final rng = DateTime.now().millisecondsSinceEpoch;
+    return List.generate(6, (i) => chars[(rng + i) % chars.length]).join();
+  }
+
+  String _getFirebaseErrorMessage(fa.FirebaseAuthException e) {
+    switch (e.code) {
+      case 'email-already-in-use':
+        return 'Email already registered';
+      case 'weak-password':
+        return 'Password is too weak';
+      case 'invalid-email':
+        return 'Invalid email address';
+      default:
+        return e.message ?? 'Registration failed';
     }
   }
 
-  Future<int> login({
+  Future<String> login({
     required String email,
     required String password,
   }) async {
-    final user = await _db.usersDao.getUserByEmail(email);
-    if (user == null) {
-      throw AuthException('Invalid email or password');
-    }
+    try {
+      final credential = await _faAuth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
-    final hash = _hashPassword(password);
-    if (hash != user.passwordHash) {
-      throw AuthException('Invalid email or password');
-    }
-
-    // Try Firebase login if available
-    final auth = firebaseAuth;
-    if (auth != null) {
-      try {
-        await auth.signInWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
-      } catch (e) {
-        // Continue with local login
+      final user = credential.user;
+      if (user == null) {
+        throw AuthException('Invalid email or password');
       }
-    }
 
-    await _prefs.setInt(_keyUserId, user.id);
-    await _prefs.setString(_keySelectedRole, user.role);
-    return user.id;
+      // Store Firebase UID
+      await _prefs.setString(_keyFirebaseUid, user.uid);
+
+      // Get user role from Firestore
+      final role = await _getUserRole(user.uid);
+      await _prefs.setString(_keySelectedRole, role ?? 'patient');
+
+      return user.uid;
+    } on fa.FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found' || e.code == 'wrong-password') {
+        throw AuthException('Invalid email or password');
+      }
+      throw AuthException(e.message ?? 'Login failed');
+    }
+  }
+
+  Future<String?> _getUserRole(String uid) async {
+    try {
+      final doc = await _fs.collection('users').doc(uid).get();
+      if (doc.exists) {
+        return doc.data()?['role'] as String?;
+      }
+    } catch (e) {
+      // Ignore
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getCurrentUserData() async {
+    final uid = firebaseUid;
+    if (uid == null) return null;
+
+    try {
+      // First check patients collection
+      final patientDoc = await _fs.collection('patients').doc(uid).get();
+      if (patientDoc.exists) {
+        return patientDoc.data();
+      }
+
+      // Then check caregivers collection
+      final caregiverDoc = await _fs.collection('caregivers').doc(uid).get();
+      if (caregiverDoc.exists) {
+        return caregiverDoc.data();
+      }
+
+      // Then check linkedPatients collection
+      final linkedDoc = await _fs.collection('linkedPatients').doc(uid).get();
+      if (linkedDoc.exists) {
+        return linkedDoc.data();
+      }
+    } catch (e) {
+      // Ignore
+    }
+    return null;
   }
 
   Future<void> logout() async {
-    try {
-      final auth = firebaseAuth;
-      if (auth != null && auth.currentUser != null) {
-        await auth.signOut();
-      }
-    } catch (e) {
-      // Ignore Firebase logout errors
-    }
-    try {
-      await _prefs.remove(_keyUserId);
-      await _prefs.remove(_keySelectedRole);
-    } catch (e) {
-      // Ignore prefs errors
-    }
+    await _faAuth.signOut();
+    await _prefs.remove(_keyFirebaseUid);
+    await _prefs.remove(_keySelectedRole);
   }
 
-  Future<User?> getCurrentUser() async {
-    final userId = currentUserId;
-    if (userId == null) return null;
-    return _db.usersDao.getUserById(userId);
-  }
-
-  /// Get Firebase UID if user logged in with Firebase
-  String? getFirebaseUid() {
-    final auth = firebaseAuth;
-    return auth?.currentUser?.uid;
+  String? getCurrentFirebaseUid() {
+    return _faAuth.currentUser?.uid;
   }
 }
 
