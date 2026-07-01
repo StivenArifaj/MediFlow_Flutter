@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../../core/widgets/app_background.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,10 +5,12 @@ import 'package:mediflow/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
+import '../../../core/supabase/supabase_client.dart';
 import '../providers/auth_provider.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../core/utils/validators.dart';
@@ -108,24 +109,42 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         role: role,
       );
       if (!mounted) return;
+      final session = supabase.auth.currentSession;
+      if (session == null) {
+        if (mounted) {
+          context.go('/email-confirmation', extra: _emailController.text.trim());
+        }
+        return;
+      }
+
+      if (!mounted) return;
       if (role == 'caregiver') {
-        // Generate invite code for caregiver
-        final code = _generateInviteCode();
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('caregiver_invite_code', code);
+        final code = prefs.getString('caregiver_invite_code') ?? '';
         if (mounted) {
           context.pushReplacement('/invite-patient', extra: {
             'inviteCode': code,
             'patientName': null,
           });
         }
-      } else {
-        context.go('/home');
+        return;
       }
-    } on AuthException catch (e) {
-      setState(() => _submitError = e.message);
+      if (role == 'linked_patient') {
+        if (mounted) context.go('/linked-patient-home');
+        return;
+      }
+      if (mounted) context.go('/home');
     } catch (e) {
-      setState(() => _submitError = 'Something went wrong. Please try again.');
+      String msg = 'Something went wrong. Please try again.';
+      if (e is sb.AuthException) {
+        msg = e.message;
+        if (e.statusCode == '429') {
+          msg = 'Too many attempts. Please wait a few minutes.';
+        }
+      } else if (e is Exception) {
+        msg = e.toString().replaceAll('Exception: ', '');
+      }
+      if (mounted) setState(() => _submitError = msg);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -140,12 +159,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (score >= 2) return 2;
     if (score >= 1 || p.length >= 8) return 1;
     return 0;
-  }
-
-  String _generateInviteCode() {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    final rand = math.Random();
-    return List.generate(6, (_) => chars[rand.nextInt(chars.length)]).join();
   }
 
   @override

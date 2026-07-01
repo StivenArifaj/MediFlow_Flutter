@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.mediflow"
+    namespace = "com.mediflow.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -22,10 +22,10 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.mediflow"
+        applicationId = "com.mediflow.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion // Required for desugaring if lower
+        minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -47,3 +47,4 @@ dependencies {
 flutter {
     source = "../.."
 }
+

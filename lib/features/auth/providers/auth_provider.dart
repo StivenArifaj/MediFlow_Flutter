@@ -1,36 +1,19 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/supabase/supabase_client.dart';
 import '../../../data/repositories/auth_repository.dart';
 
-final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
-  throw UnimplementedError(
-    'SharedPreferences must be initialized in main() before runApp',
-  );
-});
+enum AuthState { loading, unauthenticated, authenticated }
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  final prefs = ref.watch(sharedPreferencesProvider);
-  return AuthRepository(prefs: prefs);
+  return AuthRepository(supabase);
 });
 
-final authStateProvider = FutureProvider<AuthState>((ref) async {
-  final repo = ref.watch(authRepositoryProvider);
-
-  if (!repo.hasSeenOnboarding) {
-    return AuthState.onboarding;
-  }
-
-  final hasSession = await repo.hasValidSession();
-  if (hasSession) {
+/// Single source of truth for auth state — the router listens to this (fixes Bug #6).
+final authStateChangesProvider = StreamProvider<AuthState>((ref) {
+  return supabase.auth.onAuthStateChange.map((data) {
+    final session = data.session;
+    if (session == null) return AuthState.unauthenticated;
     return AuthState.authenticated;
-  }
-
-  return AuthState.unauthenticated;
+  });
 });
-
-enum AuthState {
-  onboarding,
-  unauthenticated,
-  authenticated,
-}

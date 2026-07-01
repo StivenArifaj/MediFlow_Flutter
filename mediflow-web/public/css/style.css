@@ -528,31 +528,19 @@ h6 { font-size: 1rem; }
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: var(--spacing-xl);
+    gap: 3rem;
+    padding: var(--spacing-md) 0;
 }
 
 .adherence-ring {
     position: relative;
-    width: 180px;
-    height: 180px;
+    width: 220px;
+    height: 220px;
+    flex-shrink: 0;
 }
 
 .adherence-ring svg {
-    transform: rotate(-90deg);
-}
-
-.adherence-ring-bg {
-    fill: none;
-    stroke: var(--bg-card-light);
-    stroke-width: 12;
-}
-
-.adherence-ring-progress {
-    fill: none;
-    stroke: url(#adherenceGradient);
-    stroke-width: 12;
-    stroke-linecap: round;
-    transition: stroke-dashoffset 1s ease;
+    display: block;
 }
 
 .adherence-ring-text {
@@ -561,40 +549,73 @@ h6 { font-size: 1rem; }
     left: 50%;
     transform: translate(-50%, -50%);
     text-align: center;
+    pointer-events: none;
 }
 
 .adherence-ring-value {
-    font-size: 2.5rem;
+    font-size: 3rem;
     font-weight: 800;
+    line-height: 1;
     color: var(--primary);
+    letter-spacing: -1px;
 }
 
 .adherence-ring-label {
-    font-size: 0.875rem;
+    font-size: 0.75rem;
+    font-weight: 500;
     color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 4px;
 }
 
 .adherence-stats {
-    display: flex;
-    gap: var(--spacing-lg);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
 }
 
 .adherence-stat {
     text-align: center;
-    padding: var(--spacing-md);
+    padding: var(--spacing-md) var(--spacing-lg);
     background: var(--bg-card-light);
-    border-radius: var(--radius-md);
-    min-width: 80px;
+    border-radius: var(--radius-lg);
+    min-width: 100px;
+    border: 1px solid rgba(255,255,255,0.04);
+    transition: background 0.2s;
+}
+
+.adherence-stat:hover {
+    background: rgba(255,255,255,0.05);
+}
+
+.adherence-stat-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--spacing-sm);
+}
+
+.adherence-stat-icon svg {
+    width: 18px;
+    height: 18px;
 }
 
 .adherence-stat-value {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     font-weight: 700;
+    line-height: 1;
 }
 
 .adherence-stat-label {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 4px;
 }
 
 /* ============ CARDS ============ */

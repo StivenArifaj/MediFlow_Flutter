@@ -1,65 +1,65 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../../core/supabase/supabase_client.dart';
 import 'auth_provider.dart';
 
 class UserData {
+  final String id;
   final String name;
   final String email;
   final String role;
+  final bool isPremium;
+  final String language;
+  final bool isDarkMode;
+  final bool notificationsEnabled;
+  final DateTime createdAt;
+  final String? caregiverId;
+  final String? inviteCode;
 
   UserData({
+    required this.id,
     required this.name,
     required this.email,
     required this.role,
+    required this.isPremium,
+    required this.language,
+    required this.isDarkMode,
+    required this.notificationsEnabled,
+    required this.createdAt,
+    this.caregiverId,
+    this.inviteCode,
   });
 
-  factory UserData.fromFirestore(Map<String, dynamic> data, String role) {
+  factory UserData.fromMap(Map<String, dynamic> map) {
     return UserData(
-      name: data['name'] ?? '',
-      email: data['email'] ?? '',
-      role: role,
+      id: map['id'] as String,
+      name: map['name'] as String,
+      email: map['email'] as String,
+      role: map['role'] as String,
+      isPremium: map['is_premium'] as bool? ?? false,
+      language: map['language'] as String? ?? 'en',
+      isDarkMode: map['is_dark_mode'] as bool? ?? true,
+      notificationsEnabled: map['notifications_enabled'] as bool? ?? true,
+      createdAt: DateTime.parse(map['created_at'] as String),
+      caregiverId: map['caregiver_id'] as String?,
+      inviteCode: map['invite_code'] as String?,
     );
   }
 }
 
 final currentUserProvider = FutureProvider<UserData?>((ref) async {
-  final repo = ref.watch(authRepositoryProvider);
-  final uid = repo.firebaseUid;
-  final role = repo.selectedRole;
+  final authState = ref.watch(authStateChangesProvider).value;
+  if (authState != AuthState.authenticated) return null;
 
-  if (uid == null) return null;
+  final userId = supabase.auth.currentUser?.id;
+  if (userId == null) return null;
 
-  try {
-    final fs = FirebaseFirestore.instance;
-    String collectionName;
+  final row = await supabase
+      .from('profiles')
+      .select()
+      .eq('id', userId)
+      .maybeSingle();
 
-    // Determine which collection to look in based on role
-    if (role == 'caregiver') {
-      collectionName = 'caregivers';
-    } else if (role == 'linked_patient') {
-      collectionName = 'linkedPatients';
-    } else {
-      collectionName = 'patients';
-    }
-
-    final doc = await fs.collection(collectionName).doc(uid).get();
-
-    if (doc.exists) {
-      final data = doc.data()!;
-      // For caregivers, profile is nested
-      if (role == 'caregiver' && data['profile'] != null) {
-        return UserData(
-          name: data['profile']['name'] ?? '',
-          email: data['profile']['email'] ?? '',
-          role: role,
-        );
-      }
-      return UserData.fromFirestore(data, role);
-    }
-  } catch (e) {
-    // Return null on error
-  }
-
-  return null;
+  if (row == null) return null;
+  return UserData.fromMap(row);
 });

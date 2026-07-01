@@ -11,9 +11,9 @@ class FirebaseService {
     private $localId;
 
     public function __construct() {
-        $this->projectId = FIREBASE_PROJECT_ID;
-        $this->apiKey = FIREBASE_API_KEY;
-        $this->authUrl = FIREBASE_AUTH_URL;
+        $this->projectId    = FIREBASE_PROJECT_ID;
+        $this->apiKey       = FIREBASE_API_KEY;
+        $this->authUrl      = FIREBASE_AUTH_URL;
         $this->firestoreUrl = FIRESTORE_URL;
     }
 
@@ -49,198 +49,96 @@ class FirebaseService {
         }
 
         $response = curl_exec($ch);
-        $errno = curl_errno($ch);
-        $error = curl_error($ch);
+        $errno    = curl_errno($ch);
+        $error    = curl_error($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
-
-        $result = [
-            'code' => $httpCode,
-            'data' => json_decode($response, true)
-        ];
 
         if ($errno) {
             error_log("cURL Error ($errno): $error");
         }
 
-        return $result;
+        return [
+            'code' => $httpCode,
+            'data' => json_decode($response, true),
+        ];
     }
 
-    public function signIn($email, $password) {
-        $url = FIREBASE_TOKEN_URL . '?key=' . $this->apiKey;
-        $data = [
-            'email' => $email,
-            'password' => $password,
-            'returnSecureToken' => true
-        ];
+    // ── Auth ──────────────────────────────────────────────────────────────────
 
-        $result = $this->makeRequest($url, 'POST', $data);
+    public function signIn($email, $password) {
+        $url    = FIREBASE_TOKEN_URL . '?key=' . $this->apiKey;
+        $result = $this->makeRequest($url, 'POST', [
+            'email'             => $email,
+            'password'          => $password,
+            'returnSecureToken' => true,
+        ]);
 
         if ($result['code'] === 200 && isset($result['data']['idToken'])) {
             return [
-                'success' => true,
-                'idToken' => $result['data']['idToken'],
-                'localId' => $result['data']['localId'],
-                'email' => $result['data']['email'],
+                'success'      => true,
+                'idToken'      => $result['data']['idToken'],
+                'localId'      => $result['data']['localId'],
+                'email'        => $result['data']['email'],
                 'refreshToken' => $result['data']['refreshToken'],
-                'expiresIn' => $result['data']['expiresIn']
+                'expiresIn'    => $result['data']['expiresIn'],
             ];
         }
 
         return [
             'success' => false,
-            'error' => $result['data']['error']['message'] ?? 'Authentication failed',
-            'debug' => $result['data'] ?? null
+            'error'   => $result['data']['error']['message'] ?? 'Authentication failed',
         ];
     }
 
     public function signUp($email, $password) {
-        $url = FIREBASE_SIGNUP_URL . '?key=' . $this->apiKey;
-        $data = [
-            'email' => $email,
-            'password' => $password,
-            'returnSecureToken' => true
-        ];
-
-        error_log("Firebase SignUp URL: " . $url);
-        error_log("Firebase SignUp Data: " . json_encode($data));
-
-        $result = $this->makeRequest($url, 'POST', $data);
-        
-        error_log("Firebase SignUp Response: " . json_encode($result));
+        $url    = FIREBASE_SIGNUP_URL . '?key=' . $this->apiKey;
+        $result = $this->makeRequest($url, 'POST', [
+            'email'             => $email,
+            'password'          => $password,
+            'returnSecureToken' => true,
+        ]);
 
         if ($result['code'] === 200 && isset($result['data']['idToken'])) {
             return [
-                'success' => true,
-                'idToken' => $result['data']['idToken'],
-                'localId' => $result['data']['localId'],
-                'email' => $result['data']['email'],
+                'success'      => true,
+                'idToken'      => $result['data']['idToken'],
+                'localId'      => $result['data']['localId'],
+                'email'        => $result['data']['email'],
                 'refreshToken' => $result['data']['refreshToken'],
-                'expiresIn' => $result['data']['expiresIn']
+                'expiresIn'    => $result['data']['expiresIn'],
             ];
         }
 
         return [
-            'success' => false,
-            'error' => $result['data']['error']['message'] ?? 'Registration failed',
-            'http_code' => $result['code'],
-            'raw_response' => $result['data']
+            'success'      => false,
+            'error'        => $result['data']['error']['message'] ?? 'Registration failed',
+            'http_code'    => $result['code'],
+            'raw_response' => $result['data'],
         ];
     }
 
     public function refreshToken($refreshToken) {
-        $url = 'https://securetoken.googleapis.com/v1/token?key=' . $this->apiKey;
-        $data = [
-            'grant_type' => 'refresh_token',
-            'refresh_token' => $refreshToken
-        ];
-
-        $result = $this->makeRequest($url, 'POST', $data);
+        $url    = 'https://securetoken.googleapis.com/v1/token?key=' . $this->apiKey;
+        $result = $this->makeRequest($url, 'POST', [
+            'grant_type'    => 'refresh_token',
+            'refresh_token' => $refreshToken,
+        ]);
 
         if ($result['code'] === 200) {
             return [
-                'success' => true,
-                'id_token' => $result['data']['id_token'],
-                'refresh_token' => $result['data']['refresh_token']
+                'success'       => true,
+                'id_token'      => $result['data']['id_token'],
+                'refresh_token' => $result['data']['refresh_token'],
             ];
         }
 
         return ['success' => false];
-    }
-
-    public function verifyIdToken($idToken) {
-        $url = FIREBASE_AUTH_URL . '/accounts:lookup?key=' . $this->apiKey;
-        $data = ['idToken' => $idToken];
-
-        $result = $this->makeRequest($url, 'POST', $data);
-
-        if ($result['code'] === 200 && !empty($result['data']['users'])) {
-            return [
-                'success' => true,
-                'user' => $result['data']['users'][0]
-            ];
-        }
-
-        return ['success' => false];
-    }
-
-    public function getCaregiverProfile($caregiverUid) {
-        $url = $this->firestoreUrl . '/caregivers/' . $caregiverUid;
-        $result = $this->makeRequest($url, 'GET', null, true);
-
-        if ($result['code'] === 200 && isset($result['data']['fields'])) {
-            return $this->parseFirestoreDocument($result['data']);
-        }
-
-        return null;
-    }
-
-    public function getCaregiverMedicines($caregiverUid) {
-        $url = $this->firestoreUrl . '/caregivers/' . $caregiverUid . '/medicines';
-        $result = $this->makeRequest($url, 'GET', null, true);
-
-        if ($result['code'] === 200 && isset($result['data']['documents'])) {
-            $medicines = [];
-            foreach ($result['data']['documents'] as $doc) {
-                $medicines[] = $this->parseFirestoreDocument($doc);
-            }
-            return $medicines;
-        }
-
-        return [];
-    }
-
-    public function getCaregiverReminders($caregiverUid) {
-        $url = $this->firestoreUrl . '/caregivers/' . $caregiverUid . '/reminders';
-        $result = $this->makeRequest($url, 'GET', null, true);
-
-        if ($result['code'] === 200 && isset($result['data']['documents'])) {
-            $reminders = [];
-            foreach ($result['data']['documents'] as $doc) {
-                $reminders[] = $this->parseFirestoreDocument($doc);
-            }
-            return $reminders;
-        }
-
-        return [];
-    }
-
-    public function getCaregiverHistory($caregiverUid, $limit = 100) {
-        $url = $this->firestoreUrl . '/caregivers/' . $caregiverUid . '/history?orderBy=timestamp&limit=' . $limit;
-        $result = $this->makeRequest($url, 'GET', null, true);
-
-        if ($result['code'] === 200 && isset($result['data']['documents'])) {
-            $history = [];
-            foreach ($result['data']['documents'] as $doc) {
-                $history[] = $this->parseFirestoreDocument($doc);
-            }
-            return $history;
-        }
-
-        return [];
-    }
-
-    public function getLinkedPatient($caregiverUid) {
-        $url = $this->firestoreUrl . '/linkedPatients?where=caregiverUid';
-        $result = $this->makeRequest($url, 'GET', null, true);
-
-        if ($result['code'] === 200 && isset($result['data']['documents'])) {
-            foreach ($result['data']['documents'] as $doc) {
-                $data = $this->parseFirestoreDocument($doc);
-                if (isset($data['caregiverUid']) && $data['caregiverUid'] === $caregiverUid) {
-                    return $data;
-                }
-            }
-        }
-
-        return null;
     }
 
     public function getUserByEmail($email) {
-        $url = FIREBASE_AUTH_URL . '/accounts:lookup?key=' . $this->apiKey;
-        $data = ['email' => [$email]];
-
-        $result = $this->makeRequest($url, 'POST', $data);
+        $url    = FIREBASE_AUTH_URL . '/accounts:lookup?key=' . $this->apiKey;
+        $result = $this->makeRequest($url, 'POST', ['email' => [$email]]);
 
         if ($result['code'] === 200 && !empty($result['data']['users'])) {
             return $result['data']['users'][0];
@@ -249,12 +147,64 @@ class FirebaseService {
         return null;
     }
 
+    // ── Firestore ─────────────────────────────────────────────────────────────
+
+    public function getDocument($collection, $docId) {
+        $url    = $this->firestoreUrl . '/' . $collection . '/' . $docId;
+        $result = $this->makeRequest($url, 'GET', null, true);
+
+        if ($result['code'] === 200 && isset($result['data']['fields'])) {
+            return $this->parseFirestoreDocument($result['data']);
+        }
+
+        if ($result['code'] !== 200 && $result['code'] !== 404) {
+            error_log("Firestore getDocument HTTP {$result['code']} — $collection/$docId — " . json_encode($result['data']));
+        }
+
+        return null;
+    }
+
+    public function getCollectionDocuments($collection, $docId, $subcollection, $limit = 100) {
+        $url    = $this->firestoreUrl . '/' . $collection . '/' . $docId . '/' . $subcollection . '?pageSize=' . $limit;
+        $result = $this->makeRequest($url, 'GET', null, true);
+
+        if ($result['code'] === 200 && isset($result['data']['documents'])) {
+            $docs = [];
+            foreach ($result['data']['documents'] as $doc) {
+                $docs[] = $this->parseFirestoreDocument($doc);
+            }
+            return $docs;
+        }
+
+        if ($result['code'] !== 200) {
+            error_log("Firestore getCollectionDocuments HTTP {$result['code']} — $collection/$docId/$subcollection — " . json_encode($result['data']));
+        }
+
+        return [];
+    }
+
+    // Look up a user by email via Firebase Auth, then fetch their Firestore profile.
+    public function findUserByEmail($email) {
+        $authUser = $this->getUserByEmail($email);
+        if ($authUser && isset($authUser['localId'])) {
+            $uid     = $authUser['localId'];
+            $profile = $this->getDocument('users', $uid);
+            return [
+                'uid'  => $uid,
+                'data' => $profile ?? [],
+            ];
+        }
+        return null;
+    }
+
+    // ── Firestore document parsing ────────────────────────────────────────────
+
     private function parseFirestoreDocument($doc) {
         $result = [];
 
         if (isset($doc['name'])) {
-            $parts = explode('/', $doc['name']);
-            $result['id'] = end($parts);
+            $parts         = explode('/', $doc['name']);
+            $result['id']  = end($parts);
         }
 
         if (isset($doc['fields'])) {
@@ -267,65 +217,26 @@ class FirebaseService {
     }
 
     private function parseFirestoreField($field) {
-        if (isset($field['stringValue'])) {
-            return $field['stringValue'];
-        }
-        if (isset($field['integerValue'])) {
-            return (int)$field['integerValue'];
-        }
-        if (isset($field['doubleValue'])) {
-            return (float)$field['doubleValue'];
-        }
-        if (isset($field['booleanValue'])) {
-            return $field['booleanValue'];
-        }
-        if (isset($field['timestampValue'])) {
-            return $field['timestampValue'];
-        }
+        if (isset($field['stringValue']))    return $field['stringValue'];
+        if (isset($field['integerValue']))   return (int)$field['integerValue'];
+        if (isset($field['doubleValue']))    return (float)$field['doubleValue'];
+        if (isset($field['booleanValue']))   return $field['booleanValue'];
+        if (isset($field['timestampValue'])) return $field['timestampValue'];
+
         if (isset($field['mapValue'])) {
             $map = [];
-            if (isset($field['mapValue']['fields'])) {
-                foreach ($field['mapValue']['fields'] as $k => $v) {
-                    $map[$k] = $this->parseFirestoreField($v);
-                }
+            foreach ($field['mapValue']['fields'] ?? [] as $k => $v) {
+                $map[$k] = $this->parseFirestoreField($v);
             }
             return $map;
         }
+
         if (isset($field['arrayValue'])) {
             $arr = [];
-            if (isset($field['arrayValue']['values'])) {
-                foreach ($field['arrayValue']['values'] as $v) {
-                    $arr[] = $this->parseFirestoreField($v);
-                }
+            foreach ($field['arrayValue']['values'] ?? [] as $v) {
+                $arr[] = $this->parseFirestoreField($v);
             }
             return $arr;
-        }
-
-        return null;
-    }
-
-    // Generic methods for accessing any collection
-    public function getCollectionDocuments($collection, $docId, $subcollection, $limit = 100) {
-        $url = $this->firestoreUrl . '/' . $collection . '/' . $docId . '/' . $subcollection . '?limit=' . $limit;
-        $result = $this->makeRequest($url, 'GET', null, true);
-
-        if ($result['code'] === 200 && isset($result['data']['documents'])) {
-            $docs = [];
-            foreach ($result['data']['documents'] as $doc) {
-                $docs[] = $this->parseFirestoreDocument($doc);
-            }
-            return $docs;
-        }
-
-        return [];
-    }
-
-    public function getDocument($collection, $docId) {
-        $url = $this->firestoreUrl . '/' . $collection . '/' . $docId;
-        $result = $this->makeRequest($url, 'GET', null, true);
-
-        if ($result['code'] === 200 && isset($result['data']['fields'])) {
-            return $this->parseFirestoreDocument($result['data']);
         }
 
         return null;

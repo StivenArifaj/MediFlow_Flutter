@@ -7,14 +7,15 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-
-
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../../core/widgets/glass_card.dart';
+import '../../../data/database/app_database.dart' show appDatabaseProvider;
 
+import '../../../core/providers/shared_preferences_provider.dart';
+import '../../../core/supabase/supabase_client.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../auth/providers/current_user_provider.dart';
 import '../../medicines/providers/medicines_provider.dart';
@@ -197,7 +198,7 @@ class ProfileScreen extends ConsumerWidget {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      ref.watch(sharedPreferencesProvider).getString('caregiver_invite_code') ?? 'Not set',
+                                      user.inviteCode ?? 'Not set',
                                       style: AppTypography.bodySmall(color: AppColors.neonCyan),
                                     ),
                                     const SizedBox(width: AppDimensions.xs),
@@ -205,8 +206,7 @@ class ProfileScreen extends ConsumerWidget {
                                   ],
                                 ),
                                 onTap: () {
-                                  final code = ref.read(sharedPreferencesProvider).getString('caregiver_invite_code') ?? '';
-                                  context.push('/invite-patient', extra: {'inviteCode': code});
+                                  context.push('/invite-patient', extra: {'inviteCode': user.inviteCode ?? ''});
                                 },
                               ),
                             ],
@@ -248,7 +248,7 @@ class ProfileScreen extends ConsumerWidget {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      ref.watch(sharedPreferencesProvider).getString('caregiver_invite_code') ?? 'Not set',
+                                      user.inviteCode ?? 'Not set',
                                       style: const TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w700,
@@ -261,7 +261,7 @@ class ProfileScreen extends ConsumerWidget {
                                     const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
                                   ],
                                 ),
-                                onTap: () => _showInviteCodeSheet(context, ref),
+                                onTap: () => _showInviteCodeSheet(context, user.inviteCode ?? ''),
                               ),
                               _SettingsTile(
                                 icon: Icons.person_rounded,
@@ -343,13 +343,6 @@ class ProfileScreen extends ConsumerWidget {
                               onTap: () => context.push('/about'),
                             ),
                             _SettingsTile(
-                              icon: Icons.delete_forever_rounded,
-                              iconColor: AppColors.error,
-                              label: 'Clear All Data',
-                              labelColor: AppColors.error,
-                              onTap: () => _clearAllData(context, ref),
-                            ),
-                            _SettingsTile(
                               icon: Icons.logout_rounded,
                               iconColor: AppColors.error,
                               label: 'Log Out',
@@ -358,6 +351,29 @@ class ProfileScreen extends ConsumerWidget {
                             ),
                           ],
                         ).animate().fadeIn(delay: 500.ms, duration: 300.ms),
+
+                        const SizedBox(height: AppDimensions.md),
+
+                        // ── Delete Account (destructive — bottom of page) ──
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              icon: const Icon(Icons.delete_forever_rounded, size: 18),
+                              label: const Text('Delete Account'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.error,
+                                side: const BorderSide(color: AppColors.error),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                                ),
+                              ),
+                              onPressed: () => _deleteAccount(context, ref),
+                            ),
+                          ),
+                        ).animate().fadeIn(delay: 550.ms, duration: 300.ms),
 
                         const SizedBox(height: AppDimensions.xxl),
                       ],
@@ -382,7 +398,7 @@ class ProfileScreen extends ConsumerWidget {
           side: const BorderSide(color: Color(0x1A00E5FF)),
         ),
         title: Text('Log Out', style: AppTypography.titleLarge()),
-        content: Text('Are you sure you want to log out?', style: AppTypography.bodyMedium()),
+        content: Text('Log out of MediFlow?', style: AppTypography.bodyMedium()),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -467,11 +483,13 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   // ── 2. Notifications toggle ─────────────────────────────────────────
-  Future<void> _toggleNotifications(BuildContext context, WidgetRef ref, User user, bool enabled) async {
-    final db = ref.read(appDatabaseProvider);
-    await db.usersDao.updateUser(
-      user.copyWithCompanion(UsersCompanion(notificationsEnabled: Value(enabled))),
-    );
+  Future<void> _toggleNotifications(BuildContext context, WidgetRef ref, UserData user, bool enabled) async {
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null) return;
+
+    // ponytail: update notifications_enabled in Supabase profiles table
+    await supabase.from('profiles').update({'notifications_enabled': enabled}).eq('id', uid);
+
     ref.invalidate(currentUserProvider);
 
     if (!enabled) {
@@ -529,9 +547,9 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  // ── 4. Clear All Data ──────────────────────────────────────────────
-  Future<void> _clearAllData(BuildContext context, WidgetRef ref) async {
-    // Step 1 confirmation
+  // ── 4. Delete Account (two-step — calls delete_my_account RPC) ────────
+  Future<void> _deleteAccount(BuildContext context, WidgetRef ref) async {
+    // Step 1: warn
     final step1 = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -544,11 +562,11 @@ class ProfileScreen extends ConsumerWidget {
           children: [
             const Icon(Icons.warning_rounded, color: AppColors.error, size: 24),
             const SizedBox(width: 8),
-            Text('Clear All Data?', style: AppTypography.titleLarge()),
+            Text('Delete account permanently?', style: AppTypography.titleLarge()),
           ],
         ),
         content: Text(
-          'This will permanently delete all your medicines, reminders, health measurements, and history. This action cannot be undone.',
+          'This will delete all your medicines, health data, reminders and history. This cannot be undone.',
           style: AppTypography.bodyMedium(color: AppColors.textSecondary),
         ),
         actions: [
@@ -566,13 +584,13 @@ class ProfileScreen extends ConsumerWidget {
 
     if (step1 != true || !context.mounted) return;
 
-    // Step 2 — type DELETE
+    // Step 2: type DELETE
     final deleteController = TextEditingController();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setInnerState) {
-          final typed = deleteController.text.toUpperCase() == 'DELETE';
+          final typed = deleteController.text == 'DELETE';
           return AlertDialog(
             backgroundColor: AppColors.bgCard,
             shape: RoundedRectangleBorder(
@@ -584,13 +602,12 @@ class ProfileScreen extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Enter DELETE below to permanently erase all data.',
+                  'Type DELETE (all caps) to permanently delete your account.',
                   style: AppTypography.bodyMedium(color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: AppDimensions.md),
                 TextField(
                   controller: deleteController,
-                  textCapitalization: TextCapitalization.characters,
                   onChanged: (_) => setInnerState(() {}),
                   style: AppTypography.titleMedium(color: AppColors.error),
                   decoration: InputDecoration(
@@ -618,7 +635,7 @@ class ProfileScreen extends ConsumerWidget {
               TextButton(
                 onPressed: typed ? () => Navigator.pop(ctx, true) : null,
                 child: Text(
-                  'Erase Everything',
+                  'Delete Forever',
                   style: AppTypography.labelLarge(
                     color: typed ? AppColors.error : AppColors.textMuted,
                   ),
@@ -633,25 +650,14 @@ class ProfileScreen extends ConsumerWidget {
 
     if (confirmed != true || !context.mounted) return;
 
-    // Perform deletion
-    final db = ref.read(appDatabaseProvider);
-    final prefs = ref.read(sharedPreferencesProvider);
-
     await NotificationService.cancelAll();
-    // Delete all table data
-    await db.customStatement('DELETE FROM health_measurements');
-    await db.customStatement('DELETE FROM history_entries');
-    await db.customStatement('DELETE FROM reminders');
-    await db.customStatement('DELETE FROM medicines');
-    await db.customStatement('DELETE FROM users');
-    await prefs.clear();
+    await ref.read(authRepositoryProvider).deleteMyAccount();
 
     if (context.mounted) context.go('/welcome');
   }
 
   // ── 5. Invite Code Sheet ──────────────────────────────────────────
-  void _showInviteCodeSheet(BuildContext context, WidgetRef ref) {
-    final code = ref.read(sharedPreferencesProvider).getString('caregiver_invite_code') ?? '';
+  void _showInviteCodeSheet(BuildContext context, String code) {
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.bgCard,
@@ -848,7 +854,7 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   // ── 8. My Role (read-only modal) ───────────────────────────────────
-  void _showRoleInfoModal(BuildContext context, User user) {
+  void _showRoleInfoModal(BuildContext context, UserData user) {
     final roleName = user.role == 'caregiver' ? 'Caregiver' : 'Patient';
     final roleDesc = user.role == 'caregiver'
         ? 'You manage medicines for someone else. Your medicines and reminders sync to your linked patient\'s device.'
@@ -906,13 +912,15 @@ class ProfileScreen extends ConsumerWidget {
 
 class _StatsGrid extends StatelessWidget {
   final int medicineCount;
-  final DateTime memberSince;
+  final DateTime? memberSince;
 
-  const _StatsGrid({required this.medicineCount, required this.memberSince});
+  const _StatsGrid({required this.medicineCount, this.memberSince});
 
   @override
   Widget build(BuildContext context) {
-    final joined = '${memberSince.day}/${memberSince.month}/${memberSince.year}';
+    final joined = memberSince != null 
+        ? '${memberSince!.day}/${memberSince!.month}/${memberSince!.year}'
+        : 'N/A';
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),

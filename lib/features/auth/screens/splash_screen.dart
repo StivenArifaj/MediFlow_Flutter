@@ -1,53 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:go_router/go_router.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mediflow/l10n/app_localizations.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../providers/auth_provider.dart';
 
-class SplashScreen extends ConsumerStatefulWidget {
+class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
-
-  @override
-  ConsumerState<SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends ConsumerState<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    _checkSessionAndNavigate();
-  }
-
-  Future<void> _checkSessionAndNavigate() async {
-    await Future.delayed(const Duration(seconds: 2));
-
-    if (!mounted) return;
-
-    final repo = ref.read(authRepositoryProvider);
-
-    if (!repo.hasSeenOnboarding) {
-      context.go('/onboarding');
-      return;
-    }
-
-    final hasSession = await repo.hasValidSession();
-    if (hasSession) {
-      // Route based on role
-      final role = repo.selectedRole;
-      if (role == 'linked_patient') {
-        context.go('/linked-patient-home');
-      } else {
-        context.go('/home');
-      }
-    } else {
-      context.go('/welcome');
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -96,15 +56,26 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
               )
                   .animate()
                   .fadeIn(delay: 300.ms, duration: 600.ms)
-                  .slideY(begin: 0.2, end: 0, duration: 600.ms, curve: Curves.easeOutCubic),
+                  .slideY(
+                      begin: 0.2,
+                      end: 0,
+                      duration: 600.ms,
+                      curve: Curves.easeOutCubic),
               const SizedBox(height: AppDimensions.sm),
               Text(
                 l10n.appTagline,
-                style: AppTypography.bodyLarge(color: AppColors.textSecondary),
+                style:
+                    AppTypography.bodyLarge(color: AppColors.textSecondary),
               )
                   .animate()
                   .fadeIn(delay: 500.ms, duration: 600.ms)
-                  .slideY(begin: 0.2, end: 0, duration: 600.ms, curve: Curves.easeOutCubic),
+                  .slideY(
+                      begin: 0.2,
+                      end: 0,
+                      duration: 600.ms,
+                      curve: Curves.easeOutCubic),
+              const SizedBox(height: AppDimensions.xl),
+              const CircularProgressIndicator(strokeWidth: 2),
             ],
           ),
         ),
@@ -112,8 +83,3 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     );
   }
 }
-
-
-
-
-

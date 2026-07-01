@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
-import 'data/services/firebase_service.dart';
-import 'features/auth/providers/auth_provider.dart';
+import 'core/providers/shared_preferences_provider.dart';
+import 'core/supabase/supabase_client.dart';
 import 'package:mediflow/data/services/notification_service.dart';
 
 void main() async {
@@ -21,9 +21,8 @@ void main() async {
   );
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
-  // Firebase — app works offline if this fails
-  await initFirebase();
-await NotificationService.init();
+  await initSupabase();
+  await NotificationService.init();
 
   final prefs = await SharedPreferences.getInstance();
   runApp(
@@ -35,5 +34,3 @@ await NotificationService.init();
     ),
   );
 }
-
-

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
@@ -95,6 +96,9 @@ class AppDatabase extends _$AppDatabase {
   @override
   int get schemaVersion => 1;
 }
+
+// ponytail: temporary — removed when Supabase data layer replaces Drift
+final appDatabaseProvider = Provider<AppDatabase>((ref) => AppDatabase());
 
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {

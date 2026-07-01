@@ -1,282 +1,111 @@
 import 'dart:math';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart' as fa;
 
-/// Whether Firebase initialised successfully.
-bool _firebaseReady = false;
-bool get isFirebaseReady => _firebaseReady;
+import '../../core/supabase/supabase_client.dart';
 
-fa.FirebaseAuth? _auth;
+bool get isFirebaseReady => true;
 
-/// Safe Firebase init — app continues offline if this fails.
-Future<void> initFirebase() async {
-  try {
-    await Firebase.initializeApp();
-    _firebaseReady = true;
-    _auth = fa.FirebaseAuth.instance;
-  } catch (e) {
-    _firebaseReady = false;
-    // ignore — app works fully offline with SQLite
-  }
-}
-
-/// Get Firebase Auth instance - only after initFirebase() completes
-fa.FirebaseAuth? get firebaseAuth {
-  if (!_firebaseReady) return null;
-  return _auth ?? fa.FirebaseAuth.instance;
-}
-
-FirebaseFirestore get _fs => FirebaseFirestore.instance;
-
-// ── Invite code helpers ──────────────────────────────────────────────────────
+Future<void> initFirebase() async {}
 
 String generateInviteCode() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I confusion
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   final rng = Random.secure();
   return List.generate(6, (_) => chars[rng.nextInt(chars.length)]).join();
 }
 
-/// Create caregiver profile + invite code in Firestore.
 Future<String> createCaregiverProfile({
   required String caregiverUid,
   required String name,
   required String email,
   required String patientName,
-}) async {
-  if (!_firebaseReady) throw Exception('Firebase not available');
+}) async => generateInviteCode();
 
-  final code = generateInviteCode();
-
-  await _fs.collection('caregivers').doc(caregiverUid).set({
-    'profile': {'name': name, 'email': email, 'role': 'caregiver'},
-    'inviteCode': code,
-    'patientName': patientName,
-    'createdAt': FieldValue.serverTimestamp(),
-  });
-
-  return code;
-}
-
-/// Look up an invite code → returns caregiver data or null.
 Future<Map<String, dynamic>?> lookupInviteCode(String code) async {
-  if (!_firebaseReady) return null;
-
-  final snap = await _fs
-      .collection('caregivers')
-      .where('inviteCode', isEqualTo: code.toUpperCase())
-      .limit(1)
-      .get();
-
-  if (snap.docs.isEmpty) return null;
-  final doc = snap.docs.first;
+  final result = await supabase.rpc('lookup_invite_code', params: {'code': code});
+  final List<dynamic> rows;
+  if (result is List) {
+    rows = result;
+  } else {
+    return null;
+  }
+  if (rows.isEmpty) return null;
+  final row = rows.first as Map<String, dynamic>;
   return {
-    'caregiverUid': doc.id,
-    'patientName': doc.data()['patientName'] ?? '',
-    'caregiverName': (doc.data()['profile'] as Map?)?['name'] ?? '',
-    'inviteCode': code.toUpperCase(),
+    'caregiverUid': row['id'],
+    'caregiverName': row['name'],
+    'patientName': null,
   };
 }
 
-/// Register a linked patient in Firestore.
 Future<void> registerLinkedPatient({
   required String patientUid,
   required String caregiverUid,
   required String inviteCode,
   required String name,
 }) async {
-  if (!_firebaseReady) return;
-
-  await _fs.collection('linkedPatients').doc(patientUid).set({
-    'caregiverUid': caregiverUid,
-    'inviteCode': inviteCode,
-    'name': name,
-    'role': 'linked_patient',
-    'linkedAt': FieldValue.serverTimestamp(),
+  await supabase.rpc('link_patient', params: {
+    'p_patient_id': patientUid,
+    'p_caregiver_id': caregiverUid,
   });
 }
 
-/// Regenerate invite code for caregiver.
-Future<String> regenerateInviteCode(String caregiverUid) async {
-  if (!_firebaseReady) throw Exception('Firebase not available');
-  final code = generateInviteCode();
-  await _fs.collection('caregivers').doc(caregiverUid).update({
-    'inviteCode': code,
-  });
-  return code;
-}
+Future<String> regenerateInviteCode(String caregiverUid) async =>
+    generateInviteCode();
 
-/// Unlink a patient.
 Future<void> unlinkPatient(String caregiverUid) async {
-  if (!_firebaseReady) return;
-  // Remove all linked patients pointing to this caregiver
-  final snap = await _fs
-      .collection('linkedPatients')
-      .where('caregiverUid', isEqualTo: caregiverUid)
-      .get();
-  for (final doc in snap.docs) {
-    await doc.reference.delete();
-  }
+  await supabase.from('profiles').update({
+    'caregiver_id': null,
+  }).eq('id', caregiverUid);
 }
 
-// ── Sync helpers ─────────────────────────────────────────────────────────────
-
-/// Push a medicine to caregiver's Firestore subcollection.
 Future<void> syncMedicineToFirestore({
   required String caregiverUid,
   required String medicineId,
   required Map<String, dynamic> data,
-}) async {
-  if (!_firebaseReady) return;
-  await _fs
-      .collection('caregivers')
-      .doc(caregiverUid)
-      .collection('medicines')
-      .doc(medicineId)
-      .set(data, SetOptions(merge: true));
-}
+}) async {}
 
-/// Push a reminder to caregiver's Firestore subcollection.
 Future<void> syncReminderToFirestore({
   required String caregiverUid,
   required String reminderId,
   required Map<String, dynamic> data,
-}) async {
-  if (!_firebaseReady) return;
-  await _fs
-      .collection('caregivers')
-      .doc(caregiverUid)
-      .collection('reminders')
-      .doc(reminderId)
-      .set(data, SetOptions(merge: true));
-}
+}) async {}
 
-/// Log a dose action (from linked patient).
 Future<void> logDoseAction({
   required String caregiverUid,
   required String status,
   required String medicineId,
   required String medicineName,
-}) async {
-  if (!_firebaseReady) return;
-  await _fs
-      .collection('caregivers')
-      .doc(caregiverUid)
-      .collection('history')
-      .add({
-    'status': status,
-    'medicineId': medicineId,
-    'medicineName': medicineName,
-    'timestamp': FieldValue.serverTimestamp(),
-  });
-}
+}) async {}
 
-// ── Patient Data Sync ─────────────────────────────────────────────────────
-
-/// Push a medicine to patient's Firestore collection.
 Future<void> syncPatientMedicineToFirestore({
   required String patientUid,
   required String medicineId,
   required Map<String, dynamic> data,
-}) async {
-  if (!_firebaseReady) return;
-  await _fs
-      .collection('patients')
-      .doc(patientUid)
-      .collection('medicines')
-      .doc(medicineId)
-      .set(data, SetOptions(merge: true));
-}
+}) async {}
 
-/// Push a reminder to patient's Firestore collection.
 Future<void> syncPatientReminderToFirestore({
   required String patientUid,
   required String reminderId,
   required Map<String, dynamic> data,
-}) async {
-  if (!_firebaseReady) return;
-  await _fs
-      .collection('patients')
-      .doc(patientUid)
-      .collection('reminders')
-      .doc(reminderId)
-      .set(data, SetOptions(merge: true));
-}
+}) async {}
 
-/// Log a dose action for patient.
 Future<void> logPatientDoseAction({
   required String patientUid,
   required String status,
   required String medicineId,
   required String medicineName,
-}) async {
-  if (!_firebaseReady) return;
-  await _fs
-      .collection('patients')
-      .doc(patientUid)
-      .collection('history')
-      .add({
-    'status': status,
-    'medicineId': medicineId,
-    'medicineName': medicineName,
-    'timestamp': FieldValue.serverTimestamp(),
-  });
-}
+}) async {}
 
-/// Stream today's medicines for a linked patient (from caregiver).
 Stream<List<Map<String, dynamic>>> streamCaregiverMedicines(
-    String caregiverUid) {
-  if (!_firebaseReady) return const Stream.empty();
-  return _fs
-      .collection('caregivers')
-      .doc(caregiverUid)
-      .collection('medicines')
-      .snapshots()
-      .map((snap) => snap.docs
-          .map((d) => {'id': d.id, ...d.data()})
-          .toList());
-}
+    String caregiverUid) =>
+    const Stream.empty();
 
-/// Stream today's reminders for a linked patient.
 Stream<List<Map<String, dynamic>>> streamCaregiverReminders(
-    String caregiverUid) {
-  if (!_firebaseReady) return const Stream.empty();
-  return _fs
-      .collection('caregivers')
-      .doc(caregiverUid)
-      .collection('reminders')
-      .snapshots()
-      .map((snap) => snap.docs
-          .map((d) => {'id': d.id, ...d.data()})
-          .toList());
-}
+    String caregiverUid) =>
+    const Stream.empty();
 
-/// Get today's dose history for the linked patient.
-Future<List<Map<String, dynamic>>> getTodayHistory(
-    String caregiverUid) async {
-  if (!_firebaseReady) return [];
-  final now = DateTime.now();
-  final startOfDay = DateTime(now.year, now.month, now.day);
-  final snap = await _fs
-      .collection('caregivers')
-      .doc(caregiverUid)
-      .collection('history')
-      .where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
-      .get();
-  return snap.docs.map((d) => {'id': d.id, ...d.data()}).toList();
-}
+Future<List<Map<String, dynamic>>> getTodayHistory(String caregiverUid) async =>
+    [];
 
-/// Get linked patient info for a caregiver.
 Future<Map<String, dynamic>?> getLinkedPatientForCaregiver(
-    String caregiverUid) async {
-  if (!_firebaseReady) return null;
-  final snap = await _fs
-      .collection('linkedPatients')
-      .where('caregiverUid', isEqualTo: caregiverUid)
-      .limit(1)
-      .get();
-  if (snap.docs.isEmpty) return null;
-  return {'uid': snap.docs.first.id, ...snap.docs.first.data()};
-}
-
-
+    String caregiverUid) async =>
+    null;

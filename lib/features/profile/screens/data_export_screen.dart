@@ -11,7 +11,9 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/services/pdf_export_service.dart';
+import '../../../data/database/app_database.dart' show appDatabaseProvider;
 import '../../auth/providers/auth_provider.dart';
+import '../../auth/providers/current_user_provider.dart';
 
 class DataExportScreen extends ConsumerStatefulWidget {
   const DataExportScreen({super.key});
@@ -92,7 +94,7 @@ class _DataExportScreenState extends ConsumerState<DataExportScreen> {
       final userId = repo.currentUserId;
       if (userId == null) return;
 
-      final user = await repo.getCurrentUser();
+      final user = ref.read(currentUserProvider).value;
       final medicines = await db.medicinesDao.getAllMedicines(userId);
       final history = await db.historyDao.getHistoryForUser(userId);
       final health = await db.healthDao.getMeasurementsForUser(userId);

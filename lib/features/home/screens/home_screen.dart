@@ -65,17 +65,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ));
 
     // Sync to Firestore
-    final role = ref.read(authRepositoryProvider).selectedRole;
+    final repo = ref.read(authRepositoryProvider);
+    final role = repo.selectedRole;
+    final uid = repo.firebaseUid ?? userId.toString();
     if (role == 'caregiver') {
       await logDoseAction(
-        caregiverUid: userId,
+        caregiverUid: uid,
         status: 'taken',
         medicineId: m.id.toString(),
         medicineName: m.verifiedName,
       );
     } else {
       await logPatientDoseAction(
-        patientUid: userId,
+        patientUid: uid,
         status: 'taken',
         medicineId: m.id.toString(),
         medicineName: m.verifiedName,
@@ -110,23 +112,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ));
 
     // Sync to Firestore
-    final role = ref.read(authRepositoryProvider).selectedRole;
+    final repo = ref.read(authRepositoryProvider);
+    final role = repo.selectedRole;
+    final uid = repo.firebaseUid ?? userId.toString();
     if (role == 'caregiver') {
       await logDoseAction(
-        caregiverUid: userId,
+        caregiverUid: uid,
         status: 'skipped',
         medicineId: m.id.toString(),
         medicineName: m.verifiedName,
       );
     } else {
       await logPatientDoseAction(
-        patientUid: userId,
+        patientUid: uid,
         status: 'skipped',
         medicineId: m.id.toString(),
         medicineName: m.verifiedName,
       );
     }
-    ));
   }
 
   DateTime _todayAt(String time) {
@@ -336,7 +339,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildHeader(User? user) {
+  Widget _buildHeader(UserData? user) {
     final name = user?.name.split(' ').first ?? 'there';
     final initials = user?.name.isNotEmpty == true
         ? user!.name.split(' ').map((w) => w.isNotEmpty ? w[0] : '').take(2).join().toUpperCase()

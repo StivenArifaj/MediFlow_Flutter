@@ -12,10 +12,9 @@ class AppBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Stack(
+      fit: StackFit.expand,
       children: [
-        Positioned.fill(
-          child: isDark ? const _DarkBg() : const _LightBg(),
-        ),
+        isDark ? const _DarkBg() : const _LightBg(),
         child,
       ],
     );

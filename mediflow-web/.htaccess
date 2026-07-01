@@ -1,0 +1,11 @@
+# MediFlow Web Dashboard - Apache Configuration
+# Enable rewrite engine
+RewriteEngine On
+
+# If the request is for an existing file or directory, serve it directly
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Route all other requests through index.php
+RewriteRule ^(.*)$ index.php?/$1 [L,QSA]
