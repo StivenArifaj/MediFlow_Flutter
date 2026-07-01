@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../../../core/widgets/app_background.dart';
-import 'package:mediflow/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:mediflow/l10n/app_localizations.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
-import '../../../core/constants/app_dimensions.dart';
-import '../../../core/widgets/neon_button.dart';
+import '../../../core/widgets/app_background.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -20,99 +18,94 @@ class WelcomeScreen extends StatelessWidget {
       backgroundColor: Colors.transparent,
       body: AppBackground(
         child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(AppDimensions.lg),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: AppDimensions.xl),
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: const BoxDecoration(
-                    gradient: AppColors.primaryGradient,
-                    shape: BoxShape.circle,
-                    boxShadow: [AppColors.cyanGlowStrong],
-                  ),
-                  child: const Icon(
-                    Icons.medication_rounded,
-                    size: 48,
-                    color: Colors.white,
-                  ),
-                )
-                    .animate()
-                    .scale(
-                      begin: const Offset(0.9, 0.9),
-                      end: const Offset(1, 1),
-                      duration: 600.ms,
-                      curve: Curves.easeOutCubic,
-                    )
-                    .fadeIn(duration: 400.ms),
-                const SizedBox(height: AppDimensions.lg),
-                Text(
-                  l10n.appName,
-                  style: AppTypography.displayLarge(color: AppColors.textPrimary)
-                      .copyWith(fontSize: 42),
-                )
-                    .animate()
-                    .fadeIn(delay: 200.ms, duration: 500.ms)
-                    .slideY(begin: 0.1, end: 0, duration: 500.ms, curve: Curves.easeOutCubic),
-                const SizedBox(height: AppDimensions.sm),
-                Text(
-                  l10n.appTagline,
-                  textAlign: TextAlign.center,
-                  style: AppTypography.bodyLarge(color: AppColors.textSecondary),
-                )
-                    .animate()
-                    .fadeIn(delay: 300.ms, duration: 500.ms)
-                    .slideY(begin: 0.1, end: 0, duration: 500.ms, curve: Curves.easeOutCubic),
-                const SizedBox(height: AppDimensions.xl),
+                const SizedBox(height: 48),
+
+                // ── Logo + branding ──────────────────────────
+                Center(
+                  child: Column(children: [
+                    Container(
+                      width: 80, height: 80,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(color: AppColors.primary.withValues(alpha: 0.25),
+                              blurRadius: 24, offset: const Offset(0, 8)),
+                        ],
+                      ),
+                      child: const Icon(Icons.medication_rounded,
+                          size: 44, color: AppColors.textOnPrimary),
+                    ).animate().scale(
+                        begin: const Offset(0.9, 0.9),
+                        duration: 600.ms,
+                        curve: Curves.easeOutCubic).fadeIn(duration: 400.ms),
+
+                    const SizedBox(height: 20),
+
+                    Text(l10n.appName, style: AppTypography.display)
+                        .animate()
+                        .fadeIn(delay: 150.ms, duration: 400.ms)
+                        .slideY(begin: 0.1, duration: 400.ms, curve: Curves.easeOutCubic),
+
+                    const SizedBox(height: 8),
+
+                    Text(l10n.appTagline,
+                      textAlign: TextAlign.center,
+                      style: AppTypography.bodyLargeStyle.copyWith(
+                          color: AppColors.textSecondary),
+                    ).animate().fadeIn(delay: 200.ms, duration: 400.ms),
+                  ]),
+                ),
+
+                const SizedBox(height: 40),
+
+                // ── Feature pills ────────────────────────────
                 Wrap(
-                  spacing: AppDimensions.sm,
-                  runSpacing: AppDimensions.sm,
+                  spacing: 8, runSpacing: 8,
                   alignment: WrapAlignment.center,
                   children: [
-                    _FeatureChip(label: l10n.welcome_featureOcr),
-                    _FeatureChip(label: l10n.welcome_featureReminders),
-                    _FeatureChip(label: l10n.welcome_featureMetrics),
-                    _FeatureChip(label: l10n.welcome_featurePrivate),
+                    _FeaturePill(label: l10n.welcome_featureOcr,
+                        icon: Icons.camera_alt_outlined),
+                    _FeaturePill(label: l10n.welcome_featureReminders,
+                        icon: Icons.alarm_rounded),
+                    _FeaturePill(label: l10n.welcome_featureMetrics,
+                        icon: Icons.favorite_border_rounded),
+                    _FeaturePill(label: l10n.welcome_featurePrivate,
+                        icon: Icons.lock_outline_rounded),
                   ],
-                )
-                    .animate()
-                    .fadeIn(delay: 400.ms, duration: 500.ms)
-                    .slideY(begin: 0.1, end: 0, duration: 500.ms, curve: Curves.easeOutCubic),
-                const SizedBox(height: AppDimensions.xxl),
-                
-                NeonButton(
-                  label: l10n.auth_createAccount,
+                ).animate().fadeIn(delay: 300.ms, duration: 400.ms),
+
+                const Spacer(),
+
+                // ── CTA buttons ──────────────────────────────
+                ElevatedButton(
                   onPressed: () => context.go('/role-selection'),
-                )
-                    .animate()
-                    .fadeIn(delay: 500.ms, duration: 500.ms)
-                    .slideY(begin: 0.1, end: 0, duration: 500.ms, curve: Curves.easeOutCubic),
-                
-                const SizedBox(height: AppDimensions.md),
+                  child: Text(l10n.auth_createAccount),
+                ).animate().fadeIn(delay: 400.ms, duration: 400.ms),
+
+                const SizedBox(height: 12),
+
                 TextButton(
                   onPressed: () => context.go('/login'),
-                  child: Text(
-                    l10n.auth_alreadyHaveAccount,
-                    style: AppTypography.labelLarge(color: AppColors.neonCyan),
-                  ),
-                )
-                    .animate()
-                    .fadeIn(delay: 600.ms, duration: 500.ms)
-                    .slideY(begin: 0.1, end: 0, duration: 500.ms, curve: Curves.easeOutCubic),
-                const SizedBox(height: AppDimensions.xxl),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppDimensions.lg),
-                  child: Text(
-                    l10n.disclaimer_text,
-                    textAlign: TextAlign.center,
-                    style: AppTypography.bodySmall(color: AppColors.textMuted)
-                        .copyWith(fontSize: 10),
-                  ),
-                )
-                    .animate()
-                    .fadeIn(delay: 700.ms, duration: 500.ms),
+                  child: Text(l10n.auth_alreadyHaveAccount,
+                      style: AppTypography.label.copyWith(
+                          color: AppColors.primary)),
+                ).animate().fadeIn(delay: 450.ms, duration: 400.ms),
+
+                const SizedBox(height: 16),
+
+                // ── Disclaimer ───────────────────────────────
+                Text(l10n.disclaimer_text,
+                  textAlign: TextAlign.center,
+                  style: AppTypography.labelSmall.copyWith(fontSize: 12),
+                ).animate().fadeIn(delay: 500.ms, duration: 400.ms),
+
+                const SizedBox(height: 24),
               ],
             ),
           ),
@@ -122,33 +115,26 @@ class WelcomeScreen extends StatelessWidget {
   }
 }
 
-class _FeatureChip extends StatelessWidget {
-  const _FeatureChip({required this.label});
-
+class _FeaturePill extends StatelessWidget {
   final String label;
+  final IconData icon;
+  const _FeaturePill({required this.label, required this.icon});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.md,
-        vertical: AppDimensions.sm,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.bgInput,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
-        border: Border.all(color: const Color(0x1A00E5FF), width: 1),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(100),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
       ),
-      child: Text(
-        label,
-        style: AppTypography.bodySmall(color: AppColors.textPrimary),
-      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, size: 14, color: AppColors.primary),
+        const SizedBox(width: 6),
+        Text(label, style: AppTypography.labelSmall.copyWith(
+            color: AppColors.textPrimary, fontSize: 13)),
+      ]),
     );
   }
 }
-
-
-
-
-
-

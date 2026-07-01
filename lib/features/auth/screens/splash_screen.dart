@@ -67,7 +67,7 @@ class SplashScreen extends StatelessWidget {
                       duration: 600.ms,
                       curve: Curves.easeOutCubic),
               const SizedBox(height: AppDimensions.xl),
-              const CircularProgressIndicator(strokeWidth: 2),
+              const CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
             ],
           ),
       ),

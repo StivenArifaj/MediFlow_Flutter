@@ -150,11 +150,12 @@ class NotificationService {
   }) async {
     if (!_initialised) await init();
     await cancelRemindersForMedicine(medicineId);
+    final baseId = medicineId.abs() % 1000000;
     for (int i = 0; i < times.length; i++) {
       if (frequency == 'specific' && days.isNotEmpty) {
         for (int d = 0; d < days.length; d++) {
           await scheduleWeeklyReminder(
-            notificationId: medicineId * 100 + i + (d * 1000),
+            notificationId: baseId * 100 + i + (d * 1000),
             medicineName: medicineName,
             time: times[i],
             dayOfWeek: days[d],
@@ -162,7 +163,7 @@ class NotificationService {
         }
       } else {
         await scheduleReminder(
-          notificationId: medicineId * 100 + i,
+          notificationId: baseId * 100 + i,
           medicineName: medicineName,
           time: times[i],
         );
@@ -193,10 +194,11 @@ class NotificationService {
 
   // Cancel all reminders for a medicine
   Future<void> cancelRemindersForMedicine(int medicineId) async {
+    final baseId = medicineId.abs() % 1000000;
     for (int i = 0; i < 10; i++) {
-      await _plugin.cancel(id: medicineId * 100 + i);
+      await _plugin.cancel(id: baseId * 100 + i);
       for (int d = 0; d < 7; d++) {
-        await _plugin.cancel(id: medicineId * 100 + i + (d * 1000));
+        await _plugin.cancel(id: baseId * 100 + i + (d * 1000));
       }
     }
   }

@@ -92,11 +92,9 @@ class AuthRepository {
     return _client.auth.currentSession != null;
   }
 
-  // ponytail: Drift DAOs need int; hash UUID so callers compile until Supabase data layer replaces Drift.
   int? get currentUserId => _client.auth.currentUser?.id.hashCode;
   String? get currentUserUid => _client.auth.currentUser?.id;
 
-  // ponytail: shims for pre-migration callers — role/onboarding state is in-memory only until screens are rewritten
   String? _selectedRole;
   bool _hasSeenOnboarding = false;
 

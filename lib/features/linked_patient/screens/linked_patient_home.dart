@@ -2,155 +2,174 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-import '../../../core/constants/app_typography.dart';
-import '../../../core/constants/app_dimensions.dart';
+import '../../../core/constants/app_colors.dart';
 import '../../../core/supabase/supabase_client.dart';
 import '../../auth/providers/current_user_provider.dart';
 import '../../home/today_schedule_provider.dart';
-
-// ── Linked-patient warm color tokens ─────────────────────────────────────────
-class _LP {
-  _LP._();
-  static const bg         = Color(0xFF0A0E1A);
-  static const cardBg     = Color(0xFF111827);
-  static const cardBorder = Color(0x1AFFB800);
-  static const amber      = Color(0xFFFFB800);
-  static const amberGlow  = Color(0x0DFFB800);
-  static const textWhite  = Color(0xFFFFFFFF);
-  static const textMuted  = Color(0xFF8A8FA8);
-}
 
 class LinkedPatientHome extends ConsumerWidget {
   const LinkedPatientHome({super.key});
 
   String _greeting() {
     final h = DateTime.now().hour;
-    if (h >= 5 && h < 12) return 'Good Morning 🌅';
-    if (h >= 12 && h < 18) return 'Good Afternoon 🌤️';
-    if (h >= 18 && h < 23) return 'Good Evening 🌙';
-    return 'Good Night 🌙';
+    if (h >= 5 && h < 12) return 'Good Morning';
+    if (h >= 12 && h < 18) return 'Good Afternoon';
+    if (h >= 18 && h < 23) return 'Good Evening';
+    return 'Good Night';
+  }
+
+  String _todayDate() {
+    final now = DateTime.now();
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return '${days[now.weekday - 1]}, ${months[now.month - 1]} ${now.day}';
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scheduleAsync = ref.watch(todayScheduleProvider);
 
-    // Resolve caregiver name from profile data (non-blocking)
-    final caregiverName = _CaregiverNameResolver(ref: ref);
-
     return Scaffold(
-      backgroundColor: _LP.bg,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment(0, -0.6),
-            radius: 1.8,
-            colors: [_LP.amberGlow, _LP.bg],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // ── Header ──────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                    AppDimensions.lg, AppDimensions.lg, AppDimensions.lg, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(_greeting(),
-                        style: AppTypography.bodyLarge(color: _LP.textMuted)
-                            .copyWith(fontSize: 22)),
-                    const SizedBox(height: 4),
-                    Text("Today's Medicines",
-                        style: AppTypography.headlineLarge(color: _LP.textWhite)
-                            .copyWith(fontSize: 28, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
-                    Text('Tap each medicine when you take it',
-                        style: AppTypography.bodyMedium(color: _LP.textMuted)
-                            .copyWith(fontSize: 16)),
-                  ],
-                ),
-              ).animate().fadeIn(duration: 300.ms),
-
-              const SizedBox(height: AppDimensions.lg),
-
-              // ── Content ─────────────────────────────────────
-              Expanded(
-                child: scheduleAsync.when(
-                  loading: () => const Center(
-                    child: CircularProgressIndicator(color: _LP.amber, strokeWidth: 2),
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // HEADER
+            Container(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+              color: AppColors.surface,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _CaregiverBanner(ref: ref),
+                  const SizedBox(height: 12),
+                  Text(
+                    _greeting(),
+                    style: const TextStyle(
+                        fontSize: 14, color: AppColors.textSecondary),
                   ),
-                  error: (_, __) => const Center(
-                    child: Text('Failed to load schedule',
-                        style: TextStyle(color: _LP.textMuted)),
+                  const SizedBox(height: 2),
+                  const Text(
+                    "Today's Medicines",
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                  data: (slots) {
-                    final pending = slots.where((s) => !s.isDone).toList();
-                    final allDone = slots.isNotEmpty && pending.isEmpty;
+                  const SizedBox(height: 2),
+                  Text(
+                    _todayDate(),
+                    style: const TextStyle(
+                        fontSize: 13, color: AppColors.textTertiary),
+                  ),
+                ],
+              ),
+            ).animate().fadeIn(duration: 300.ms),
 
-                    if (slots.isEmpty) return _EmptyState();
-                    if (allDone) return _AllDoneState();
-                    return ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: AppDimensions.lg),
-                      itemCount: pending.length,
-                      itemBuilder: (ctx, i) {
-                        final slot = pending[i];
-                        return _MedicineCard(
-                          slot: slot,
-                          onTakeIt: () => ref
-                              .read(doseLoggerProvider.notifier)
-                              .logDose(
-                                reminderId: slot.reminderId,
-                                medicineId: slot.medicineId,
-                                scheduledAt: slot.scheduledAt,
-                                action: 'taken',
-                                existingEntryId: slot.historyEntryId,
-                              ),
-                          onSkip: () => ref
-                              .read(doseLoggerProvider.notifier)
-                              .logDose(
-                                reminderId: slot.reminderId,
-                                medicineId: slot.medicineId,
-                                scheduledAt: slot.scheduledAt,
-                                action: 'skipped',
-                                existingEntryId: slot.historyEntryId,
-                              ),
-                        ).animate().fadeIn(
-                            delay: Duration(milliseconds: i * 60), duration: 300.ms);
-                      },
-                    );
-                  },
+            const Divider(height: 1, color: AppColors.border),
+
+            // BODY
+            Expanded(
+              child: scheduleAsync.when(
+                loading: () => const Center(
+                  child: CircularProgressIndicator(color: AppColors.linked),
                 ),
-              ),
+                error: (e, _) => Center(child: Text('Error: $e')),
+                data: (slots) {
+                  if (slots.isEmpty) return const _EmptyState();
 
-              // ── Bottom label ────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.all(AppDimensions.md),
-                child: caregiverName,
+                  final pending =
+                      slots.where((s) => !s.isDone).toList();
+                  final allDone = pending.isEmpty;
+
+                  if (allDone) return const _AllDoneState();
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                    itemCount: slots.length,
+                    itemBuilder: (_, i) {
+                      final slot = slots[i];
+                      if (slot.isDone) {
+                        return _TakenCard(slot: slot)
+                            .animate()
+                            .fadeIn(
+                                delay: Duration(milliseconds: i * 60),
+                                duration: 300.ms);
+                      }
+                      return _PendingCard(
+                        slot: slot,
+                        onTake: () => ref
+                            .read(doseLoggerProvider.notifier)
+                            .logDose(
+                              reminderId: slot.reminderId,
+                              medicineId: slot.medicineId,
+                              scheduledAt: slot.scheduledAt,
+                              action: 'taken',
+                              existingEntryId: slot.historyEntryId,
+                            ),
+                        onSkip: () => ref
+                            .read(doseLoggerProvider.notifier)
+                            .logDose(
+                              reminderId: slot.reminderId,
+                              medicineId: slot.medicineId,
+                              scheduledAt: slot.scheduledAt,
+                              action: 'skipped',
+                              existingEntryId: slot.historyEntryId,
+                            ),
+                      ).animate().fadeIn(
+                          delay: Duration(milliseconds: i * 60),
+                          duration: 300.ms);
+                    },
+                  );
+                },
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-// Resolves caregiver name from Supabase without blocking the screen.
-class _CaregiverNameResolver extends ConsumerWidget {
-  const _CaregiverNameResolver({required this.ref});
+class _CaregiverBanner extends ConsumerWidget {
+  const _CaregiverBanner({required this.ref});
   final WidgetRef ref;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return FutureBuilder<String>(
       future: _resolveName(ref),
-      builder: (ctx, snap) => Text(
-        snap.hasData ? 'Managed by ${snap.data}' : '',
-        textAlign: TextAlign.center,
-        style: AppTypography.bodySmall(color: _LP.textMuted).copyWith(fontSize: 13),
-      ),
+      builder: (ctx, snap) {
+        if (!snap.hasData || snap.data!.isEmpty) return const SizedBox.shrink();
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppColors.linkedLight,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.linked.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.favorite_rounded,
+                  size: 14, color: AppColors.linked),
+              const SizedBox(width: 6),
+              Text(
+                'Managed by ${snap.data}',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.linked,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -166,169 +185,243 @@ class _CaregiverNameResolver extends ConsumerWidget {
   }
 }
 
-// ── Medicine Card ────────────────────────────────────────────────────────────
-
-class _MedicineCard extends StatelessWidget {
+class _PendingCard extends StatelessWidget {
   final TodaySlot slot;
-  final VoidCallback onTakeIt;
+  final VoidCallback onTake;
   final VoidCallback onSkip;
 
-  const _MedicineCard({required this.slot, required this.onTakeIt, required this.onSkip});
+  const _PendingCard(
+      {required this.slot, required this.onTake, required this.onSkip});
 
   @override
   Widget build(BuildContext context) {
-    final time = '${slot.scheduledAt.hour.toString().padLeft(2, '0')}:${slot.scheduledAt.minute.toString().padLeft(2, '0')}';
-    final subtitle = [slot.form, slot.strength].where((s) => s != null && s.isNotEmpty).join(' · ');
+    final time = TimeOfDay(
+      hour: slot.scheduledAt.hour,
+      minute: slot.scheduledAt.minute,
+    ).format(context);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: AppDimensions.md),
-      padding: const EdgeInsets.all(AppDimensions.md),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: _LP.cardBg,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _LP.cardBorder, width: 1),
-        boxShadow: const [
-          BoxShadow(color: Color(0x0DFFB800), blurRadius: 16, offset: Offset(0, 4)),
-        ],
+        border: Border.all(color: AppColors.border),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('🕗 $time',
-              style: AppTypography.bodyMedium(color: _LP.textMuted).copyWith(fontSize: 16)),
-          const SizedBox(height: 6),
-          Text(slot.medicineName,
-              style: AppTypography.headlineMedium(color: _LP.textWhite)
-                  .copyWith(fontSize: 22, fontWeight: FontWeight.bold)),
-          if (subtitle.isNotEmpty)
-            Text(subtitle,
-                style: AppTypography.bodyMedium(color: _LP.textMuted).copyWith(fontSize: 16)),
-
-          const SizedBox(height: AppDimensions.md),
-
-          SizedBox(
-            width: double.infinity, height: 68,
-            child: _TookItButton(onTap: onTakeIt),
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity, height: 68,
-            child: _SkipButton(onTap: onSkip),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TookItButton extends StatelessWidget {
-  final VoidCallback onTap;
-  const _TookItButton({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(colors: [Color(0xFF00C896), Color(0xFF00A878)]),
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: const [BoxShadow(color: Color(0x3300C896), blurRadius: 16, offset: Offset(0, 4))],
-          ),
-          child: Center(
-            child: Text('✅  TOOK IT',
-                style: AppTypography.titleMedium(color: _LP.textWhite)
-                    .copyWith(fontSize: 20, fontWeight: FontWeight.bold)),
-          ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppColors.linkedLight,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Center(
+                      child: Text('💊', style: TextStyle(fontSize: 22))),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        slot.medicineName,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      if (slot.strength != null)
+                        Text(
+                          slot.strength!,
+                          style: const TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textSecondary),
+                        ),
+                    ],
+                  ),
+                ),
+                Text(
+                  time,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: onSkip,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.textSecondary,
+                      side: const BorderSide(color: AppColors.border),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: const Text('Skip',
+                        style: TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.w500)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton.icon(
+                    onPressed: onTake,
+                    icon: const Icon(Icons.check_rounded, size: 20),
+                    label: const Text('Took It'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.success,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      textStyle: const TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _SkipButton extends StatelessWidget {
-  final VoidCallback onTap;
-  const _SkipButton({required this.onTap});
+class _TakenCard extends StatelessWidget {
+  final TodaySlot slot;
+  const _TakenCard({required this.slot});
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: _LP.amber, width: 1.5),
-          ),
-          child: Center(
-            child: Text('⏭️  SKIP',
-                style: AppTypography.titleMedium(color: _LP.amber)
-                    .copyWith(fontSize: 20, fontWeight: FontWeight.bold)),
-          ),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border(
+          left: const BorderSide(color: AppColors.success, width: 4),
+          top: BorderSide(color: AppColors.border),
+          right: BorderSide(color: AppColors.border),
+          bottom: BorderSide(color: AppColors.border),
+        ),
+      ),
+      child: Padding(
+        padding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            const Text('💊', style: TextStyle(fontSize: 18)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                slot.medicineName,
+                style: const TextStyle(
+                    fontSize: 15, color: AppColors.textSecondary),
+              ),
+            ),
+            const Row(
+              children: [
+                Icon(Icons.check_circle_rounded,
+                    color: AppColors.success, size: 18),
+                SizedBox(width: 4),
+                Text('Taken',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.success,
+                    )),
+              ],
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-// ── Empty State ──────────────────────────────────────────────────────────────
+class _AllDoneState extends StatelessWidget {
+  const _AllDoneState();
 
-class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text('💊', style: TextStyle(fontSize: 64)),
-          const SizedBox(height: AppDimensions.md),
-          Text('Nothing scheduled today',
-              style: AppTypography.headlineMedium(color: _LP.textWhite).copyWith(fontSize: 22)),
-          const SizedBox(height: AppDimensions.sm),
-          Text('Your caregiver will set up your medicines',
-              style: AppTypography.bodyMedium(color: _LP.textMuted).copyWith(fontSize: 16)),
+        children: const [
+          Icon(Icons.check_circle_rounded, size: 72, color: AppColors.success),
+          SizedBox(height: 16),
+          Text(
+            'All done for today!',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Great job keeping up with\nyour medicines',
+            style: TextStyle(
+              fontSize: 15,
+              color: AppColors.textSecondary,
+              height: 1.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
-    ).animate().fadeIn(duration: 400.ms);
+    ).animate().fadeIn(duration: 500.ms).scale(begin: const Offset(0.9, 0.9));
   }
 }
 
-// ── All Done State ───────────────────────────────────────────────────────────
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
 
-class _AllDoneState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Container(
-        margin: const EdgeInsets.all(AppDimensions.lg),
-        padding: const EdgeInsets.all(AppDimensions.xl),
-        decoration: BoxDecoration(
-          color: const Color(0xFF0D2820),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0x3300C896)),
-          boxShadow: const [BoxShadow(color: Color(0x2200C896), blurRadius: 40)],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('✅', style: TextStyle(fontSize: 64)),
-            const SizedBox(height: AppDimensions.md),
-            Text('All done for today!',
-                style: AppTypography.headlineLarge(color: _LP.textWhite)
-                    .copyWith(fontSize: 26, fontWeight: FontWeight.bold)),
-            const SizedBox(height: AppDimensions.sm),
-            Text('Great job keeping up with your health 🎉',
-                textAlign: TextAlign.center,
-                style: AppTypography.bodyLarge(color: _LP.textMuted).copyWith(fontSize: 18)),
-          ],
-        ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: const [
+          Icon(Icons.medication_outlined,
+              size: 64, color: AppColors.textTertiary),
+          SizedBox(height: 16),
+          Text(
+            'No medicines yet',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Your caregiver will add your\nmedicines and reminders.',
+            style: TextStyle(
+              fontSize: 15,
+              color: AppColors.textSecondary,
+              height: 1.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
-    ).animate().fadeIn(duration: 500.ms).scale(begin: const Offset(0.9, 0.9));
+    ).animate().fadeIn(duration: 400.ms);
   }
 }

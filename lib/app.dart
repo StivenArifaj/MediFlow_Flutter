@@ -12,7 +12,7 @@ class MediFlowApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(themeModeProvider);
+    ref.watch(themeModeProvider); // kept for future dark mode toggle
     final locale = ref.watch(localeProvider);
 
     return MaterialApp.router(
@@ -20,8 +20,7 @@ class MediFlowApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
 
       theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: themeMode,
+      themeMode: ThemeMode.light,
 
       localizationsDelegates: const [
         AppLocalizations.delegate,

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../core/widgets/app_background.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -9,12 +8,9 @@ import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/widgets/adherence_ring.dart';
 import '../../auth/providers/current_user_provider.dart';
 import '../profile_providers.dart';
 import '../../home/today_schedule_provider.dart';
-
-const _indigo = Color(0xFF8B5CF6);
 
 class CaregiverDashboardScreen extends ConsumerWidget {
   const CaregiverDashboardScreen({super.key});
@@ -29,157 +25,118 @@ class CaregiverDashboardScreen extends ConsumerWidget {
     final isLoading = userAsync.isLoading || patientAsync.isLoading || dataAsync.isLoading;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: AppBackground(
-        child: isLoading
-            ? const Center(child: CircularProgressIndicator(color: _indigo, strokeWidth: 2))
-            : CustomScrollView(
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: SafeArea(
-                      bottom: false,
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(8, 8, 20, 0),
-                        child: Row(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white, size: 20),
-                              onPressed: () => context.pop(),
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('My Patient Dashboard', style: AppTypography.headlineMedium()),
-                                  Text(
-                                    patientAsync.value?['name'] as String? ?? 'No patient linked',
-                                    style: AppTypography.bodySmall(color: _indigo),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              width: 40, height: 40,
-                              decoration: BoxDecoration(
-                                color: _indigo.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(Icons.people_rounded, color: _indigo, size: 20),
-                            ),
-                          ],
-                        ),
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('My Patient Dashboard'),
+            if (!isLoading)
+              Text(
+                patientAsync.value?['name'] as String? ?? 'No patient linked',
+                style: const TextStyle(fontSize: 13, color: AppColors.caregiver, fontWeight: FontWeight.w400),
+              ),
+          ],
+        ),
+        backgroundColor: AppColors.surface,
+        foregroundColor: AppColors.textPrimary,
+        elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Divider(height: 1, color: AppColors.border),
+        ),
+      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(AppDimensions.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Connection card
+                  _ConnectionCard(
+                    inviteCode: userAsync.value?.inviteCode,
+                    patientName: patientAsync.value?['name'] as String?,
+                  ),
+                  const SizedBox(height: AppDimensions.md),
+
+                  // Adherence
+                  _AdherenceCard(data: dataAsync.value ?? {}),
+                  const SizedBox(height: AppDimensions.md),
+
+                  // Today's schedule
+                  _TodayScheduleCard(schedule: scheduleAsync.value ?? []),
+                  const SizedBox(height: AppDimensions.md),
+
+                  // Medicine list
+                  _MedicineListCard(
+                    medicines: (dataAsync.value?['medicines'] as List?)?.cast<Map<String, dynamic>>() ?? [],
+                  ),
+                  const SizedBox(height: AppDimensions.md),
+
+                  // Calendar
+                  _CalendarCard(
+                    history: (dataAsync.value?['recentHistory'] as List?)?.cast<Map<String, dynamic>>() ?? [],
+                  ),
+                  const SizedBox(height: AppDimensions.md),
+
+                  // Generate report
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.description_rounded, size: 20),
+                      label: const Text('Generate Report', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                      onPressed: () => _showReportSheet(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.caregiver,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        elevation: 0,
                       ),
                     ),
-                  ),
+                  ).animate().fadeIn(delay: 400.ms, duration: 400.ms),
 
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: AppDimensions.md),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: AppDimensions.lg),
-
-                          // Connection card
-                          _ConnectionCard(
-                            inviteCode: userAsync.value?.inviteCode,
-                            patientName: patientAsync.value?['name'] as String?,
-                          ),
-                          const SizedBox(height: AppDimensions.md),
-
-                          // Adherence
-                          _AdherenceCard(
-                            data: dataAsync.value ?? {},
-                          ),
-                          const SizedBox(height: AppDimensions.md),
-
-                          // Today's schedule
-                          _TodayScheduleCard(schedule: scheduleAsync.value ?? []),
-                          const SizedBox(height: AppDimensions.md),
-
-                          // Medicine list
-                          _MedicineListCard(
-                            medicines: (dataAsync.value?['medicines'] as List?)
-                                ?.cast<Map<String, dynamic>>() ?? [],
-                          ),
-                          const SizedBox(height: AppDimensions.md),
-
-                          // Calendar
-                          _CalendarCard(
-                            history: (dataAsync.value?['recentHistory'] as List?)
-                                ?.cast<Map<String, dynamic>>() ?? [],
-                          ),
-                          const SizedBox(height: AppDimensions.md),
-
-                          // Generate report
-                          GestureDetector(
-                            onTap: () => _showReportSheet(context),
-                            child: Container(
-                              width: double.infinity,
-                              height: 56,
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(colors: [_indigo, Color(0xFF6366F1)]),
-                                borderRadius: BorderRadius.circular(100),
-                                boxShadow: [
-                                  BoxShadow(color: _indigo.withValues(alpha: 0.4), blurRadius: 20, offset: const Offset(0, 6)),
-                                ],
-                              ),
-                              child: const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.description_rounded, color: Colors.white, size: 20),
-                                  SizedBox(width: 8),
-                                  Text('Generate Report',
-                                      style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
-                                ],
-                              ),
-                            ),
-                          ).animate().fadeIn(delay: 400.ms, duration: 400.ms),
-
-                          const SizedBox(height: 100),
-                        ],
-                      ),
-                    ),
-                  ),
+                  const SizedBox(height: 32),
                 ],
               ),
-      ),
+            ),
     );
   }
 
   void _showReportSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF0D1826),
+      backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 36, height: 4,
-              decoration: BoxDecoration(color: const Color(0xFF2A3A50), borderRadius: BorderRadius.circular(2)),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
             ),
             const SizedBox(height: 20),
             Text('Generate Report', style: AppTypography.titleLarge(color: AppColors.textPrimary)),
             const SizedBox(height: 8),
             Text('Export patient data as PDF or JSON', style: AppTypography.bodySmall(color: AppColors.textSecondary)),
             const SizedBox(height: 24),
-            GestureDetector(
-              onTap: () { Navigator.pop(ctx); context.push('/data-export'); },
-              child: Container(
-                width: double.infinity, height: 56,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [_indigo, Color(0xFF6366F1)]),
-                  borderRadius: BorderRadius.circular(100),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: () { Navigator.pop(ctx); context.push('/data-export'); },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.caregiver,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
-                child: const Center(
-                  child: Text('Go to Export',
-                      style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
-                ),
+                child: const Text('Go to Export', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
               ),
             ),
             const SizedBox(height: 16),
@@ -204,72 +161,75 @@ class _ConnectionCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF0D1826),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: hasPatient ? const Color(0x3310B981) : _indigo.withValues(alpha: 0.3),
+          color: hasPatient ? AppColors.success.withValues(alpha: 0.3) : AppColors.caregiver.withValues(alpha: 0.3),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 10, height: 10,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: hasPatient ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+          Row(children: [
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: hasPatient ? AppColors.success : AppColors.warning,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              hasPatient ? 'Patient Connected' : 'Waiting for Patient',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: hasPatient ? AppColors.success : AppColors.warning,
+              ),
+            ),
+          ]),
+          if (inviteCode != null && inviteCode!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text('Invite Code', style: AppTypography.bodySmall(color: AppColors.textSecondary)),
+            const SizedBox(height: 6),
+            Row(children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.caregiverLight,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.caregiver.withValues(alpha: 0.3)),
+                  ),
+                  child: Text(
+                    inviteCode!,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.caregiver,
+                      letterSpacing: 8,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                hasPatient ? 'Patient Connected' : 'Waiting for Patient',
-                style: AppTypography.titleMedium(
-                  color: hasPatient ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+              GestureDetector(
+                onTap: () => SharePlus.instance.share(
+                  ShareParams(text: 'Enter code: $inviteCode in MediFlow to connect with me'),
+                ),
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppColors.caregiverLight,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.caregiver.withValues(alpha: 0.3)),
+                  ),
+                  child: const Icon(Icons.share_rounded, color: AppColors.caregiver, size: 20),
                 ),
               ),
-            ],
-          ),
-          if (inviteCode != null && inviteCode!.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Text('Invite Code', style: AppTypography.bodySmall(color: AppColors.textMuted)),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF070B12),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: _indigo.withValues(alpha: 0.3)),
-                    ),
-                    child: Text(
-                      inviteCode!,
-                      style: const TextStyle(
-                          fontFamily: 'monospace', fontSize: 28, fontWeight: FontWeight.bold,
-                          color: AppColors.neonCyan, letterSpacing: 8),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: () => SharePlus.instance.share(
-                    ShareParams(text: 'Enter code: $inviteCode in MediFlow to connect with me'),
-                  ),
-                  child: Container(
-                    width: 48, height: 48,
-                    decoration: BoxDecoration(
-                      color: _indigo.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: _indigo.withValues(alpha: 0.3)),
-                    ),
-                    child: const Icon(Icons.share_rounded, color: _indigo, size: 20),
-                  ),
-                ),
-              ],
-            ),
+            ]),
           ],
         ],
       ),
@@ -290,47 +250,66 @@ class _AdherenceCard extends StatelessWidget {
     final skipped = history.where((h) => h['status'] == 'skipped').length;
     final missed = history.where((h) => h['status'] == 'missed').length;
     final total = history.length;
-    final pct = total == 0 ? 0.0 : (taken / total * 100);
+    final adherence = total == 0 ? 0 : (taken / total * 100).round();
+
+    final adColor = adherence >= 80
+        ? AppColors.success
+        : adherence >= 50
+            ? AppColors.warning
+            : AppColors.danger;
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF0D1826),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0x1A00E5FF)),
+        border: Border.all(color: AppColors.border),
       ),
-      child: Column(
-        children: [
-          Text('30-Day Adherence', style: AppTypography.titleMedium(color: AppColors.textPrimary)),
-          const SizedBox(height: 16),
-          AdherenceRing(percent: pct, size: 140),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _statChip('Taken', '$taken', const Color(0xFF10B981)),
-              _statChip('Skipped', '$skipped', const Color(0xFF6366F1)),
-              _statChip('Missed', '$missed', const Color(0xFFEF4444)),
-            ],
+      child: Column(children: [
+        Text('30-Day Adherence', style: AppTypography.titleMedium(color: AppColors.textPrimary)),
+        const SizedBox(height: 16),
+        Text(
+          '$adherence%',
+          style: TextStyle(fontSize: 48, fontWeight: FontWeight.w800, color: adColor),
+        ),
+        Text('adherence', style: const TextStyle(fontSize: 14, color: AppColors.textSecondary)),
+        const SizedBox(height: 12),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: LinearProgressIndicator(
+            value: total == 0 ? 0 : taken / total,
+            backgroundColor: AppColors.surfaceVariant,
+            valueColor: AlwaysStoppedAnimation(adColor),
+            minHeight: 10,
           ),
-          if (total == 0) ...[
-            const SizedBox(height: 12),
-            Text('Patient activity will appear here when doses are logged',
-                style: AppTypography.bodySmall(color: AppColors.textMuted), textAlign: TextAlign.center),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _statChip('Taken', '$taken', AppColors.success),
+            _statChip('Skipped', '$skipped', AppColors.caregiver),
+            _statChip('Missed', '$missed', AppColors.danger),
           ],
+        ),
+        if (total == 0) ...[
+          const SizedBox(height: 12),
+          Text(
+            'Patient activity will appear here when doses are logged',
+            style: AppTypography.bodySmall(color: AppColors.textSecondary),
+            textAlign: TextAlign.center,
+          ),
         ],
-      ),
+      ]),
     ).animate().fadeIn(delay: 100.ms, duration: 400.ms);
   }
 
   Widget _statChip(String label, String value, Color color) {
-    return Column(
-      children: [
-        Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: color)),
-        const SizedBox(height: 2),
-        Text(label, style: AppTypography.bodySmall(color: AppColors.textSecondary)),
-      ],
-    );
+    return Column(children: [
+      Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: color)),
+      const SizedBox(height: 2),
+      Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+    ]);
   }
 }
 
@@ -345,27 +324,30 @@ class _TodayScheduleCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF0D1826),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0x1A00E5FF)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
-            Container(width: 3, height: 18,
-                decoration: BoxDecoration(color: _indigo, borderRadius: BorderRadius.circular(2))),
+            Container(
+              width: 3,
+              height: 18,
+              decoration: BoxDecoration(color: AppColors.caregiver, borderRadius: BorderRadius.circular(2)),
+            ),
             const SizedBox(width: 8),
-            Text("Today's Schedule", style: AppTypography.titleMedium(color: _indigo)),
+            Text("Today's Schedule", style: AppTypography.titleMedium(color: AppColors.caregiver)),
             const Spacer(),
-            Text('${schedule.length} items', style: AppTypography.bodySmall(color: AppColors.textMuted)),
+            Text('${schedule.length} items', style: AppTypography.bodySmall(color: AppColors.textSecondary)),
           ]),
           const SizedBox(height: 12),
           if (schedule.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 16),
               child: Center(child: Text('No reminders scheduled for today',
-                  style: AppTypography.bodySmall(color: AppColors.textMuted))),
+                  style: AppTypography.bodySmall(color: AppColors.textSecondary))),
             )
           else
             ...schedule.map((slot) => _ScheduleRow(slot: slot)),
@@ -392,10 +374,10 @@ class _ScheduleRow extends StatelessWidget {
   Color get _statusColor {
     switch (slot.status) {
       case DoseStatus.taken:
-      case DoseStatus.takenLate: return const Color(0xFF10B981);
-      case DoseStatus.skipped: return const Color(0xFF6366F1);
-      case DoseStatus.missed: return const Color(0xFFEF4444);
-      case DoseStatus.pending: return const Color(0xFFF59E0B);
+      case DoseStatus.takenLate: return AppColors.success;
+      case DoseStatus.skipped: return AppColors.caregiver;
+      case DoseStatus.missed: return AppColors.danger;
+      case DoseStatus.pending: return AppColors.warning;
     }
   }
 
@@ -406,35 +388,37 @@ class _ScheduleRow extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF0A1420),
+        color: AppColors.surfaceVariant,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0x1100E5FF)),
+        border: Border.all(color: AppColors.border),
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 36, height: 36,
-            decoration: BoxDecoration(color: _indigo.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
-            child: const Icon(Icons.medication_rounded, color: _indigo, size: 18),
+      child: Row(children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: AppColors.caregiver.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(10),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(slot.medicineName, style: AppTypography.titleMedium(color: AppColors.textPrimary)),
-              Text(timeStr, style: AppTypography.bodySmall(color: AppColors.textSecondary)),
-            ]),
+          child: const Icon(Icons.medication_rounded, color: AppColors.caregiver, size: 18),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(slot.medicineName, style: AppTypography.titleMedium(color: AppColors.textPrimary)),
+            Text(timeStr, style: AppTypography.bodySmall(color: AppColors.textSecondary)),
+          ]),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: _statusColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(20),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: _statusColor.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(_statusLabel,
-                style: TextStyle(color: _statusColor, fontSize: 12, fontWeight: FontWeight.w600)),
-          ),
-        ],
-      ),
+          child: Text(_statusLabel,
+              style: TextStyle(color: _statusColor, fontSize: 12, fontWeight: FontWeight.w600)),
+        ),
+      ]),
     );
   }
 }
@@ -450,27 +434,30 @@ class _MedicineListCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF0D1826),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0x1A00E5FF)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
-            Container(width: 3, height: 18,
-                decoration: BoxDecoration(color: _indigo, borderRadius: BorderRadius.circular(2))),
+            Container(
+              width: 3,
+              height: 18,
+              decoration: BoxDecoration(color: AppColors.caregiver, borderRadius: BorderRadius.circular(2)),
+            ),
             const SizedBox(width: 8),
-            Text('Medicines', style: AppTypography.titleMedium(color: _indigo)),
+            Text('Medicines', style: AppTypography.titleMedium(color: AppColors.caregiver)),
             const Spacer(),
-            Text('${medicines.length}', style: AppTypography.bodySmall(color: AppColors.textMuted)),
+            Text('${medicines.length}', style: AppTypography.bodySmall(color: AppColors.textSecondary)),
           ]),
           const SizedBox(height: 12),
           if (medicines.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 16),
               child: Center(child: Text('No medicines added yet',
-                  style: AppTypography.bodySmall(color: AppColors.textMuted))),
+                  style: AppTypography.bodySmall(color: AppColors.textSecondary))),
             )
           else
             ...medicines.asMap().entries.map((e) {
@@ -480,42 +467,43 @@ class _MedicineListCard extends StatelessWidget {
                 margin: EdgeInsets.only(bottom: i < medicines.length - 1 ? 8 : 0),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0A1420),
+                  color: AppColors.surfaceVariant,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0x1100E5FF)),
+                  border: Border.all(color: AppColors.border),
                 ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 36, height: 36,
-                      decoration: BoxDecoration(
-                          color: _indigo.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
-                      child: const Icon(Icons.medication_rounded, color: _indigo, size: 18),
+                child: Row(children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: AppColors.caregiver.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(m['verified_name'] ?? '—',
-                            style: AppTypography.titleMedium(color: AppColors.textPrimary)),
-                        if (m['form'] != null || m['strength'] != null)
-                          Text(
-                            '${m['form'] ?? ''}${m['strength'] != null ? ' · ${m['strength']}' : ''}',
-                            style: AppTypography.bodySmall(color: AppColors.textSecondary),
-                          ),
-                      ]),
-                    ),
-                    if (m['category'] != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: AppColors.neonCyan.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(20),
+                    child: const Icon(Icons.medication_rounded, color: AppColors.caregiver, size: 18),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(m['verified_name'] ?? '—',
+                          style: AppTypography.titleMedium(color: AppColors.textPrimary)),
+                      if (m['form'] != null || m['strength'] != null)
+                        Text(
+                          '${m['form'] ?? ''}${m['strength'] != null ? ' · ${m['strength']}' : ''}',
+                          style: AppTypography.bodySmall(color: AppColors.textSecondary),
                         ),
-                        child: Text(m['category'],
-                            style: const TextStyle(color: AppColors.neonCyan, fontSize: 10, fontWeight: FontWeight.w600)),
+                    ]),
+                  ),
+                  if (m['category'] != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight,
+                        borderRadius: BorderRadius.circular(20),
                       ),
-                  ],
-                ),
+                      child: Text(m['category'],
+                          style: const TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.w600)),
+                    ),
+                ]),
               );
             }),
         ],
@@ -569,24 +557,27 @@ class _CalendarCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF0D1826),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0x1A00E5FF)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
-            Container(width: 3, height: 18,
-                decoration: BoxDecoration(color: _indigo, borderRadius: BorderRadius.circular(2))),
+            Container(
+              width: 3,
+              height: 18,
+              decoration: BoxDecoration(color: AppColors.caregiver, borderRadius: BorderRadius.circular(2)),
+            ),
             const SizedBox(width: 8),
-            Text(DateFormat('MMMM yyyy').format(now), style: AppTypography.titleMedium(color: _indigo)),
+            Text(DateFormat('MMMM yyyy').format(now), style: AppTypography.titleMedium(color: AppColors.caregiver)),
           ]),
           const SizedBox(height: 12),
           Row(
             children: ['M', 'T', 'W', 'T', 'F', 'S', 'S']
-                .map((d) => Expanded(child: Center(child: Text(d,
-                    style: AppTypography.bodySmall(color: AppColors.textMuted)))))
+                .map((d) => Expanded(
+                    child: Center(child: Text(d, style: AppTypography.bodySmall(color: AppColors.textSecondary)))))
                 .toList(),
           ),
           const SizedBox(height: 8),
@@ -601,27 +592,29 @@ class _CalendarCard extends StatelessWidget {
               if (idx < startWeekday - 1) return const SizedBox.shrink();
               final day = idx - startWeekday + 2;
               if (day > daysInMonth) return const SizedBox.shrink();
-              final key =
-                  '${now.year}-${now.month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}';
+              final key = '${now.year}-${now.month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}';
               final data = calendarData[key];
               final isToday = day == now.day;
               Color cellColor;
-              if (data == 'green') cellColor = const Color(0xFF10B981);
-              else if (data == 'amber') cellColor = const Color(0xFFF59E0B);
-              else if (data == 'red') cellColor = const Color(0xFFEF4444);
-              else cellColor = const Color(0xFF162032);
+              if (data == 'green') cellColor = AppColors.success;
+              else if (data == 'amber') cellColor = AppColors.warning;
+              else if (data == 'red') cellColor = AppColors.danger;
+              else cellColor = AppColors.surfaceVariant;
               return Container(
                 decoration: BoxDecoration(
-                  color: cellColor.withValues(alpha: data != null ? 0.25 : 1),
+                  color: data != null ? cellColor.withValues(alpha: 0.25) : cellColor,
                   borderRadius: BorderRadius.circular(6),
-                  border: isToday ? Border.all(color: _indigo, width: 2) : null,
+                  border: isToday ? Border.all(color: AppColors.caregiver, width: 2) : Border.all(color: AppColors.border, width: 0.5),
                 ),
                 child: Center(
-                  child: Text('$day',
-                      style: TextStyle(
-                          color: isToday ? _indigo : AppColors.textSecondary,
-                          fontSize: 12,
-                          fontWeight: isToday ? FontWeight.w700 : FontWeight.w400)),
+                  child: Text(
+                    '$day',
+                    style: TextStyle(
+                      color: isToday ? AppColors.caregiver : AppColors.textSecondary,
+                      fontSize: 12,
+                      fontWeight: isToday ? FontWeight.w700 : FontWeight.w400,
+                    ),
+                  ),
                 ),
               );
             },
@@ -630,11 +623,11 @@ class _CalendarCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _legendDot(const Color(0xFF10B981), 'All taken'),
+              _legendDot(AppColors.success, 'All taken'),
               const SizedBox(width: 16),
-              _legendDot(const Color(0xFFF59E0B), 'Some skipped'),
+              _legendDot(AppColors.warning, 'Some skipped'),
               const SizedBox(width: 16),
-              _legendDot(const Color(0xFFEF4444), 'Missed'),
+              _legendDot(AppColors.danger, 'Missed'),
             ],
           ),
         ],
@@ -643,20 +636,18 @@ class _CalendarCard extends StatelessWidget {
   }
 
   Widget _legendDot(Color color, String label) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 10, height: 10,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(3),
-            border: Border.all(color: color.withValues(alpha: 0.6)),
-          ),
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      Container(
+        width: 10,
+        height: 10,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.3),
+          borderRadius: BorderRadius.circular(3),
+          border: Border.all(color: color.withValues(alpha: 0.6)),
         ),
-        const SizedBox(width: 4),
-        Text(label, style: AppTypography.bodySmall(color: AppColors.textMuted)),
-      ],
-    );
+      ),
+      const SizedBox(width: 4),
+      Text(label, style: AppTypography.bodySmall(color: AppColors.textSecondary)),
+    ]);
   }
 }

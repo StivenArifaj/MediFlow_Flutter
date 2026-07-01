@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:go_router/go_router.dart';
 
+import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_typography.dart';
 import '../health_providers.dart';
 
 // ── Input types ───────────────────────────────────────────────────────────────
@@ -43,40 +44,40 @@ class _Metric {
 const _metrics = [
   _Metric(
     type: 'Weight',        unit: 'kg',    icon: Icons.monitor_weight_outlined,
-    color: Color(0xFF00E5FF), description: 'Body weight',
+    color: Color(0xFF2D7DD2), description: 'Body weight',
     inputType: _InputType.dualDrumRoll,
     minValue: 20, maxValue: 250, secondMin: 0, secondMax: 9,
   ),
   _Metric(
     type: 'Blood Pressure', unit: 'mmHg', icon: Icons.favorite_border_rounded,
-    color: Color(0xFFFF4D6A), description: 'Systolic / Diastolic',
+    color: Color(0xFFE74C3C), description: 'Systolic / Diastolic',
     inputType: _InputType.dualField,
     minValue: 40, maxValue: 250,
   ),
   _Metric(
     type: 'Heart Rate',    unit: 'bpm',   icon: Icons.favorite_rounded,
-    color: Color(0xFFFF4D6A), description: 'Beats per minute',
+    color: Color(0xFFE74C3C), description: 'Beats per minute',
     inputType: _InputType.drumRoll, minValue: 30, maxValue: 220,
   ),
   _Metric(
     type: 'Blood Glucose', unit: 'mg/dL', icon: Icons.water_drop_rounded,
-    color: Color(0xFF00C896), description: 'Blood sugar level',
+    color: Color(0xFF27AE60), description: 'Blood sugar level',
     inputType: _InputType.drumRoll, minValue: 40, maxValue: 600,
   ),
   _Metric(
     type: 'Temperature',   unit: '°C',    icon: Icons.thermostat_rounded,
-    color: Color(0xFFFFB800), description: 'Body temperature',
+    color: Color(0xFFF39C12), description: 'Body temperature',
     inputType: _InputType.dualDrumRoll,
     minValue: 34, maxValue: 42, secondMin: 0, secondMax: 9,
   ),
   _Metric(
     type: 'SpO2',          unit: '%',     icon: Icons.air_rounded,
-    color: Color(0xFF6B7FCC), description: 'Oxygen saturation',
+    color: Color(0xFF5B6EF5), description: 'Oxygen saturation',
     inputType: _InputType.drumRoll, minValue: 70, maxValue: 100,
   ),
   _Metric(
     type: 'Steps',         unit: 'steps', icon: Icons.directions_walk_rounded,
-    color: Color(0xFF00C896), description: 'Daily step count',
+    color: Color(0xFF27AE60), description: 'Daily step count',
     inputType: _InputType.stepper, minValue: 0, maxValue: 100000, step: 500,
   ),
   _Metric(
@@ -86,27 +87,27 @@ const _metrics = [
   ),
   _Metric(
     type: 'Water Intake',  unit: 'glasses', icon: Icons.local_drink_rounded,
-    color: Color(0xFF00E5FF), description: 'Glasses of water',
+    color: Color(0xFF2D7DD2), description: 'Glasses of water',
     inputType: _InputType.stepper, minValue: 0, maxValue: 30, step: 1,
   ),
   _Metric(
     type: 'BMI',           unit: '',      icon: Icons.accessibility_new_rounded,
-    color: Color(0xFF00E5FF), description: 'Body mass index',
+    color: Color(0xFF2D7DD2), description: 'Body mass index',
     inputType: _InputType.numberPad, minValue: 5, maxValue: 80,
   ),
   _Metric(
     type: 'Cholesterol',   unit: 'mg/dL', icon: Icons.opacity_rounded,
-    color: Color(0xFFFFB800), description: 'Total cholesterol',
+    color: Color(0xFFF39C12), description: 'Total cholesterol',
     inputType: _InputType.numberPad, minValue: 50, maxValue: 500,
   ),
   _Metric(
     type: 'Waist',         unit: 'cm',    icon: Icons.straighten_rounded,
-    color: Color(0xFF6B7FCC), description: 'Waist circumference',
+    color: Color(0xFF5B6EF5), description: 'Waist circumference',
     inputType: _InputType.drumRoll, minValue: 40, maxValue: 200,
   ),
   _Metric(
     type: 'Respiratory Rate', unit: '/min', icon: Icons.waves_rounded,
-    color: Color(0xFFFF7F7F), description: 'Breaths per minute',
+    color: Color(0xFFE74C3C), description: 'Breaths per minute',
     inputType: _InputType.drumRoll, minValue: 5, maxValue: 60,
   ),
 ];
@@ -124,96 +125,48 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
     final measAsync = ref.watch(latestMeasurementsProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF070B12),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment(0, -0.6),
-            radius: 1.5,
-            colors: [Color(0xFF0D1F35), Color(0xFF070B12)],
-          ),
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: const Text(
+          'Health',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
         ),
-        child: measAsync.when(
-          loading: () => const Center(
-              child: CircularProgressIndicator(color: Color(0xFF00E5FF), strokeWidth: 2)),
-          error: (_, __) => const Center(
-              child: Text('Error loading data', style: TextStyle(color: Colors.white))),
-          data: (latest) {
-            return CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(
-                  child: SafeArea(
-                    bottom: false,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text('Health Dashboard',
-                              style: TextStyle(
-                                  fontSize: 26, fontWeight: FontWeight.w700, color: Colors.white)),
-                          SizedBox(height: 4),
-                          Text('Tap a metric to log a new reading',
-                              style: TextStyle(fontSize: 13, color: Color(0xFF8A9BB5))),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-                  sliver: SliverGrid(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      mainAxisExtent: 110,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (ctx, i) {
-                        final metric = _metrics[i];
-                        final m = latest[metric.type];
-                        return _MetricCard(
-                          metric: metric,
-                          measurement: m,
-                          onTap: () {
-                            if (m != null) {
-                              context.push('/home/health-detail?type=${Uri.encodeComponent(metric.type)}&unit=${Uri.encodeComponent(metric.unit)}');
-                            } else {
-                              _openSheet(metric, m);
-                            }
-                          },
-                          onLongPress: () => _openSheet(metric, m),
-                        )
-                            .animate()
-                            .fadeIn(delay: Duration(milliseconds: i * 45), duration: 300.ms)
-                            .scale(begin: const Offset(0.88, 0.88), curve: Curves.easeOutBack);
-                      },
-                      childCount: _metrics.length,
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(height: 1, color: AppColors.border),
         ),
       ),
-      floatingActionButton: Container(
-        width: 56, height: 56,
-        decoration: const BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: LinearGradient(colors: [Color(0xFF00E5FF), Color(0xFF0088FF)]),
-          boxShadow: [
-            BoxShadow(color: Color(0x6000E5FF), blurRadius: 20, spreadRadius: 2)
-          ],
-        ),
-        child: FloatingActionButton(
-          onPressed: () {},
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          highlightElevation: 0,
-          child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
-        ),
+      body: measAsync.when(
+        loading: () => const Center(
+            child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2)),
+        error: (_, __) => const Center(
+            child: Text('Error loading data')),
+        data: (latest) {
+          return GridView.builder(
+            padding: const EdgeInsets.all(16),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 1.1,
+            ),
+            itemCount: _metrics.length,
+            itemBuilder: (ctx, i) {
+              final metric = _metrics[i];
+              final m = latest[metric.type];
+              return _MetricCard(
+                metric: metric,
+                measurement: m,
+                onTap: () => _openSheet(metric, m),
+              )
+                  .animate()
+                  .fadeIn(delay: Duration(milliseconds: i * 45), duration: 300.ms)
+                  .scale(begin: const Offset(0.88, 0.88), curve: Curves.easeOutBack);
+            },
+          );
+        },
       ),
     );
   }
@@ -233,9 +186,8 @@ class _MetricCard extends StatelessWidget {
   final _Metric metric;
   final Map<String, dynamic>? measurement;
   final VoidCallback onTap;
-  final VoidCallback? onLongPress;
 
-  const _MetricCard({required this.metric, this.measurement, required this.onTap, this.onLongPress});
+  const _MetricCard({required this.metric, this.measurement, required this.onTap});
 
   String get _displayValue {
     if (measurement == null) return '—';
@@ -245,96 +197,61 @@ class _MetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasData = measurement != null;
-
-    return GestureDetector(
-      onTap: onTap,
-      onLongPress: onLongPress,
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFF0D1826),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: const Color(0x1A00E5FF),
-            width: 1,
-          ),
-          boxShadow: const [
-            BoxShadow(color: Color(0x1200E5FF), blurRadius: 16, offset: Offset(0, 4))
-          ],
-        ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            if (hasData)
-              Positioned(
-                top: 8, right: 8,
-                child: Container(
-                  width: 8, height: 8,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF00E5FF),
-                    shape: BoxShape.circle,
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 44, height: 44,
+                decoration: BoxDecoration(
+                  color: metric.color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(metric.icon, color: metric.color, size: 24),
+              ),
+              const Spacer(),
+              Text(
+                _displayValue,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              if (metric.unit.isNotEmpty)
+                Text(
+                  metric.unit,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textTertiary,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-              ),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: metric.color.withValues(alpha: hasData ? 0.18 : 0.08),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: hasData
-                    ? [BoxShadow(color: metric.color.withValues(alpha: 0.35), blurRadius: 20, spreadRadius: 2)]
-                    : null,
-              ),
-              child: Icon(metric.icon,
-                  color: hasData ? metric.color : metric.color.withValues(alpha: 0.45),
-                  size: 24),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6),
-              child: Text(
+              const SizedBox(height: 4),
+              Text(
                 metric.type,
-                style: TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w600,
-                  color: hasData ? Colors.white : const Color(0xFF8A9BB5),
-                  letterSpacing: 0.1,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textSecondary,
                 ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-            ),
-            const SizedBox(height: 6),
-            if (hasData)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: metric.color.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(100),
-                ),
-                child: Text(
-                  '$_displayValue${metric.unit.isNotEmpty ? " ${metric.unit}" : ""}',
-                  style: TextStyle(
-                      fontSize: 9.5, fontWeight: FontWeight.w700, color: metric.color),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              )
-            else
-              Text(
-                '—',
-                style: const TextStyle(
-                  fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF8A9BB5),
-                ),
-              ),
-          ],
+            ],
+          ),
         ),
-        ],
-      ),
       ),
     );
   }
@@ -475,43 +392,45 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
 
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFF0A1628),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        border: Border(top: BorderSide(color: Color(0x1A00E5FF))),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      padding: EdgeInsets.fromLTRB(24, 0, 24, bottomPad),
+      padding: EdgeInsets.fromLTRB(24, 12, 24, bottomPad),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const SizedBox(height: 12),
           Center(
             child: Container(
               width: 40, height: 4,
               decoration: BoxDecoration(
-                  color: const Color(0xFF2A3A4A),
-                  borderRadius: BorderRadius.circular(2)),
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
           ),
-          const SizedBox(height: 22),
+          const SizedBox(height: 20),
           Row(
             children: [
               Container(
-                width: 50, height: 50,
+                width: 44, height: 44,
                 decoration: BoxDecoration(
-                  color: widget.metric.color.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(15),
-                  boxShadow: [BoxShadow(color: widget.metric.color.withValues(alpha: 0.3), blurRadius: 18)],
+                  color: widget.metric.color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(widget.metric.icon, color: widget.metric.color, size: 26),
+                child: Icon(widget.metric.icon, color: widget.metric.color, size: 24),
               ),
               const SizedBox(width: 14),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(widget.metric.type,
-                      style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700, color: Colors.white)),
-                  Text(widget.metric.description,
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF8A9BB5))),
+                  Text(
+                    'Log ${widget.metric.type}',
+                    style: AppTypography.h3,
+                  ),
+                  Text(
+                    widget.metric.description,
+                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  ),
                 ],
               ),
             ],
@@ -519,25 +438,15 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
           const SizedBox(height: 28),
           _buildInput(),
           const SizedBox(height: 28),
-          GestureDetector(
-            onTap: _saving ? null : _save,
-            child: Container(
-              width: double.infinity, height: 54,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                    colors: [widget.metric.color, const Color(0xFF0044DD)]),
-                borderRadius: BorderRadius.circular(100),
-                boxShadow: [
-                  BoxShadow(color: widget.metric.color.withValues(alpha: 0.45), blurRadius: 20, offset: const Offset(0, 6))
-                ],
-              ),
-              child: Center(
-                child: _saving
-                    ? const SizedBox(width: 22, height: 22,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Text('Save Reading',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
-              ),
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton(
+              onPressed: _saving ? null : _save,
+              child: _saving
+                  ? const SizedBox(width: 20, height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Text('Save Reading'),
             ),
           ),
         ],
@@ -571,7 +480,8 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
           selectionOverlay: const SizedBox.shrink(),
           children: List.generate(count, (i) => Center(
             child: Text('${(widget.metric.minValue + i).round()}',
-                style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w700, color: Colors.white)),
+                style: TextStyle(fontSize: 34, fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary)),
           )),
         ),
         widget.metric.color,
@@ -594,7 +504,8 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
           Expanded(
             flex: 3,
             child: Column(children: [
-              Text(isWeight ? 'kg' : '°C', style: const TextStyle(fontSize: 11, color: Color(0xFF8A9BB5))),
+              Text(isWeight ? 'kg' : '°C',
+                  style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
               const SizedBox(height: 6),
               _rollerContainer(
                 CupertinoPicker(
@@ -604,7 +515,8 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
                   selectionOverlay: const SizedBox.shrink(),
                   children: List.generate(primaryCount, (i) => Center(
                     child: Text('${(widget.metric.minValue + i).round()}',
-                        style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w700, color: Colors.white)),
+                        style: TextStyle(fontSize: 32, fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary)),
                   )),
                 ),
                 widget.metric.color,
@@ -613,12 +525,14 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
           ),
           Padding(
             padding: const EdgeInsets.only(top: 8),
-            child: Text('.', style: TextStyle(fontSize: 40, fontWeight: FontWeight.w300, color: widget.metric.color)),
+            child: Text('.', style: TextStyle(fontSize: 40, fontWeight: FontWeight.w300,
+                color: widget.metric.color)),
           ),
           Expanded(
             flex: 2,
             child: Column(children: [
-              Text(isWeight ? 'g×100' : 'decimal', style: const TextStyle(fontSize: 11, color: Color(0xFF8A9BB5))),
+              Text(isWeight ? 'g×100' : 'decimal',
+                  style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
               const SizedBox(height: 6),
               _rollerContainer(
                 CupertinoPicker(
@@ -628,7 +542,8 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
                   selectionOverlay: const SizedBox.shrink(),
                   children: List.generate(secCount, (i) => Center(
                     child: Text('$i',
-                        style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w700, color: Colors.white)),
+                        style: TextStyle(fontSize: 32, fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary)),
                   )),
                 ),
                 widget.metric.color,
@@ -653,11 +568,15 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
         ),
         child: Column(children: [
           Text(
-            _stepperValue % 1 == 0 ? _stepperValue.toInt().toString() : _stepperValue.toStringAsFixed(1),
-            style: TextStyle(fontSize: 52, fontWeight: FontWeight.w800, color: widget.metric.color, height: 1),
+            _stepperValue % 1 == 0
+                ? _stepperValue.toInt().toString()
+                : _stepperValue.toStringAsFixed(1),
+            style: TextStyle(fontSize: 52, fontWeight: FontWeight.w800,
+                color: widget.metric.color, height: 1),
           ),
           const SizedBox(height: 4),
-          Text(widget.metric.unit, style: const TextStyle(fontSize: 14, color: Color(0xFF8A9BB5))),
+          Text(widget.metric.unit,
+              style: const TextStyle(fontSize: 14, color: AppColors.textSecondary)),
         ]),
       ),
       const SizedBox(height: 18),
@@ -665,7 +584,8 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           _circleBtn(Icons.remove_rounded, widget.metric.color, () => setState(() {
-            _stepperValue = (_stepperValue - widget.metric.step).clamp(widget.metric.minValue, widget.metric.maxValue);
+            _stepperValue = (_stepperValue - widget.metric.step)
+                .clamp(widget.metric.minValue, widget.metric.maxValue);
           })),
           if (isSteps) ...[
             const SizedBox(width: 10),
@@ -673,7 +593,8 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
               padding: const EdgeInsets.only(right: 8),
               child: GestureDetector(
                 onTap: () => setState(() {
-                  _stepperValue = (_stepperValue + v).clamp(widget.metric.minValue, widget.metric.maxValue);
+                  _stepperValue = (_stepperValue + v)
+                      .clamp(widget.metric.minValue, widget.metric.maxValue);
                 }),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
@@ -683,14 +604,16 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
                     border: Border.all(color: widget.metric.color.withValues(alpha: 0.4)),
                   ),
                   child: Text('+$v',
-                      style: TextStyle(fontSize: 13, color: widget.metric.color, fontWeight: FontWeight.w600)),
+                      style: TextStyle(fontSize: 13, color: widget.metric.color,
+                          fontWeight: FontWeight.w600)),
                 ),
               ),
             )),
           ] else
             const SizedBox(width: 40),
           _circleBtn(Icons.add_rounded, widget.metric.color, () => setState(() {
-            _stepperValue = (_stepperValue + widget.metric.step).clamp(widget.metric.minValue, widget.metric.maxValue);
+            _stepperValue = (_stepperValue + widget.metric.step)
+                .clamp(widget.metric.minValue, widget.metric.maxValue);
           })),
         ],
       ),
@@ -703,12 +626,13 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       textAlign: TextAlign.center,
       autofocus: true,
-      style: TextStyle(fontSize: 48, fontWeight: FontWeight.w800, color: widget.metric.color),
+      style: TextStyle(fontSize: 48, fontWeight: FontWeight.w800,
+          color: widget.metric.color),
       decoration: InputDecoration(
         hintText: '0',
         hintStyle: TextStyle(color: widget.metric.color.withValues(alpha: 0.25), fontSize: 48),
         suffixText: widget.metric.unit,
-        suffixStyle: const TextStyle(fontSize: 18, color: Color(0xFF8A9BB5)),
+        suffixStyle: const TextStyle(fontSize: 18, color: AppColors.textSecondary),
         filled: true,
         fillColor: widget.metric.color.withValues(alpha: 0.06),
         border: OutlineInputBorder(
@@ -728,7 +652,7 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
   Widget _dualField() {
     return Column(children: [
       const Text('Enter systolic / diastolic',
-          style: TextStyle(fontSize: 13, color: Color(0xFF8A9BB5))),
+          style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
       const SizedBox(height: 16),
       Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -744,23 +668,28 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
         ],
       ),
       const SizedBox(height: 8),
-      Text('mmHg', style: TextStyle(fontSize: 14, color: widget.metric.color, fontWeight: FontWeight.w600)),
+      Text('mmHg',
+          style: TextStyle(fontSize: 14, color: widget.metric.color,
+              fontWeight: FontWeight.w600)),
     ]);
   }
 
-  Widget _bpField(TextEditingController ctrl, String label, String hint, {bool autofocus = false}) {
+  Widget _bpField(TextEditingController ctrl, String label, String hint,
+      {bool autofocus = false}) {
     return Column(children: [
-      Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF8A9BB5))),
+      Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
       const SizedBox(height: 6),
       TextField(
         controller: ctrl,
         keyboardType: TextInputType.number,
         textAlign: TextAlign.center,
         autofocus: autofocus,
-        style: TextStyle(fontSize: 36, fontWeight: FontWeight.w700, color: widget.metric.color),
+        style: TextStyle(fontSize: 36, fontWeight: FontWeight.w700,
+            color: widget.metric.color),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: TextStyle(color: widget.metric.color.withValues(alpha: 0.3), fontSize: 36),
+          hintStyle: TextStyle(color: widget.metric.color.withValues(alpha: 0.3),
+              fontSize: 36),
           filled: true,
           fillColor: widget.metric.color.withValues(alpha: 0.06),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
@@ -776,7 +705,8 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
   }
 
   Widget _sleepPicker() {
-    final liveVal = '${_sleepHrsIndex}h ${(_sleepMinsIndex * 5).toString().padLeft(2, '0')}m';
+    final liveVal =
+        '${_sleepHrsIndex}h ${(_sleepMinsIndex * 5).toString().padLeft(2, '0')}m';
 
     return Column(children: [
       _rollerLabel(liveVal),
@@ -786,7 +716,8 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
         children: [
           Expanded(
             child: Column(children: [
-              const Text('Hours', style: TextStyle(fontSize: 11, color: Color(0xFF8A9BB5))),
+              const Text('Hours',
+                  style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
               const SizedBox(height: 6),
               _rollerContainer(
                 CupertinoPicker(
@@ -795,7 +726,9 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
                   onSelectedItemChanged: (i) => setState(() => _sleepHrsIndex = i),
                   selectionOverlay: const SizedBox.shrink(),
                   children: List.generate(25, (i) => Center(
-                    child: Text('$i', style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w700, color: Colors.white)),
+                    child: Text('$i',
+                        style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary)),
                   )),
                 ),
                 widget.metric.color,
@@ -804,11 +737,14 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
           ),
           Padding(
             padding: const EdgeInsets.only(top: 8),
-            child: Text(' h ', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: widget.metric.color)),
+            child: Text(' h ',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700,
+                    color: widget.metric.color)),
           ),
           Expanded(
             child: Column(children: [
-              const Text('Minutes', style: TextStyle(fontSize: 11, color: Color(0xFF8A9BB5))),
+              const Text('Minutes',
+                  style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
               const SizedBox(height: 6),
               _rollerContainer(
                 CupertinoPicker(
@@ -818,7 +754,8 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
                   selectionOverlay: const SizedBox.shrink(),
                   children: List.generate(12, (i) => Center(
                     child: Text('${i * 5}'.padLeft(2, '0'),
-                        style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w700, color: Colors.white)),
+                        style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary)),
                   )),
                 ),
                 widget.metric.color,
@@ -827,7 +764,9 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
           ),
           Padding(
             padding: const EdgeInsets.only(top: 8),
-            child: Text(' m', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: widget.metric.color)),
+            child: Text(' m',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700,
+                    color: widget.metric.color)),
           ),
         ],
       ),
@@ -837,7 +776,8 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
   Widget _rollerLabel(String value) {
     return Text(
       value,
-      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: widget.metric.color),
+      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700,
+          color: widget.metric.color),
     );
   }
 
@@ -860,10 +800,10 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
             top: 0, left: 0, right: 0,
             child: Container(
               height: 55,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter, end: Alignment.bottomCenter,
-                  colors: [const Color(0xFF0A1628), const Color(0xFF0A1628).withValues(alpha: 0)],
+                  colors: [Colors.white, Color(0x00FFFFFF)],
                 ),
               ),
             ),
@@ -872,10 +812,10 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
             bottom: 0, left: 0, right: 0,
             child: Container(
               height: 55,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter, end: Alignment.topCenter,
-                  colors: [const Color(0xFF0A1628), const Color(0xFF0A1628).withValues(alpha: 0)],
+                  colors: [Colors.white, Color(0x00FFFFFF)],
                 ),
               ),
             ),
@@ -894,7 +834,6 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
           color: color.withValues(alpha: 0.12),
           shape: BoxShape.circle,
           border: Border.all(color: color.withValues(alpha: 0.5)),
-          boxShadow: [BoxShadow(color: color.withValues(alpha: 0.2), blurRadius: 12)],
         ),
         child: Icon(icon, color: color, size: 28),
       ),

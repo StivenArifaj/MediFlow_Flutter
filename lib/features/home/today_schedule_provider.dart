@@ -115,7 +115,6 @@ final todayScheduleProvider = FutureProvider<List<TodaySlot>>((ref) async {
       scheduledAt: scheduledAt,
       status: status,
       historyEntryId: historyEntryId,
-      // ponytail: matches the ID scheme used in add_medicine_screen
       notificationId: medicineId.hashCode.abs() % 2147483647,
       snoozeDuration: r['snooze_duration'] as int? ?? 15,
     ));

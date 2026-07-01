@@ -56,7 +56,6 @@ class AppColors {
   // Camera scan UI accent — visible on dark camera background
   static const Color scanAccent     = Color(0xFF00D4D4);
 
-  // ponytail: keep neon aliases until all screens are migrated in Pass 2-4
   static const Color info           = Color(0xFF2D7DD2); // was 0xFF6B7FCC
   static const Color premiumFrom    = Color(0xFF8B5CF6);
   static const Color premiumTo      = Color(0xFFEC4899);
