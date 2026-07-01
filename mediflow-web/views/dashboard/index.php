@@ -7,6 +7,7 @@ $pageTitle = 'Dashboard';
 
 ob_start();
 
+
 $todayTaken = count(array_filter($todayHistory ?? [], fn($h) => ($h['status'] ?? '') === 'taken'));
 $todaySkipped = count(array_filter($todayHistory ?? [], fn($h) => ($h['status'] ?? '') === 'skipped'));
 $todayMissed = count(array_filter($todayHistory ?? [], fn($h) => ($h['status'] ?? '') === 'missed'));
@@ -68,42 +69,67 @@ $todayMissed = count(array_filter($todayHistory ?? [], fn($h) => ($h['status'] ?
         </div>
         <div class="card-body">
             <div class="adherence-ring-container">
-                <div class="adherence-ring" id="adherence-ring" data-percentage="<?= $stats['adherence'] ?? 0 ?>">
-                    <?php
-                    $percentage = $stats['adherence'] ?? 0;
-                    $radius = 70;
-                    $circumference = 2 * M_PI * $radius;
-                    $offset = $circumference - ($percentage / 100) * $circumference;
-                    ?>
-                    <svg width="180" height="180" viewBox="0 0 180 180">
+                <?php
+                $percentage    = $stats['adherence'] ?? 0;
+                $radius        = 96;
+                $cx            = 110;
+                $circumference = 2 * M_PI * $radius;
+                $offset        = $circumference - ($percentage / 100) * $circumference;
+                ?>
+                <div class="adherence-ring" id="adherence-ring" data-percentage="<?= $percentage ?>">
+                    <svg width="220" height="220" viewBox="0 0 220 220">
                         <defs>
                             <linearGradient id="adherenceGradient" x1="0%" y1="0%" x2="100%" y2="0%">
                                 <stop offset="0%" style="stop-color:#00E5FF"/>
                                 <stop offset="100%" style="stop-color:#0080FF"/>
                             </linearGradient>
+                            <filter id="glow">
+                                <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                                <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                            </filter>
                         </defs>
-                        <circle cx="90" cy="90" r="<?= $radius ?>" fill="none" stroke="#162032" stroke-width="12"/>
-                        <circle cx="90" cy="90" r="<?= $radius ?>" fill="none" stroke="url(#adherenceGradient)" stroke-width="12"
-                            stroke-linecap="round" stroke-dasharray="<?= $circumference ?>"
-                            stroke-dashoffset="<?= $offset ?>" transform="rotate(-90 90 90)"/>
-                        <text x="90" y="90" text-anchor="middle" dy="0.35em"
-                            style="font-size: 2.5rem; font-weight: 800; fill: var(--primary)"><?= $percentage ?>%</text>
-                        <text x="90" y="110" text-anchor="middle"
-                            style="font-size: 0.75rem; fill: var(--text-secondary)">adherence</text>
+                        <circle cx="<?= $cx ?>" cy="<?= $cx ?>" r="<?= $radius ?>" fill="none" stroke="#1a2535" stroke-width="14"/>
+                        <circle cx="<?= $cx ?>" cy="<?= $cx ?>" r="<?= $radius ?>" fill="none"
+                            stroke="url(#adherenceGradient)" stroke-width="14" stroke-linecap="round"
+                            stroke-dasharray="<?= round($circumference, 2) ?>"
+                            stroke-dashoffset="<?= round($offset, 2) ?>"
+                            transform="rotate(-90 <?= $cx ?> <?= $cx ?>)"
+                            filter="url(#glow)"/>
                     </svg>
+                    <div class="adherence-ring-text">
+                        <div class="adherence-ring-value"><?= $percentage ?>%</div>
+                        <div class="adherence-ring-label">adherence</div>
+                    </div>
                 </div>
+
                 <div class="adherence-stats">
                     <div class="adherence-stat">
-                        <div class="adherence-stat-value" style="color: var(--primary)"><?= $stats['taken'] ?? 0 ?></div>
+                        <div class="adherence-stat-icon" style="background:rgba(0,229,255,0.1)">
+                            <svg viewBox="0 0 24 24" style="fill:#00E5FF"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                        </div>
+                        <div class="adherence-stat-value" style="color:var(--primary)"><?= $stats['taken'] ?? 0 ?></div>
                         <div class="adherence-stat-label">Taken</div>
                     </div>
                     <div class="adherence-stat">
-                        <div class="adherence-stat-value" style="color: var(--info)"><?= $stats['skipped'] ?? 0 ?></div>
+                        <div class="adherence-stat-icon" style="background:rgba(107,127,204,0.1)">
+                            <svg viewBox="0 0 24 24" style="fill:#6B7FCC"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                        </div>
+                        <div class="adherence-stat-value" style="color:var(--info)"><?= $stats['skipped'] ?? 0 ?></div>
                         <div class="adherence-stat-label">Skipped</div>
                     </div>
                     <div class="adherence-stat">
-                        <div class="adherence-stat-value" style="color: var(--error)"><?= $stats['missed'] ?? 0 ?></div>
+                        <div class="adherence-stat-icon" style="background:rgba(255,59,92,0.1)">
+                            <svg viewBox="0 0 24 24" style="fill:#FF3B5C"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                        </div>
+                        <div class="adherence-stat-value" style="color:var(--error)"><?= $stats['missed'] ?? 0 ?></div>
                         <div class="adherence-stat-label">Missed</div>
+                    </div>
+                    <div class="adherence-stat">
+                        <div class="adherence-stat-icon" style="background:rgba(0,200,150,0.1)">
+                            <svg viewBox="0 0 24 24" style="fill:#00C896"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg>
+                        </div>
+                        <div class="adherence-stat-value" style="color:#00C896"><?= $stats['total'] ?? 0 ?></div>
+                        <div class="adherence-stat-label">Total</div>
                     </div>
                 </div>
             </div>

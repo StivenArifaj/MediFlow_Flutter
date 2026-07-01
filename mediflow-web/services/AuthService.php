@@ -16,19 +16,30 @@ class AuthService {
         $result = $this->firebaseService->signIn($email, $password);
 
         if ($result['success']) {
+            $uid = $result['localId'];
+            $idToken = $result['idToken'];
+
+            // Set token so authenticated Firestore requests work
+            $this->firebaseService->setIdToken($idToken);
+
+            // Fetch user profile from Firestore to get name and role
+            $userProfile = $this->firebaseService->getDocument('users', $uid);
+            $userRole = $userProfile['role'] ?? 'patient';
+            $userName = $userProfile['name'] ?? $this->extractNameFromEmail($email);
+
             $user = [
-                'uid' => $result['localId'],
-                'email' => $result['email'],
-                'idToken' => $result['idToken'],
+                'uid'          => $uid,
+                'email'        => $result['email'],
+                'idToken'      => $idToken,
                 'refreshToken' => $result['refreshToken'],
-                'name' => $this->extractNameFromEmail($email),
-                'role' => 'patient',
-                'login_time' => time()
+                'name'         => $userName,
+                'role'         => $userRole,
+                'login_time'   => time(),
             ];
 
-            $_SESSION[$this->sessionKey] = $user;
-            $_SESSION['firebase_token'] = $result['idToken'];
-            $_SESSION['refresh_token'] = $result['refreshToken'];
+            $_SESSION[$this->sessionKey]  = $user;
+            $_SESSION['firebase_token']   = $idToken;
+            $_SESSION['refresh_token']    = $result['refreshToken'];
 
             return $user;
         }
@@ -41,18 +52,18 @@ class AuthService {
 
         if (isset($result['success']) && $result['success']) {
             $user = [
-                'uid' => $result['localId'],
-                'email' => $result['email'],
-                'idToken' => $result['idToken'],
+                'uid'          => $result['localId'],
+                'email'        => $result['email'],
+                'idToken'      => $result['idToken'],
                 'refreshToken' => $result['refreshToken'],
-                'name' => $name ?? $this->extractNameFromEmail($email),
-                'role' => $role,
-                'login_time' => time()
+                'name'         => $name ?? $this->extractNameFromEmail($email),
+                'role'         => $role,
+                'login_time'   => time(),
             ];
 
             $_SESSION[$this->sessionKey] = $user;
-            $_SESSION['firebase_token'] = $result['idToken'];
-            $_SESSION['refresh_token'] = $result['refreshToken'];
+            $_SESSION['firebase_token']  = $result['idToken'];
+            $_SESSION['refresh_token']   = $result['refreshToken'];
 
             return ['success' => true, 'user' => $user];
         }
@@ -89,6 +100,24 @@ class AuthService {
         }
     }
 
+    // Refresh the Firebase idToken using the stored refresh token.
+    // Call this at the top of any page that reads from Firestore.
+    public function refreshTokenIfNeeded() {
+        if (!isset($_SESSION['firebase_token']) || !isset($_SESSION['refresh_token'])) {
+            return false;
+        }
+
+        $loginTime = $_SESSION[$this->sessionKey]['login_time'] ?? 0;
+        $tokenAge  = time() - $loginTime;
+
+        // Refresh if token is older than 55 minutes (expires at 60)
+        if ($tokenAge < 3300) {
+            return true;
+        }
+
+        return $this->refreshSession();
+    }
+
     public function refreshSession() {
         if (!isset($_SESSION['refresh_token'])) {
             return false;
@@ -98,7 +127,9 @@ class AuthService {
 
         if ($result['success']) {
             $_SESSION['firebase_token'] = $result['id_token'];
-            $_SESSION['refresh_token'] = $result['refresh_token'];
+            $_SESSION['refresh_token']  = $result['refresh_token'];
+            // Update login_time so we don't refresh every request
+            $_SESSION[$this->sessionKey]['login_time'] = time();
             $this->firebaseService->setIdToken($result['id_token']);
             return true;
         }

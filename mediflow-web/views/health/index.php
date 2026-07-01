@@ -5,179 +5,62 @@ require_once __DIR__ . '/../../config/functions.php';
 
 $pageTitle = 'Health';
 
-// Health metrics data (13 types)
-$healthMetrics = [
-    'Weight' => ['value' => 75, 'unit' => 'kg', 'color' => '#00E5FF'],
-    'Blood Pressure' => ['value' => '120/80', 'unit' => 'mmHg', 'color' => '#FF4D6A'],
-    'Heart Rate' => ['value' => 72, 'unit' => 'bpm', 'color' => '#FF4D6A'],
-    'Blood Glucose' => ['value' => 95, 'unit' => 'mg/dL', 'color' => '#00C896'],
-    'Temperature' => ['value' => 36.8, 'unit' => '°C', 'color' => '#FFB800'],
-    'SpO2' => ['value' => 98, 'unit' => '%', 'color' => '#6B7FCC'],
-    'Steps' => ['value' => 8500, 'unit' => 'steps', 'color' => '#00C896'],
-    'Sleep' => ['value' => 7.5, 'unit' => 'hrs', 'color' => '#8B5CF6'],
-    'Water Intake' => ['value' => 8, 'unit' => 'glasses', 'color' => '#00E5FF'],
-    'BMI' => ['value' => 24.2, 'unit' => '', 'color' => '#00E5FF'],
-    'Cholesterol' => ['value' => 185, 'unit' => 'mg/dL', 'color' => '#FFB800'],
-    'Waist' => ['value' => 82, 'unit' => 'cm', 'color' => '#6B7FCC'],
-    'Respiratory Rate' => ['value' => 16, 'unit' => '/min', 'color' => '#FF7F7F']
-];
-
-$metricIcons = [
-    'Weight' => 'monitor_weight',
-    'Blood Pressure' => 'favorite',
-    'Heart Rate' => 'favorite_rounded',
-    'Blood Glucose' => 'water_drop',
-    'Temperature' => 'thermostat',
-    'SpO2' => 'air',
-    'Steps' => 'directions_walk',
-    'Sleep' => 'bedtime',
-    'Water Intake' => 'local_drink',
-    'BMI' => 'accessibility_new',
-    'Cholesterol' => 'opacity',
-    'Waist' => 'straighten',
-    'Respiratory Rate' => 'waves'
+// Metric definitions — values come from the app; none are hardcoded here
+$metricDefs = [
+    ['name' => 'Weight',           'unit' => 'kg',    'color' => '#00E5FF', 'icon' => 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z'],
+    ['name' => 'Blood Pressure',   'unit' => 'mmHg',  'color' => '#FF4D6A', 'icon' => 'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'],
+    ['name' => 'Heart Rate',       'unit' => 'bpm',   'color' => '#FF4D6A', 'icon' => 'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'],
+    ['name' => 'Blood Glucose',    'unit' => 'mg/dL', 'color' => '#00C896', 'icon' => 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z'],
+    ['name' => 'Temperature',      'unit' => '°C',    'color' => '#FFB800', 'icon' => 'M15 13V5c0-1.66-1.34-3-3-3S9 3.34 9 5v8c-1.21.91-2 2.37-2 4 0 2.76 2.24 5 5 5s5-2.24 5-5c0-1.63-.79-3.09-2-4z'],
+    ['name' => 'SpO2',             'unit' => '%',     'color' => '#6B7FCC', 'icon' => 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z'],
+    ['name' => 'Steps',            'unit' => 'steps', 'color' => '#00C896', 'icon' => 'M13.49 5.48c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3.6 13.9l1-4.4 2.1 2v6h2v-7.5l-2.1-2 .6-3c1.3 1.5 3.3 2.5 5.5 2.5v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1l-5.2 2.2v4.7h2v-3.4l1.8-.7-1.6 8.1-4.9-1-.4 2 7 1.4z'],
+    ['name' => 'Sleep',            'unit' => 'hrs',   'color' => '#8B5CF6', 'icon' => 'M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21.91 2 2.37 2 4.01C16 17.64 14.12 20 11.5 20S7 17.64 7 15.25c0-1.64.79-3.1 2-4.01z'],
+    ['name' => 'Water Intake',     'unit' => 'glasses','color'=> '#00E5FF', 'icon' => 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z'],
+    ['name' => 'BMI',              'unit' => '',      'color' => '#00E5FF', 'icon' => 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z'],
+    ['name' => 'Cholesterol',      'unit' => 'mg/dL', 'color' => '#FFB800', 'icon' => 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z'],
+    ['name' => 'Waist',            'unit' => 'cm',    'color' => '#6B7FCC', 'icon' => 'M20 9H4v2h16V9zM4 15h16v-2H4v2z'],
+    ['name' => 'Respiratory Rate', 'unit' => '/min',  'color' => '#FF7F7F', 'icon' => 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z'],
 ];
 
 ob_start();
-
 ?>
 
-<!-- Page Header -->
 <div class="page-header">
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
             <h1 class="page-title">Health Dashboard</h1>
-            <p class="page-subtitle">Track your vital signs and health metrics.</p>
+            <p class="page-subtitle">Your vital signs and health metrics from the mobile app.</p>
         </div>
-        <button class="btn btn-primary">
-            <svg viewBox="0 0 24 24" style="width: 20px; height: 20px; fill: currentColor;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-            Add Reading
-        </button>
     </div>
 </div>
 
-<!-- Health Metrics Grid -->
-<div id="health-grid">
-    <div class="health-grid">
-        <?php foreach ($healthMetrics as $type => $data): ?>
-        <div class="health-metric">
-            <div class="health-metric-icon" style="background: linear-gradient(135deg, <?= $data['color'] ?>20, <?= $data['color'] ?>40)">
-                <svg viewBox="0 0 24 24" style="fill: <?= $data['color'] ?>">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                </svg>
-            </div>
-            <div class="health-metric-name"><?= htmlspecialchars($type) ?></div>
-            <div class="health-metric-value" style="color: <?= $data['color'] ?>">
-                <?= htmlspecialchars($data['value']) ?>
-                <?php if (!empty($data['unit'])): ?>
-                <span class="health-metric-unit"><?= htmlspecialchars($data['unit']) ?></span>
-                <?php endif; ?>
-            </div>
-        </div>
-        <?php endforeach; ?>
-    </div>
+<!-- No-data notice -->
+<div style="display:flex; align-items:center; gap:10px; background:rgba(0,229,255,0.06); border:1px solid rgba(0,229,255,0.15); border-radius:12px; padding:14px 20px; margin-bottom:var(--spacing-xl);">
+    <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#00E5FF;flex-shrink:0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+    <span style="font-size:0.875rem;color:var(--text-secondary)">Health readings are recorded in the <strong style="color:var(--text-primary)">MediFlow mobile app</strong>. Add readings there and they will appear here once synced.</span>
 </div>
 
-<!-- Charts Section -->
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-lg); margin-top: var(--spacing-xl);">
-    <!-- Blood Pressure Trend -->
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Blood Pressure Trend</h3>
-            <span class="text-secondary">Last 30 days</span>
+<!-- Metric cards — values show — when no data is recorded -->
+<div class="health-grid">
+    <?php foreach ($metricDefs as $metric): ?>
+    <div class="health-metric health-metric-empty">
+        <div class="health-metric-icon" style="background:linear-gradient(135deg,<?= $metric['color'] ?>18,<?= $metric['color'] ?>35)">
+            <svg viewBox="0 0 24 24" style="fill:<?= $metric['color'] ?>">
+                <path d="<?= $metric['icon'] ?>"/>
+            </svg>
         </div>
-        <div class="card-body">
-            <div class="chart-container">
-                <canvas id="bpChart"></canvas>
-            </div>
+        <div class="health-metric-name"><?= htmlspecialchars($metric['name']) ?></div>
+        <div class="health-metric-value" style="color:<?= $metric['color'] ?>">
+            <span style="opacity:0.35">—</span>
+            <?php if (!empty($metric['unit'])): ?>
+            <span class="health-metric-unit" style="opacity:0.3"><?= htmlspecialchars($metric['unit']) ?></span>
+            <?php endif; ?>
         </div>
+        <div style="font-size:0.65rem;color:var(--text-secondary);margin-top:4px;opacity:0.5">No data yet</div>
     </div>
-    
-    <!-- Steps Trend -->
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Daily Steps</h3>
-            <span class="text-secondary">Last 30 days</span>
-        </div>
-        <div class="card-body">
-            <div class="chart-container">
-                <canvas id="stepsChart"></canvas>
-            </div>
-        </div>
-    </div>
+    <?php endforeach; ?>
 </div>
 
 <?php
-
 $content = ob_get_clean();
-
-$scripts = '
-<script>
-    // Initialize charts when page loads
-    document.addEventListener("DOMContentLoaded", function() {
-        // Blood Pressure Chart
-        const bpCtx = document.getElementById("bpChart").getContext("2d");
-        new Chart(bpCtx, {
-            type: "line",
-            data: {
-                labels: Array.from({length: 30}, (_, i) => "Day " + (i + 1)),
-                datasets: [{
-                    label: "Systolic",
-                    data: Array.from({length: 30}, () => 115 + Math.random() * 15),
-                    borderColor: "#FF4D6A",
-                    backgroundColor: "rgba(255, 77, 106, 0.1)",
-                    fill: true,
-                    tension: 0.4
-                }, {
-                    label: "Diastolic",
-                    data: Array.from({length: 30}, () => 75 + Math.random() * 10),
-                    borderColor: "#00E5FF",
-                    backgroundColor: "rgba(0, 229, 255, 0.1)",
-                    fill: true,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: "bottom" }
-                },
-                scales: {
-                    y: { grid: { color: "rgba(255,255,255,0.05)" } },
-                    x: { grid: { display: false } }
-                }
-            }
-        });
-        
-        // Steps Chart
-        const stepsCtx = document.getElementById("stepsChart").getContext("2d");
-        new Chart(stepsCtx, {
-            type: "bar",
-            data: {
-                labels: Array.from({length: 30}, (_, i) => "Day " + (i + 1)),
-                datasets: [{
-                    label: "Steps",
-                    data: Array.from({length: 30}, () => 5000 + Math.random() * 8000),
-                    backgroundColor: "#00E5FF",
-                    borderRadius: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: { grid: { color: "rgba(255,255,255,0.05)" } },
-                    x: { grid: { display: false } }
-                }
-            }
-        });
-    });
-</script>
-';
-
-// Include layout
 require_once __DIR__ . '/../layouts/main.php';

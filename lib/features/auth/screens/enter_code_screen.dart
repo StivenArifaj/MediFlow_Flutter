@@ -3,10 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
+import '../../../core/providers/shared_preferences_provider.dart';
 import '../../../data/services/firebase_service.dart';
 import '../providers/auth_provider.dart';
 
@@ -72,16 +74,22 @@ class _EnterCodeScreenState extends ConsumerState<EnterCodeScreen> {
       await repo.setSelectedRole('linked_patient');
 
       // Create local account
-      final userId = await repo.register(
-        name: result['patientName'] ?? 'Patient',
-        email: '${code.toLowerCase()}@linked.mediflow',
-        password: 'linked_$code',
-        role: 'linked_patient',
-      );
+      final email = '${code.toLowerCase()}@linked.mediflow';
+      try {
+        await repo.register(
+          name: result['patientName'] ?? 'Patient',
+          email: email,
+          password: 'linked_$code',
+          role: 'linked_patient',
+        );
+      } on sb.AuthException catch (_) {
+        // User already exists — sign in instead
+        await repo.login(email: email, password: 'linked_$code');
+      }
 
-      // Register in Firestore
+      // Register in Firestore (stub — no-op until Supabase invite flow is wired)
       await registerLinkedPatient(
-        patientUid: userId.toString(),
+        patientUid: repo.currentUserUid ?? '',
         caregiverUid: result['caregiverUid'],
         inviteCode: code,
         name: result['patientName'] ?? 'Patient',
@@ -89,7 +97,7 @@ class _EnterCodeScreenState extends ConsumerState<EnterCodeScreen> {
 
       if (mounted) context.go('/linked-patient-home');
     } catch (e) {
-      setState(() => _error = 'Connection failed. Please try again.');
+      setState(() => _error = 'Error: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

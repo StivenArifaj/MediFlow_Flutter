@@ -180,15 +180,17 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
         'createdAt': DateTime.now().toIso8601String(),
       };
 
+      final uid = repo.firebaseUid ?? userId.toString();
+
       if (role == 'caregiver') {
         await syncMedicineToFirestore(
-          caregiverUid: userId,
+          caregiverUid: uid,
           medicineId: medId.toString(),
           data: medicineData,
         );
       } else {
         await syncPatientMedicineToFirestore(
-          patientUid: userId,
+          patientUid: uid,
           medicineId: medId.toString(),
           data: medicineData,
         );
@@ -235,13 +237,13 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
 
           if (role == 'caregiver') {
             await syncReminderToFirestore(
-              caregiverUid: userId,
+              caregiverUid: uid,
               reminderId: '${medId}_$t',
               data: reminderData,
             );
           } else {
             await syncPatientReminderToFirestore(
-              patientUid: userId,
+              patientUid: uid,
               reminderId: '${medId}_$t',
               data: reminderData,
             );
@@ -740,14 +742,16 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
       ),
 
       // ── Sticky bottom button ───────────────────────────────────────────────
-      bottomNavigationBar: Container(
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter, end: Alignment.bottomCenter,
             colors: [const Color(0xFF070B12).withValues(alpha: 0), const Color(0xFF070B12)],
           ),
         ),
-        padding: EdgeInsets.fromLTRB(16, 12, 16, MediaQuery.of(context).padding.bottom + 16),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
         child: GestureDetector(
           onTap: _isLoading ? null : _submit,
           child: Container(
@@ -773,6 +777,7 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

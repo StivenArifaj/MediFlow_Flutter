@@ -82,7 +82,7 @@ $adherence = $total > 0 ? round(($totalTaken / $total) * 100) : 0;
                     <div class="history-content">
                         <span class="history-status <?= $entry['status'] ?? 'pending' ?>"><?= ucfirst($entry['status'] ?? 'Pending') ?></span>
                         <div class="history-medicine"><?= htmlspecialchars($entry['medicineName'] ?? 'Medicine') ?></div>
-                        <div class="history-scheduled">Scheduled: <?= date('d MMM, H:i', strtotime($entry['timestamp'] ?? time())) ?></div>
+                        <div class="history-scheduled">Scheduled: <?= date('d M, H:i', strtotime($entry['timestamp'] ?? time())) ?></div>
                     </div>
                 </div>
                 <?php endforeach; ?>

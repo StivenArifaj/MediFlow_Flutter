@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mediflow/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 import '../providers/auth_provider.dart';
 import '../../../data/repositories/auth_repository.dart';
@@ -63,10 +64,33 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       } else {
         context.go('/home');
       }
-    } on AuthException catch (e) {
-      setState(() => _submitError = e.message);
-    } catch (_) {
-      setState(() => _submitError = 'Something went wrong. Please try again.');
+    } catch (e) {
+      String msg = 'Something went wrong. Please try again.';
+      if (e is sb.AuthException) {
+        msg = e.message;
+        if (e.statusCode == '429') {
+          msg = 'Too many attempts. Please wait a few minutes.';
+        }
+      } else if (e is Exception) {
+        msg = e.toString().replaceAll('Exception: ', '');
+      }
+      if (mounted) setState(() => _submitError = msg);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isLoading = true);
+    try {
+      final repo = ref.read(authRepositoryProvider);
+      await repo.loginWithGoogle();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Google sign-in failed: $e')),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -220,6 +244,38 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                 ).animate().fadeIn(delay: 400.ms, duration: 400.ms).slideY(begin: 0.08),
+
+                const SizedBox(height: 20),
+
+                // ── Or Divider ───────────────────────────────
+                Row(
+                  children: [
+                    const Expanded(child: Divider(color: Colors.white24)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text('or', style: const TextStyle(color: Colors.white54)),
+                    ),
+                    const Expanded(child: Divider(color: Colors.white24)),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                // ── Google Sign-In ───────────────────────────
+                OutlinedButton.icon(
+                  onPressed: _isLoading ? null : _handleGoogleSignIn,
+                  icon: const Icon(Icons.g_mobiledata, size: 28),
+                  label: const Text('Continue with Google'),
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black87,
+                    minimumSize: const Size(double.infinity, 52),
+                    side: const BorderSide(color: Colors.white24),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ).animate().fadeIn(delay: 420.ms, duration: 400.ms).slideY(begin: 0.08),
 
                 const SizedBox(height: 20),
 

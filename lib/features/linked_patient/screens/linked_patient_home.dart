@@ -4,8 +4,9 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
+import '../../../core/providers/shared_preferences_provider.dart';
+import '../../../core/supabase/supabase_client.dart';
 import '../../../data/services/firebase_service.dart';
-import '../../auth/providers/auth_provider.dart';
 
 // ── Linked-patient warm color tokens ─────────────────────────────────────────
 class _LP {
@@ -42,7 +43,25 @@ class _LinkedPatientHomeState extends ConsumerState<LinkedPatientHome> {
   Future<void> _loadData() async {
     final prefs = ref.read(sharedPreferencesProvider);
     final cUid = prefs.getString('linked_caregiver_uid') ?? '';
-    final cName = prefs.getString('linked_caregiver_name') ?? '';
+
+    // Resolve caregiver name from Supabase (survives reinstall)
+    String cName = prefs.getString('linked_caregiver_name') ?? '';
+    final userId = supabase.auth.currentUser?.id;
+    if (userId != null) {
+      final userRow = await supabase
+          .from('profiles')
+          .select('caregiver_id')
+          .eq('id', userId)
+          .maybeSingle();
+      if (userRow != null && userRow['caregiver_id'] != null) {
+        final caregiverRow = await supabase
+            .from('profiles')
+            .select('name')
+            .eq('id', userRow['caregiver_id'])
+            .maybeSingle();
+        cName = caregiverRow?['name'] as String? ?? cName;
+      }
+    }
 
     setState(() {
       _caregiverUid = cUid;
