@@ -9,7 +9,6 @@ import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
-import '../../../core/constants/app_dimensions.dart';
 import '../../../core/services/pdf_export_service.dart';
 import '../../../data/services/supabase_data_service.dart';
 import '../../../core/hooks/managed_user_id.dart';
@@ -163,7 +162,7 @@ class _DataExportScreenState extends ConsumerState<DataExportScreen> {
                       // JSON Export card
                       _ExportCard(
                         icon: Icons.code_rounded,
-                        iconColor: AppColors.neonCyan,
+                        iconColor: AppColors.primary,
                         title: 'JSON Data Export',
                         desc: 'Export all your data as machine-readable JSON. Perfect for backups and data portability.',
                         buttonLabel: 'Export JSON',
@@ -236,7 +235,7 @@ class _ExportCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.bgCard,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0x1A00E5FF)),
         boxShadow: [

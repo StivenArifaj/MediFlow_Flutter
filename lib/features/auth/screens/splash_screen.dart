@@ -14,16 +14,8 @@ class SplashScreen extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment(0, -0.8),
-            radius: 1.5,
-            colors: [Color(0xFF0D1F35), Color(0xFF070B12)],
-          ),
-        ),
-        child: Center(
+      backgroundColor: AppColors.background,
+      body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -78,7 +70,6 @@ class SplashScreen extends StatelessWidget {
               const CircularProgressIndicator(strokeWidth: 2),
             ],
           ),
-        ),
       ),
     );
   }

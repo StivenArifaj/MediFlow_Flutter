@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../core/widgets/app_background.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -26,33 +24,35 @@ class HealthDetailScreen extends ConsumerWidget {
     final measAsync = ref.watch(measurementsForTypeProvider(type));
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: AppBackground(
-        child: measAsync.when(
-          loading: () => const Center(
-              child: CircularProgressIndicator(color: AppColors.neonCyan, strokeWidth: 2)),
-          error: (_, __) => const Center(
-              child: Text('Error loading data', style: TextStyle(color: Colors.white))),
-          data: (measurements) => _Body(
-            type: type,
-            unit: unit,
-            measurements: measurements,
-            ref: ref,
-          ),
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: Text(type),
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        leading: BackButton(color: AppColors.primary),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(height: 1, color: AppColors.border),
         ),
       ),
-      floatingActionButton: Container(
-        decoration: BoxDecoration(
-          gradient: AppColors.primaryGradient,
-          shape: BoxShape.circle,
-          boxShadow: [AppColors.cyanGlow],
+      body: measAsync.when(
+        loading: () => const Center(
+            child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2)),
+        error: (_, __) => Center(
+            child: Text('Error loading data',
+                style: TextStyle(color: AppColors.textPrimary))),
+        data: (measurements) => _Body(
+          type: type,
+          unit: unit,
+          measurements: measurements,
+          ref: ref,
         ),
-        child: FloatingActionButton(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          onPressed: () => _openAddSheet(context, ref),
-          child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
-        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'health_detail_fab',
+        backgroundColor: AppColors.primary,
+        onPressed: () => _openAddSheet(context, ref),
+        child: const Icon(Icons.add_rounded, color: Colors.white),
       ),
     );
   }
@@ -90,12 +90,13 @@ class _Body extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgCard,
+        backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-          side: const BorderSide(color: Color(0x1A00E5FF)),
+          side: const BorderSide(color: AppColors.border),
         ),
-        title: Text('Delete Entry?', style: AppTypography.titleLarge()),
+        title: Text('Delete Entry?',
+            style: AppTypography.titleLarge().copyWith(color: AppColors.textPrimary)),
         content: Text(
           'Delete this $type reading (${_formatValue((m['value'] as num).toDouble())})?',
           style: AppTypography.bodyMedium(color: AppColors.textSecondary),
@@ -103,15 +104,18 @@ class _Body extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: AppTypography.labelLarge(color: AppColors.textSecondary)),
+            child: Text('Cancel',
+                style: AppTypography.labelLarge(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
-              ref.read(measurementNotifierProvider.notifier)
+              ref
+                  .read(measurementNotifierProvider.notifier)
                   .deleteMeasurement(m['id'] as String, type);
             },
-            child: Text('Delete', style: AppTypography.labelLarge(color: AppColors.error)),
+            child: Text('Delete',
+                style: AppTypography.labelLarge(color: AppColors.danger)),
           ),
         ],
       ),
@@ -120,114 +124,121 @@ class _Body extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final latestValue = measurements.isNotEmpty
+        ? _formatValue((measurements.first['value'] as num).toDouble())
+        : null;
+
     return CustomScrollView(
       slivers: [
+        // Latest value card
         SliverToBoxAdapter(
-          child: SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 20, 0),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white, size: 20),
-                    onPressed: () => context.pop(),
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(type, style: AppTypography.headlineMedium()),
-                        if (unit.isNotEmpty)
-                          Text(unit, style: AppTypography.bodySmall(color: AppColors.neonCyan)),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppColors.neonCyan.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
-                      border: Border.all(color: AppColors.neonCyan.withValues(alpha: 0.3)),
-                    ),
-                    child: Text(
-                      '${measurements.length} entries',
-                      style: AppTypography.bodySmall(color: AppColors.neonCyan),
-                    ),
-                  ),
-                ],
-              ),
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.border),
             ),
-          ),
+            child: Row(
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(Icons.show_chart_rounded,
+                      color: AppColors.primary, size: 26),
+                ),
+                const SizedBox(width: 16),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Latest Reading',
+                        style: const TextStyle(
+                            fontSize: 13, color: AppColors.textSecondary)),
+                    Text(latestValue ?? '—',
+                        style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary)),
+                    if (unit.isNotEmpty)
+                      Text(unit,
+                          style: const TextStyle(
+                              fontSize: 13, color: AppColors.textTertiary)),
+                  ],
+                ),
+              ],
+            ),
+          ).animate().fadeIn(duration: 400.ms),
         ),
 
+        // Chart
         SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(12, 20, 20, 12),
-              decoration: BoxDecoration(
-                color: AppColors.bgCard,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0x1A00E5FF)),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.neonCyan.withValues(alpha: 0.06),
-                    blurRadius: 20,
-                    offset: const Offset(0, 4),
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 8, bottom: 16),
+                  child: Text(
+                    'Trend — Last 30 Readings',
+                    style: AppTypography.bodySmall(color: AppColors.textSecondary),
                   ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8, bottom: 16),
-                    child: Text(
-                      'Trend — Last 30 Readings',
-                      style: AppTypography.bodySmall(color: AppColors.textSecondary),
-                    ),
-                  ),
-                  SizedBox(
-                    height: 220,
-                    child: measurements.length < 2
-                        ? Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.show_chart_rounded,
-                                    color: AppColors.neonCyan.withValues(alpha: 0.3), size: 48),
-                                const SizedBox(height: 12),
-                                Text(
-                                  'Add more entries to see your trend',
-                                  style: AppTypography.bodyMedium(color: AppColors.textMuted),
-                                ),
-                              ],
-                            ),
-                          )
-                        : _buildChart(measurements),
-                  ),
-                ],
-              ),
-            ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.05, end: 0),
-          ),
+                ),
+                SizedBox(
+                  height: 220,
+                  child: measurements.length < 2
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.show_chart_rounded,
+                                  color: AppColors.primary.withValues(alpha: 0.3),
+                                  size: 48),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Add more entries to see your trend',
+                                style: AppTypography.bodyMedium(
+                                    color: AppColors.textSecondary),
+                              ),
+                            ],
+                          ),
+                        )
+                      : _buildChart(measurements),
+                ),
+              ],
+            ),
+          ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.05, end: 0),
         ),
 
+        // Section header
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
             child: Row(
               children: [
                 Container(
-                  width: 3, height: 16,
+                  width: 3,
+                  height: 16,
                   decoration: BoxDecoration(
-                    color: AppColors.neonCyan,
+                    color: AppColors.primary,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text('All Readings', style: AppTypography.titleMedium()),
+                Text('All Readings',
+                    style: AppTypography.titleMedium()
+                        .copyWith(color: AppColors.textPrimary)),
               ],
             ),
           ),
@@ -239,24 +250,15 @@ class _Body extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    width: 80, height: 80,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.neonCyan.withValues(alpha: 0.15),
-                          blurRadius: 40, spreadRadius: 15,
-                        ),
-                      ],
-                    ),
-                    child: const Center(child: Text('📊', style: TextStyle(fontSize: 44))),
-                  ),
+                  const Text('📊', style: TextStyle(fontSize: 44)),
                   const SizedBox(height: 16),
-                  Text('No readings yet', style: AppTypography.titleMedium()),
+                  Text('No readings yet',
+                      style: AppTypography.titleMedium()
+                          .copyWith(color: AppColors.textPrimary)),
                   const SizedBox(height: 6),
                   Text('Tap + to add your first $type entry',
-                      style: AppTypography.bodySmall(color: AppColors.textMuted)),
+                      style: AppTypography.bodySmall(
+                          color: AppColors.textSecondary)),
                 ],
               ),
             ),
@@ -271,8 +273,7 @@ class _Body extends StatelessWidget {
                   unit: unit,
                   onDelete: () => _confirmDelete(ctx, measurements[i]),
                 ).animate().fadeIn(
-                    delay: Duration(milliseconds: i * 30),
-                    duration: 250.ms),
+                    delay: Duration(milliseconds: i * 30), duration: 250.ms),
                 childCount: measurements.length,
               ),
             ),
@@ -303,7 +304,8 @@ class _Body extends StatelessWidget {
           drawVerticalLine: false,
           horizontalInterval: ((maxY - minY) / 4).clamp(1, double.infinity),
           getDrawingHorizontalLine: (_) => const FlLine(
-            color: Color(0x1A00E5FF), strokeWidth: 0.5,
+            color: AppColors.border,
+            strokeWidth: 0.5,
           ),
         ),
         titlesData: FlTitlesData(
@@ -315,7 +317,8 @@ class _Body extends StatelessWidget {
                 padding: const EdgeInsets.only(right: 6),
                 child: Text(
                   _formatValue(value),
-                  style: const TextStyle(fontSize: 10, color: Color(0xFF8A9BB5)),
+                  style:
+                      const TextStyle(fontSize: 10, color: AppColors.textTertiary),
                   textAlign: TextAlign.right,
                 ),
               ),
@@ -328,19 +331,25 @@ class _Body extends StatelessWidget {
               interval: (chartData.length / 5).clamp(1, double.infinity),
               getTitlesWidget: (value, _) {
                 final idx = value.toInt();
-                if (idx < 0 || idx >= chartData.length) return const SizedBox.shrink();
+                if (idx < 0 || idx >= chartData.length) {
+                  return const SizedBox.shrink();
+                }
                 return Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
-                    dateFmt.format(DateTime.parse(chartData[idx]['recorded_at'] as String)),
-                    style: const TextStyle(fontSize: 9, color: Color(0xFF8A9BB5)),
+                    dateFmt.format(DateTime.parse(
+                        chartData[idx]['recorded_at'] as String)),
+                    style:
+                        const TextStyle(fontSize: 9, color: AppColors.textTertiary),
                   ),
                 );
               },
             ),
           ),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         ),
         borderData: FlBorderData(show: false),
         lineBarsData: [
@@ -348,7 +357,7 @@ class _Body extends StatelessWidget {
             spots: spots,
             isCurved: true,
             curveSmoothness: 0.25,
-            color: AppColors.neonCyan,
+            color: AppColors.primary,
             barWidth: 2.5,
             isStrokeCapRound: true,
             belowBarData: BarAreaData(
@@ -357,31 +366,37 @@ class _Body extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  AppColors.neonCyan.withValues(alpha: 0.2),
-                  AppColors.neonCyan.withValues(alpha: 0.0),
+                  AppColors.primary.withValues(alpha: 0.2),
+                  AppColors.primary.withValues(alpha: 0.0),
                 ],
               ),
             ),
             dotData: FlDotData(
               show: true,
               getDotPainter: (_, __, ___, ____) => FlDotCirclePainter(
-                radius: 3.5, color: Colors.white, strokeWidth: 2,
-                strokeColor: AppColors.neonCyan,
+                radius: 3.5,
+                color: Colors.white,
+                strokeWidth: 2,
+                strokeColor: AppColors.primary,
               ),
             ),
           ),
         ],
         lineTouchData: LineTouchData(
           touchTooltipData: LineTouchTooltipData(
-            getTooltipColor: (_) => AppColors.bgCard,
-            tooltipBorder: const BorderSide(color: Color(0x4D00E5FF)),
+            getTooltipColor: (_) => AppColors.surface,
+            tooltipBorder:
+                BorderSide(color: AppColors.primary.withValues(alpha: 0.3)),
             getTooltipItems: (touchedSpots) => touchedSpots.map((spot) {
               final m = chartData[spot.spotIndex];
               final v = (m['value'] as num).toDouble();
               final dt = DateTime.parse(m['recorded_at'] as String);
               return LineTooltipItem(
                 '${_formatValue(v)} $unit\n${DateFormat('d MMM HH:mm').format(dt)}',
-                const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w600),
+                const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w600),
               );
             }).toList(),
           ),
@@ -422,22 +437,22 @@ class _EntryRow extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.only(right: 20),
         decoration: BoxDecoration(
-          color: AppColors.error.withValues(alpha: 0.15),
+          color: AppColors.danger.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(14),
         ),
-        child: const Icon(Icons.delete_rounded, color: AppColors.error),
+        child: const Icon(Icons.delete_rounded, color: AppColors.danger),
       ),
       confirmDismiss: (_) async {
         onDelete();
         return false;
       },
       child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
+        margin: const EdgeInsets.fromLTRB(0, 0, 0, 8),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: AppColors.bgCard,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0x1A00E5FF)),
+          border: Border.all(color: AppColors.border),
         ),
         child: Row(
           children: [
@@ -448,12 +463,16 @@ class _EntryRow extends StatelessWidget {
                 children: [
                   Text(
                     DateFormat('dd MMM yyyy').format(recordedAt),
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.white),
+                    style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textPrimary),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     DateFormat('HH:mm').format(recordedAt),
-                    style: const TextStyle(fontSize: 11, color: Color(0xFF8A9BB5)),
+                    style: const TextStyle(
+                        fontSize: 11, color: AppColors.textSecondary),
                   ),
                 ],
               ),
@@ -463,7 +482,10 @@ class _EntryRow extends StatelessWidget {
               child: Text(
                 '${_formatValue(value)}${unit.isNotEmpty ? ' $unit' : ''}',
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.neonCyan),
+                style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary),
               ),
             ),
             if (notes != null && notes.isNotEmpty)
@@ -474,15 +496,17 @@ class _EntryRow extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: AppColors.info.withValues(alpha: 0.1),
+                      color: AppColors.primaryLight,
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: const Icon(Icons.notes_rounded, color: AppColors.info, size: 16),
+                    child: const Icon(Icons.notes_rounded,
+                        color: AppColors.primary, size: 16),
                   ),
                 ),
               ),
             IconButton(
-              icon: const Icon(Icons.delete_outline_rounded, color: AppColors.error, size: 20),
+              icon: const Icon(Icons.delete_outline_rounded,
+                  color: AppColors.danger, size: 20),
               onPressed: onDelete,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
@@ -522,10 +546,10 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
     setState(() => _saving = true);
     try {
       await ref.read(measurementNotifierProvider.notifier).addMeasurement(
-        type: widget.type,
-        value: val,
-        unit: widget.unit,
-      );
+            type: widget.type,
+            value: val,
+            unit: widget.unit,
+          );
       if (mounted) Navigator.pop(context);
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -539,9 +563,9 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
 
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFF0A1628),
+        color: AppColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        border: Border(top: BorderSide(color: Color(0x1A00E5FF))),
+        border: Border(top: BorderSide(color: AppColors.border)),
       ),
       padding: EdgeInsets.fromLTRB(24, 0, 24, bottomPad),
       child: Column(
@@ -550,65 +574,80 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
           const SizedBox(height: 12),
           Center(
             child: Container(
-              width: 40, height: 4,
+              width: 40,
+              height: 4,
               decoration: BoxDecoration(
-                color: const Color(0xFF2A3A4A),
+                color: AppColors.border,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
           ),
           const SizedBox(height: 22),
-          Text('Add ${widget.type}', style: AppTypography.headlineMedium()),
+          Text('Add ${widget.type}',
+              style: AppTypography.headlineMedium()
+                  .copyWith(color: AppColors.textPrimary)),
           const SizedBox(height: 20),
           TextField(
             controller: _controller,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
             textAlign: TextAlign.center,
             autofocus: true,
-            style: const TextStyle(fontSize: 42, fontWeight: FontWeight.w800, color: AppColors.neonCyan),
+            style: const TextStyle(
+                fontSize: 42,
+                fontWeight: FontWeight.w800,
+                color: AppColors.primary),
             decoration: InputDecoration(
               hintText: '0',
-              hintStyle: TextStyle(color: AppColors.neonCyan.withValues(alpha: 0.25), fontSize: 42),
+              hintStyle: TextStyle(
+                  color: AppColors.primary.withValues(alpha: 0.25),
+                  fontSize: 42),
               suffixText: widget.unit,
-              suffixStyle: const TextStyle(fontSize: 18, color: Color(0xFF8A9BB5)),
+              suffixStyle: const TextStyle(
+                  fontSize: 18, color: AppColors.textSecondary),
               filled: true,
-              fillColor: AppColors.neonCyan.withValues(alpha: 0.06),
+              fillColor: AppColors.primaryLight,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(18),
-                borderSide: BorderSide(color: AppColors.neonCyan.withValues(alpha: 0.3)),
+                borderSide:
+                    BorderSide(color: AppColors.primary.withValues(alpha: 0.3)),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(18),
-                borderSide: BorderSide(color: AppColors.neonCyan.withValues(alpha: 0.3)),
+                borderSide:
+                    BorderSide(color: AppColors.primary.withValues(alpha: 0.3)),
               ),
               focusedBorder: const OutlineInputBorder(
                 borderRadius: BorderRadius.all(Radius.circular(18)),
-                borderSide: BorderSide(color: AppColors.neonCyan, width: 2),
+                borderSide: BorderSide(color: AppColors.primary, width: 2),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+              contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 24, vertical: 18),
             ),
           ),
           const SizedBox(height: 24),
           GestureDetector(
             onTap: _saving ? null : _save,
             child: Container(
-              width: double.infinity, height: 54,
+              width: double.infinity,
+              height: 54,
               decoration: BoxDecoration(
                 gradient: AppColors.primaryGradient,
                 borderRadius: BorderRadius.circular(100),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.neonCyan.withValues(alpha: 0.4),
-                    blurRadius: 20, offset: const Offset(0, 6),
-                  ),
-                ],
+                boxShadow: const [AppColors.cyanGlow],
               ),
               child: Center(
                 child: _saving
-                    ? const SizedBox(width: 22, height: 22,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2))
                     : const Text('Save Reading',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white)),
               ),
             ),
           ),

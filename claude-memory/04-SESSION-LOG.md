@@ -3,6 +3,38 @@
 Append one entry per session, right before /clear. Keep entries short — 
 3-5 lines. This is a changelog, not a transcript.
 
+## 2026-07-01 — UI Redesign Pass 4 (final)
+- health_detail: full light rewrite — surface cards, primary chart, latest value card, light sheet
+- scan_screen: neonCyan → scanAccent (0xFF00D4D4) for camera overlay visibility
+- invite_patient + enter_code: dark gradient → light AppBar + surface card layout
+- splash_screen + about_screen + data_export: cleaned dark references
+- neonCyan removed from app_colors; scanAccent added
+- UI redesign phase COMPLETE — 0 neon/dark references, 0 analyzer errors
+- Next: full OpenCode QA on all screens
+
+## 2026-07-01 — UI Redesign Pass 3: Profile + Caregiver Dashboard
+- profile_screen: full visual rewrite — AppBar added, light CircleAvatar, role badge helpers, _StatCell grid (no GlassCard), dedicated invite code card for caregivers, _SettingsTile ListTile pattern, grouped sections with section labels, clean dialogs/sheets
+- caregiver_dashboard_screen: AdherenceRing replaced with linear progress + large %, all Color(0xFF0D1826)/0xFF0A1420/0xFF162032 dark hex → AppColors.surface/surfaceVariant, neonCyan → AppColors.caregiver/primary, AppBackground → plain Scaffold, AppBar added
+- reminder_setup_screen: GlassCard → Container (so glass_card.dart could be deleted)
+- Deleted: neon_button.dart, neon_card.dart, glass_card.dart, starfield_background.dart, adherence_ring.dart
+- app_colors.dart: removed neonCardDecoration, glassCardDecoration (truly unused)
+- NOTE: neonCyan kept in app_colors — still referenced by health_detail, scan_screen, invite_patient, enter_code screens (not in scope for Pass 3)
+- flutter analyze: 0 errors (9 pre-existing warnings/infos)
+
+## 2026-07-01 — UI Redesign Pass 2 (refinement): Home + Navigation polish
+- main_tab_screen: already correct (Material3 NavigationBar), no changes needed
+- home_screen: progress card redesigned (header "$X of $Y", footer "X remaining"/"On track ✓")
+- Avatar tap now routes to /home/profile; schedule header uses TextButton.icon
+- Health tip gradient changed to blue→blue (0xFF2D7DD2→0xFF1A5BA8)
+- FAB bottom sheet: ListTile → _AddOptionTile with icon containers + chevron
+- flutter analyze: 0 errors
+
+## 2026-07-01 — UI Redesign Pass 2: Home + Navigation
+- main_tab_screen: replaced custom dark nav row with Material3 NavigationBar (light, blue indicator, border-top separator)
+- home_screen: full visual rewrite — light background, linear progress card replaces AdherenceRing, Took It/Skip buttons on pending cards, color-coded left-border for taken/missed/skipped, FAB opens bottom sheet instead of floating mini menu
+- Removed: AdherenceRing, GlassCard, _FloatingFab mini-options, _StatsRow, _MedicineCard section, all hardcoded dark hex colors, flutter_animate import, neonCyan refs
+- flutter analyze: 0 errors (11 pre-existing warnings)
+
 ## 2026-07-01 — QA bug fixes (5 bugs)
 - B4 FIXED: Linked patient routing — router redirect checks profiles.role from Supabase on /login and /welcome, routes linked_patient → /linked-patient-home
 - B1 NOT FOUND: "100mg by by" — no display code produces this; may be stale test data in Supabase
@@ -90,3 +122,13 @@ Append one entry per session, right before /clear. Keep entries short —
 - Committed v0.2-backend-complete tag
 - Backend phase DONE
 - Next: full QA pass then UI redesign
+
+## 2026-07-01 — UI Redesign Pass 1
+- Design system replaced: dark neon → light trust
+- AppColors: new light palette (primary=0xFF2D7DD2 trust blue), legacy aliases kept for non-auth screens
+- AppTypography: added static getter forms alongside legacy method forms (no breakage)
+- AppTheme: Material3 light theme, both theme/darkTheme → lightTheme, ThemeMode.light forced
+- AppBackground: simple light gradient replacing dark starfield
+- 4 auth screens redesigned (welcome, login, register, role_selection)
+- 0 errors on flutter analyze
+- Next: Pass 2 (Home screen + bottom nav)

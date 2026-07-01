@@ -177,7 +177,7 @@ class _ScanScreenState extends State<ScanScreen> with WidgetsBindingObserver {
   Widget _buildCameraView() {
     if (_mode == _ScanMode.barcode) return MobileScanner(onDetect: _onBarcodeDetected);
     if (!_cameraReady || _cameraController == null) {
-      return Container(color: Colors.black, child: const Center(child: CircularProgressIndicator(color: AppColors.neonCyan)));
+      return Container(color: Colors.black, child: const Center(child: CircularProgressIndicator(color: AppColors.scanAccent)));
     }
     return CameraPreview(_cameraController!);
   }
@@ -228,9 +228,9 @@ class _ScanScreenState extends State<ScanScreen> with WidgetsBindingObserver {
                     decoration: BoxDecoration(
                       color: const Color(0x33000000),
                       borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
-                      border: Border.all(color: const Color(0x4D00E5FF)),
+                      border: Border.all(color: const Color(0x4D00D4D4)),
                     ),
-                    child: Text('Manual Entry', style: AppTypography.bodySmall(color: AppColors.neonCyan)),
+                    child: Text('Manual Entry', style: AppTypography.bodySmall(color: AppColors.scanAccent)),
                   ),
                 ),
               ],
@@ -268,7 +268,7 @@ class _ScanOverlay extends StatelessWidget {
           height: frameH,
           child: _CornerBrackets()
               .animate(onPlay: (c) => c.repeat())
-              .shimmer(duration: 1500.ms, color: AppColors.neonCyan),
+              .shimmer(duration: 1500.ms, color: AppColors.scanAccent),
         ),
       ],
     );
@@ -284,7 +284,7 @@ class _BracketPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = AppColors.neonCyan
+      ..color = AppColors.scanAccent
       ..strokeWidth = 3
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
@@ -330,7 +330,7 @@ class _ModeToggle extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0x33000000),
         borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
-        border: Border.all(color: const Color(0x4D00E5FF)),
+        border: Border.all(color: const Color(0x4D00D4D4)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -372,7 +372,7 @@ class _CaptureButton extends StatelessWidget {
         width: 72, height: 72,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(color: AppColors.neonCyan, width: 4),
+          border: Border.all(color: AppColors.scanAccent, width: 4),
           boxShadow: const [AppColors.cyanGlowStrong],
         ),
         child: Container(
@@ -403,7 +403,7 @@ class _CircleButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: const Color(0x33000000),
           shape: BoxShape.circle,
-          border: Border.all(color: const Color(0x4D00E5FF)),
+          border: Border.all(color: const Color(0x4D00D4D4)),
         ),
         child: Icon(icon, color: iconColor, size: 22),
       ),
@@ -424,7 +424,7 @@ class _ProcessingOverlay extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const CircularProgressIndicator(color: AppColors.neonCyan, strokeWidth: 3),
+            const CircularProgressIndicator(color: AppColors.scanAccent, strokeWidth: 3),
             const SizedBox(height: AppDimensions.md),
             Text(label, style: AppTypography.titleMedium()),
           ],
@@ -466,7 +466,7 @@ class _ErrorBanner extends StatelessWidget {
           const SizedBox(height: AppDimensions.sm),
           TextButton(
             onPressed: onManualEntry,
-            child: Text('Enter Manually →', style: AppTypography.labelLarge(color: AppColors.neonCyan)),
+            child: Text('Enter Manually →', style: AppTypography.labelLarge(color: AppColors.scanAccent)),
           ),
         ],
       ),

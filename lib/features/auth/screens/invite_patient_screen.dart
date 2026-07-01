@@ -7,7 +7,6 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
-import '../../../core/constants/app_dimensions.dart';
 
 class InvitePatientScreen extends ConsumerWidget {
   final String inviteCode;
@@ -42,153 +41,128 @@ class InvitePatientScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment(0, -0.8),
-            radius: 1.5,
-            colors: [Color(0xFF0D1F35), Color(0xFF070B12)],
-          ),
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: const Text('Invite Patient'),
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        leading: BackButton(color: AppColors.primary),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(height: 1, color: AppColors.border),
         ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(AppDimensions.lg),
-            child: Column(
-              children: [
-                const Spacer(flex: 1),
+      ),
+      body: SingleChildScrollView(
+        child: Container(
+          margin: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            children: [
+              // Icon
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: AppColors.caregiverLight,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Icon(Icons.group_add_outlined,
+                    color: AppColors.caregiver, size: 36),
+              ).animate().fadeIn(duration: 300.ms).scale(begin: const Offset(0.8, 0.8)),
 
-                // Icon
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: AppColors.neonCyan.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(20),
+              const SizedBox(height: 20),
+
+              Text(
+                'Your Invite Code',
+                style: AppTypography.headlineMedium()
+                    .copyWith(color: AppColors.textPrimary),
+              ).animate().fadeIn(delay: 100.ms, duration: 400.ms),
+
+              const SizedBox(height: 8),
+
+              Text(
+                patientName != null
+                    ? 'Share this code with $patientName. They enter it when they register as a linked patient.'
+                    : 'Share this code with the person you care for. They enter it when they register as a linked patient.',
+                style: AppTypography.bodyMedium(color: AppColors.textSecondary)
+                    .copyWith(height: 1.5),
+                textAlign: TextAlign.center,
+              ).animate().fadeIn(delay: 200.ms, duration: 400.ms),
+
+              const SizedBox(height: 24),
+
+              // Code display
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                decoration: BoxDecoration(
+                  color: AppColors.caregiverLight,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                      color: AppColors.caregiver.withValues(alpha: 0.3)),
+                ),
+                child: Text(
+                  inviteCode,
+                  style: const TextStyle(
+                    fontSize: 36,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.caregiver,
+                    letterSpacing: 10,
                   ),
-                  child: const Center(
-                    child: Text('🔗', style: TextStyle(fontSize: 40)),
-                  ),
-                ).animate().fadeIn(duration: 300.ms).scale(begin: const Offset(0.8, 0.8)),
-
-                const SizedBox(height: AppDimensions.lg),
-
-                Text(
-                  'Invite Your Patient',
-                  style: AppTypography.headlineLarge(color: AppColors.textPrimary),
-                ).animate().fadeIn(delay: 100.ms, duration: 400.ms),
-
-                const SizedBox(height: AppDimensions.sm),
-
-                Text(
-                  patientName != null
-                      ? 'Share this code with $patientName so they can link their device'
-                      : 'Share this code with your patient so they can link their device',
                   textAlign: TextAlign.center,
-                  style: AppTypography.bodyMedium(color: AppColors.textSecondary),
-                ).animate().fadeIn(delay: 200.ms, duration: 400.ms),
+                ),
+              ).animate().fadeIn(delay: 300.ms, duration: 500.ms)
+                  .scale(begin: const Offset(0.9, 0.9)),
 
-                const SizedBox(height: AppDimensions.xl),
+              const SizedBox(height: 20),
 
-                // Code display
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 32),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0D1826),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0x3300E5FF), width: 2),
-                    boxShadow: const [
-                      BoxShadow(color: Color(0x3300E5FF), blurRadius: 30),
-                    ],
-                  ),
-                  child: Text(
-                    inviteCode,
-                    style: const TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 48,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.neonCyan,
-                      letterSpacing: 12,
-                    ),
-                  ),
-                ).animate().fadeIn(delay: 300.ms, duration: 500.ms).scale(begin: const Offset(0.9, 0.9)),
+              // Share button
+              ElevatedButton.icon(
+                icon: const Icon(Icons.share_outlined, size: 18),
+                label: const Text('Share Code'),
+                onPressed: () => _shareCode(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.caregiver,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+              ).animate().fadeIn(delay: 400.ms, duration: 400.ms),
 
-                const SizedBox(height: AppDimensions.lg),
+              const SizedBox(height: 10),
 
-                // Buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        height: 56,
-                        decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Color(0xFF00E5FF), Color(0xFF0066FF)],
-                          ),
-                          borderRadius: BorderRadius.all(Radius.circular(100)),
-                          boxShadow: [
-                            BoxShadow(color: Color(0x4000E5FF), blurRadius: 20, offset: Offset(0, 6)),
-                          ],
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () => _shareCode(context),
-                            borderRadius: BorderRadius.circular(100),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.share_rounded, color: Color(0xFF070B12), size: 20),
-                                const SizedBox(width: 8),
-                                Text('Share Code',
-                                    style: AppTypography.titleMedium(color: const Color(0xFF070B12))),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: AppDimensions.sm),
-                    Container(
-                      height: 56,
-                      width: 56,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0D1826),
-                        borderRadius: BorderRadius.circular(100),
-                        border: Border.all(color: const Color(0x3300E5FF)),
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () => _copyCode(context),
-                          borderRadius: BorderRadius.circular(100),
-                          child: const Icon(Icons.copy_rounded, color: AppColors.neonCyan, size: 20),
-                        ),
-                      ),
-                    ),
-                  ],
-                ).animate().fadeIn(delay: 400.ms, duration: 400.ms),
+              // Copy button
+              OutlinedButton.icon(
+                icon: const Icon(Icons.copy_outlined, size: 18),
+                label: const Text('Copy Code'),
+                onPressed: () => _copyCode(context),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.caregiver,
+                  side: const BorderSide(color: AppColors.caregiver),
+                  minimumSize: const Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+              ).animate().fadeIn(delay: 450.ms, duration: 400.ms),
 
-                const Spacer(flex: 2),
+              const SizedBox(height: 10),
 
-                // Skip
-                TextButton(
-                  onPressed: () => context.go('/home'),
-                  child: Text('Skip for now',
-                      style: AppTypography.labelLarge(color: AppColors.textMuted)),
-                ).animate().fadeIn(delay: 500.ms, duration: 400.ms),
-
-                const SizedBox(height: AppDimensions.md),
-              ],
-            ),
+              TextButton(
+                onPressed: () => context.go('/home'),
+                child: Text('Go to Home →',
+                    style: TextStyle(
+                        color: AppColors.textSecondary, fontSize: 14)),
+              ).animate().fadeIn(delay: 500.ms, duration: 400.ms),
+            ],
           ),
         ),
       ),
     );
   }
 }
-
-
-
-
-

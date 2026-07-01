@@ -32,6 +32,20 @@ Migrating from Firebase + Drift/SQLite to Supabase (single backend).
 - Account deletion must cascade through all 5 tables + remove the Auth user
 
 ## What's Done
+- [x] UI REDESIGN PASS 2: Home + bottom nav (2026-07-01)
+  - NavigationBar: Material 3, light, blue indicator (already correct, no change)
+  - Home: progress card shows "X of Y" header + "X remaining"/"On track ✓" footer
+  - Avatar tap navigates to /home/profile
+  - Schedule header: TextButton.icon 'Add' replaces IconButton
+  - Health tip: blue→blue gradient replaces green→blue
+  - FAB bottom sheet: _AddOptionTile widgets replace plain ListTile
+  - flutter analyze: 0 errors
+- [x] UI REDESIGN PASS 1: Design system + auth screens
+  - AppColors: light palette, trust blues, legacy aliases preserved
+  - AppTypography: larger text, Inter font, getter + method forms
+  - AppTheme: Material3 light theme (both themes locked to light)
+  - AppBackground: clean light gradient, no stars
+  - Welcome/Login/Register/Role Selection redesigned
 - [x] SESSION 2: Medicines migration verified on real device
   (Moto G05) — add/view/delete all working against Supabase
 - supabase_flutter ^2.8.0 added, firebase_core/firebase_auth/cloud_firestore removed, lib/core/supabase/supabase_client.dart created
@@ -89,7 +103,28 @@ Migrating from Firebase + Drift/SQLite to Supabase (single backend).
 
 ## What's NOT Done Yet
 - [ ] Full QA pass on all 3 roles (OpenCode)
-- [ ] UI redesign for target audience
+- [x] UI REDESIGN PASS 4 — FINAL (2026-07-01): All screens light, zero neon
+  - health_detail: light AppBar, surface cards, primary chart/dots, latest value card
+  - scan_screen: scanAccent (0xFF00D4D4) replaces neonCyan for camera UI
+  - invite_patient: caregiver-accented card, AppBar, light layout
+  - enter_code: linked-accented OTP boxes, AppBar, light layout
+  - splash_screen: dark gradient → AppColors.background
+  - about_screen: dark gradient → light AppBar + surface cards
+  - data_export_screen: neonCyan/bgCard → primary/surface
+  - neonCyan removed from app_colors; scanAccent added
+  - flutter analyze: 0 errors
+- [x] UI REDESIGN PASS 3: Profile + Caregiver Dashboard (2026-07-01)
+  - profile_screen: neon removed, light AppBar, CircleAvatar, role badge, _StatCell grid, dedicated invite code card, _SettingsTile grouped sections, clean dialogs
+  - caregiver_dashboard: AdherenceRing → linear progress + %, all dark hex → AppColors tokens
+  - Deleted: neon_button, neon_card, glass_card, starfield_background, adherence_ring
+  - app_colors: neonCardDecoration + glassCardDecoration removed
+- [x] UI REDESIGN PASS 2: Home + navigation
+  - NavigationBar: clean light with blue indicator
+  - Home: linear progress bar replaces adherence ring
+  - Dose cards: clear Took It/Skip buttons, color-coded left border for status
+  - FAB: bottom sheet replaces floating menu
+  - Empty state: friendly with Add Medicine CTA
+- [ ] UI redesign for remaining screens (Health, History, Profile) — COMPLETE
 - [ ] iOS build verification
 - [ ] Release signing config
 - [ ] Play Store submission

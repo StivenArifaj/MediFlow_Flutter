@@ -7,7 +7,6 @@ import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
-import '../../../core/constants/app_dimensions.dart';
 import '../../../core/providers/shared_preferences_provider.dart';
 import '../../../data/services/invite_service.dart';
 import '../providers/auth_provider.dart';
@@ -101,175 +100,175 @@ class _EnterCodeScreenState extends ConsumerState<EnterCodeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment(0, -0.8),
-            radius: 1.5,
-            colors: [Color(0xFF0D1F35), Color(0xFF070B12)],
-          ),
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: const Text('Enter Invite Code'),
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        leading: BackButton(color: AppColors.primary),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(height: 1, color: AppColors.border),
         ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(AppDimensions.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Back
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: IconButton(
-                    onPressed: () => context.go('/role-selection'),
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.neonCyan),
-                  ),
+      ),
+      body: SingleChildScrollView(
+        child: Container(
+          margin: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: AppColors.linkedLight,
+                  borderRadius: BorderRadius.circular(20),
                 ),
+                child: const Icon(Icons.link_rounded,
+                    color: AppColors.linked, size: 36),
+              ).animate().fadeIn(duration: 300.ms).scale(begin: const Offset(0.8, 0.8)),
 
-                const SizedBox(height: AppDimensions.xl),
+              const SizedBox(height: 20),
 
-                // Title
-                Center(
-                  child: Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: AppColors.warning.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Center(
-                      child: Text('🔗', style: TextStyle(fontSize: 40)),
-                    ),
-                  ),
-                ).animate().fadeIn(duration: 300.ms).scale(begin: const Offset(0.8, 0.8)),
+              Text(
+                'Enter Your Code',
+                textAlign: TextAlign.center,
+                style: AppTypography.headlineMedium()
+                    .copyWith(color: AppColors.textPrimary),
+              ).animate().fadeIn(delay: 100.ms, duration: 400.ms),
 
-                const SizedBox(height: AppDimensions.lg),
+              const SizedBox(height: 8),
 
-                Text(
-                  'Enter Your Invite Code',
-                  textAlign: TextAlign.center,
-                  style: AppTypography.headlineLarge(color: AppColors.textPrimary),
-                ).animate().fadeIn(delay: 100.ms, duration: 400.ms),
+              Text(
+                'Ask your caregiver for their 6-character invite code and enter it below.',
+                textAlign: TextAlign.center,
+                style: AppTypography.bodyMedium(color: AppColors.textSecondary)
+                    .copyWith(height: 1.5),
+              ).animate().fadeIn(delay: 200.ms, duration: 400.ms),
 
-                const SizedBox(height: AppDimensions.sm),
+              const SizedBox(height: 28),
 
-                Text(
-                  'Your caregiver shared a 6-character code.\nEnter it below to link your device.',
-                  textAlign: TextAlign.center,
-                  style: AppTypography.bodyMedium(color: AppColors.textSecondary),
-                ).animate().fadeIn(delay: 200.ms, duration: 400.ms),
-
-                const SizedBox(height: AppDimensions.xl),
-
-                // 6 OTP-style input boxes
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(6, (i) {
-                    return Container(
-                      width: 48,
-                      height: 60,
-                      margin: EdgeInsets.only(right: i < 5 ? 8 : 0),
-                      child: TextField(
-                        controller: _controllers[i],
-                        focusNode: _focusNodes[i],
-                        textAlign: TextAlign.center,
-                        textCapitalization: TextCapitalization.characters,
-                        maxLength: 1,
-                        style: AppTypography.headlineLarge(color: AppColors.neonCyan)
-                            .copyWith(fontSize: 24, letterSpacing: 0),
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp('[a-zA-Z0-9]')),
-                          UpperCaseTextFormatter(),
-                        ],
-                        decoration: InputDecoration(
-                          counterText: '',
-                          filled: true,
-                          fillColor: const Color(0xFF0D1826),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Color(0x1A00E5FF)),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Color(0x1A00E5FF)),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: AppColors.neonCyan, width: 2),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 16),
+              // 6 OTP-style input boxes
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(6, (i) {
+                  return Container(
+                    width: 44,
+                    height: 54,
+                    margin: EdgeInsets.only(right: i < 5 ? 8 : 0),
+                    child: TextField(
+                      controller: _controllers[i],
+                      focusNode: _focusNodes[i],
+                      textAlign: TextAlign.center,
+                      textCapitalization: TextCapitalization.characters,
+                      maxLength: 1,
+                      style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.linked,
+                          letterSpacing: 0),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                            RegExp('[a-zA-Z0-9]')),
+                        UpperCaseTextFormatter(),
+                      ],
+                      decoration: InputDecoration(
+                        counterText: '',
+                        filled: true,
+                        fillColor: AppColors.surfaceVariant,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide:
+                              const BorderSide(color: AppColors.border),
                         ),
-                        onChanged: (val) {
-                          if (val.isNotEmpty && i < 5) {
-                            _focusNodes[i + 1].requestFocus();
-                          }
-                          if (val.isEmpty && i > 0) {
-                            _focusNodes[i - 1].requestFocus();
-                          }
-                          setState(() => _error = null);
-                        },
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide:
+                              const BorderSide(color: AppColors.border),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(
+                              color: AppColors.linked, width: 2),
+                        ),
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 16),
                       ),
-                    );
-                  }),
-                ).animate().fadeIn(delay: 300.ms, duration: 400.ms),
-
-                if (_error != null) ...[
-                  const SizedBox(height: AppDimensions.md),
-                  Text(
-                    _error!,
-                    textAlign: TextAlign.center,
-                    style: AppTypography.bodySmall(color: AppColors.error),
-                  ),
-                ],
-
-                const SizedBox(height: AppDimensions.xl),
-
-                // Connect button
-                Container(
-                  height: 56,
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF00E5FF), Color(0xFF0066FF)],
+                      onChanged: (val) {
+                        if (val.isNotEmpty && i < 5) {
+                          _focusNodes[i + 1].requestFocus();
+                        }
+                        if (val.isEmpty && i > 0) {
+                          _focusNodes[i - 1].requestFocus();
+                        }
+                        setState(() => _error = null);
+                      },
                     ),
-                    borderRadius: BorderRadius.all(Radius.circular(100)),
-                    boxShadow: [
-                      BoxShadow(color: Color(0x4000E5FF), blurRadius: 20, offset: Offset(0, 6)),
+                  );
+                }),
+              ).animate().fadeIn(delay: 300.ms, duration: 400.ms),
+
+              if (_error != null) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.dangerLight,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline,
+                          color: AppColors.danger, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(_error!,
+                            style: const TextStyle(
+                                color: AppColors.danger, fontSize: 13)),
+                      ),
                     ],
                   ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: _isLoading ? null : _connect,
-                      borderRadius: BorderRadius.circular(100),
-                      child: Center(
-                        child: _isLoading
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  color: Color(0xFF070B12),
-                                  strokeWidth: 2.5,
-                                ),
-                              )
-                            : Text(
-                                'Connect',
-                                style: AppTypography.titleMedium(
-                                  color: const Color(0xFF070B12),
-                                ).copyWith(fontSize: 16, fontWeight: FontWeight.bold),
-                              ),
-                      ),
-                    ),
-                  ),
-                ).animate().fadeIn(delay: 400.ms, duration: 400.ms),
-
-                const Spacer(),
-
-                Text(
-                  'Don\'t have a code? Ask your caregiver to share it from their MediFlow app.',
-                  textAlign: TextAlign.center,
-                  style: AppTypography.bodySmall(color: AppColors.textMuted),
                 ),
               ],
-            ),
+
+              const SizedBox(height: 28),
+
+              ElevatedButton(
+                onPressed: _isLoading ? null : _connect,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.linked,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2))
+                    : const Text('Link to Caregiver',
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white)),
+              ).animate().fadeIn(delay: 400.ms, duration: 400.ms),
+
+              const SizedBox(height: 16),
+
+              Text(
+                'Don\'t have a code? Ask your caregiver to share it from their MediFlow app.',
+                textAlign: TextAlign.center,
+                style:
+                    AppTypography.bodySmall(color: AppColors.textSecondary),
+              ),
+            ],
           ),
         ),
       ),
@@ -284,8 +283,3 @@ class UpperCaseTextFormatter extends TextInputFormatter {
     return newValue.copyWith(text: newValue.text.toUpperCase());
   }
 }
-
-
-
-
-
