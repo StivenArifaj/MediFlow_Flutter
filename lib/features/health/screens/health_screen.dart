@@ -1,19 +1,10 @@
-import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../data/database/app_database.dart';
-import '../../auth/providers/auth_provider.dart';
-
-// ── Provider ──────────────────────────────────────────────────────────────────
-final healthMeasurementsProvider =
-    FutureProvider.family<List<HealthMeasurement>, int>((ref, userId) async {
-  final db = ref.watch(appDatabaseProvider);
-  return db.healthDao.getAllMeasurements(userId);
-});
+import '../health_providers.dart';
 
 // ── Input types ───────────────────────────────────────────────────────────────
 enum _InputType { drumRoll, dualDrumRoll, stepper, numberPad, dualField, sleepPicker }
@@ -130,11 +121,7 @@ class HealthScreen extends ConsumerStatefulWidget {
 class _HealthScreenState extends ConsumerState<HealthScreen> {
   @override
   Widget build(BuildContext context) {
-    final repo = ref.read(authRepositoryProvider);
-    final userId = repo.currentUserId;
-    final measAsync = userId != null
-        ? ref.watch(healthMeasurementsProvider(userId))
-        : const AsyncValue<List<HealthMeasurement>>.data([]);
+    final measAsync = ref.watch(latestMeasurementsProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFF070B12),
@@ -151,14 +138,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
               child: CircularProgressIndicator(color: Color(0xFF00E5FF), strokeWidth: 2)),
           error: (_, __) => const Center(
               child: Text('Error loading data', style: TextStyle(color: Colors.white))),
-          data: (measurements) {
-            final Map<String, HealthMeasurement> latest = {};
-            for (final m in measurements) {
-              if (!latest.containsKey(m.type) ||
-                  m.recordedAt.isAfter(latest[m.type]!.recordedAt)) {
-                latest[m.type] = m;
-              }
-            }
+          data: (latest) {
             return CustomScrollView(
               slivers: [
                 SliverToBoxAdapter(
@@ -200,10 +180,10 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
                             if (m != null) {
                               context.push('/home/health-detail?type=${Uri.encodeComponent(metric.type)}&unit=${Uri.encodeComponent(metric.unit)}');
                             } else {
-                              _openSheet(metric, m, userId);
+                              _openSheet(metric, m);
                             }
                           },
-                          onLongPress: () => _openSheet(metric, m, userId),
+                          onLongPress: () => _openSheet(metric, m),
                         )
                             .animate()
                             .fadeIn(delay: Duration(milliseconds: i * 45), duration: 300.ms)
@@ -228,9 +208,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
           ],
         ),
         child: FloatingActionButton(
-          onPressed: () {
-            // FAB action placeholder
-          },
+          onPressed: () {},
           backgroundColor: Colors.transparent,
           elevation: 0,
           highlightElevation: 0,
@@ -240,20 +218,12 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
     );
   }
 
-  void _openSheet(_Metric metric, HealthMeasurement? existing, int? userId) {
-    if (userId == null) return;
+  void _openSheet(_Metric metric, Map<String, dynamic>? existing) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _MetricSheet(
-        metric: metric,
-        existing: existing,
-        userId: userId,
-        onSaved: () {
-          if (userId != null) ref.invalidate(healthMeasurementsProvider(userId));
-        },
-      ),
+      builder: (ctx) => _MetricSheet(metric: metric, existing: existing),
     );
   }
 }
@@ -261,7 +231,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
 // ── Metric Card ───────────────────────────────────────────────────────────────
 class _MetricCard extends StatelessWidget {
   final _Metric metric;
-  final HealthMeasurement? measurement;
+  final Map<String, dynamic>? measurement;
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
 
@@ -269,7 +239,7 @@ class _MetricCard extends StatelessWidget {
 
   String get _displayValue {
     if (measurement == null) return '—';
-    final v = measurement!.value;
+    final v = (measurement!['value'] as num).toDouble();
     return v % 1 == 0 ? v.toInt().toString() : v.toStringAsFixed(1);
   }
 
@@ -309,7 +279,6 @@ class _MetricCard extends StatelessWidget {
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Big icon with glow
                 Container(
                   width: 48,
                   height: 48,
@@ -325,7 +294,6 @@ class _MetricCard extends StatelessWidget {
                   size: 24),
             ),
             const SizedBox(height: 8),
-            // Name
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 6),
               child: Text(
@@ -342,7 +310,6 @@ class _MetricCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 6),
-            // Value badge or add indicator
             if (hasData)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -376,14 +343,9 @@ class _MetricCard extends StatelessWidget {
 // ── Metric Sheet ──────────────────────────────────────────────────────────────
 class _MetricSheet extends ConsumerStatefulWidget {
   final _Metric metric;
-  final HealthMeasurement? existing;
-  final int userId;
-  final VoidCallback onSaved;
+  final Map<String, dynamic>? existing;
 
-  const _MetricSheet({
-    required this.metric, this.existing,
-    required this.userId, required this.onSaved,
-  });
+  const _MetricSheet({required this.metric, this.existing});
 
   @override
   ConsumerState<_MetricSheet> createState() => _MetricSheetState();
@@ -400,7 +362,6 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
   late FixedExtentScrollController _sleepHrsCtrl;
   late FixedExtentScrollController _sleepMinsCtrl;
 
-  // Index mirrors — NEVER call .selectedItem before the picker is built
   int _primaryIndex = 0;
   int _secondaryIndex = 0;
   int _sleepHrsIndex = 7;
@@ -428,7 +389,10 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
   @override
   void initState() {
     super.initState();
-    final def = widget.existing?.value ?? _defaultValue();
+    final existingVal = widget.existing != null
+        ? (widget.existing!['value'] as num).toDouble()
+        : null;
+    final def = existingVal ?? _defaultValue();
 
     final primaryIdx = (def - widget.metric.minValue).clamp(0,
         widget.metric.maxValue - widget.metric.minValue).round();
@@ -482,29 +446,22 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
     }
   }
 
-  String _currentNotes() {
+  String? _currentNotes() {
     if (widget.metric.type == 'Blood Pressure') {
       return '${_numberCtrl.text}/${_number2Ctrl.text} mmHg';
     }
-    return '';
+    return null;
   }
 
   Future<void> _save() async {
     setState(() => _saving = true);
     try {
-      final db = ref.read(appDatabaseProvider);
-      final value = _currentValue();
-      final notes = _currentNotes();
-      await db.healthDao.insertMeasurement(HealthMeasurementsCompanion(
-        userId: Value(widget.userId),
-        type: Value(widget.metric.type),
-        value: Value(value),
-        unit: Value(widget.metric.unit),
-        notes: Value(notes.isEmpty ? null : notes),
-        recordedAt: Value(DateTime.now()),
-        createdAt: Value(DateTime.now()),
-      ));
-      widget.onSaved();
+      await ref.read(measurementNotifierProvider.notifier).addMeasurement(
+        type: widget.metric.type,
+        value: _currentValue(),
+        unit: widget.metric.unit,
+        notes: _currentNotes(),
+      );
       if (mounted) Navigator.pop(context);
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -514,7 +471,6 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
   @override
   Widget build(BuildContext context) {
     final mq = MediaQuery.of(context);
-    // viewInsets.bottom = keyboard height, padding.bottom = system nav bar
     final bottomPad = mq.viewInsets.bottom + mq.padding.bottom + 24;
 
     return Container(
@@ -528,7 +484,6 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
         mainAxisSize: MainAxisSize.min,
         children: [
           const SizedBox(height: 12),
-          // Handle
           Center(
             child: Container(
               width: 40, height: 4,
@@ -538,7 +493,6 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
             ),
           ),
           const SizedBox(height: 22),
-          // Header
           Row(
             children: [
               Container(
@@ -563,10 +517,8 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
             ],
           ),
           const SizedBox(height: 28),
-          // Input
           _buildInput(),
           const SizedBox(height: 28),
-          // Save button
           GestureDetector(
             onTap: _saving ? null : _save,
             child: Container(
@@ -604,7 +556,6 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
     }
   }
 
-  // ── DRUM ROLL ─────────────────────────────────────────────────────────────
   Widget _drumRoll() {
     final count = (widget.metric.maxValue - widget.metric.minValue).round() + 1;
     final liveVal = '${(widget.metric.minValue + _primaryIndex).round()}'
@@ -628,7 +579,6 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
     ]);
   }
 
-  // ── DUAL DRUM ROLL ────────────────────────────────────────────────────────
   Widget _dualDrumRoll() {
     final primaryCount = (widget.metric.maxValue - widget.metric.minValue).round() + 1;
     final secCount = ((widget.metric.secondMax ?? 9) - (widget.metric.secondMin ?? 0)).round() + 1;
@@ -641,7 +591,6 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
       Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Primary
           Expanded(
             flex: 3,
             child: Column(children: [
@@ -666,7 +615,6 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
             padding: const EdgeInsets.only(top: 8),
             child: Text('.', style: TextStyle(fontSize: 40, fontWeight: FontWeight.w300, color: widget.metric.color)),
           ),
-          // Secondary
           Expanded(
             flex: 2,
             child: Column(children: [
@@ -692,11 +640,9 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
     ]);
   }
 
-  // ── STEPPER ───────────────────────────────────────────────────────────────
   Widget _stepper() {
     final isSteps = widget.metric.type == 'Steps';
     return Column(children: [
-      // Big value display
       Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 20),
@@ -751,7 +697,6 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
     ]);
   }
 
-  // ── NUMBER PAD ────────────────────────────────────────────────────────────
   Widget _numberPad() {
     return TextField(
       controller: _numberCtrl,
@@ -780,7 +725,6 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
     );
   }
 
-  // ── DUAL FIELD (Blood Pressure) ───────────────────────────────────────────
   Widget _dualField() {
     return Column(children: [
       const Text('Enter systolic / diastolic',
@@ -831,7 +775,6 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
     ]);
   }
 
-  // ── SLEEP PICKER ──────────────────────────────────────────────────────────
   Widget _sleepPicker() {
     final liveVal = '${_sleepHrsIndex}h ${(_sleepMinsIndex * 5).toString().padLeft(2, '0')}m';
 
@@ -891,7 +834,6 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
     ]);
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
   Widget _rollerLabel(String value) {
     return Text(
       value,
@@ -914,7 +856,6 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
             ),
           ),
           picker,
-          // Top fade
           Positioned(
             top: 0, left: 0, right: 0,
             child: Container(
@@ -927,7 +868,6 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
               ),
             ),
           ),
-          // Bottom fade
           Positioned(
             bottom: 0, left: 0, right: 0,
             child: Container(
@@ -961,8 +901,3 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
     );
   }
 }
-
-
-
-
-

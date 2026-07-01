@@ -1,26 +1,21 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../data/database/app_database.dart';
-import '../../../features/auth/providers/auth_provider.dart';
+import '../../../data/services/supabase_data_service.dart';
+import '../../../core/hooks/managed_user_id.dart';
 
-/// Watches all active medicines for the current user — auto-updates via Drift stream.
-/// Switching from FutureProvider to StreamProvider means the home screen, profile,
-/// and any other screen watching this provider will rebuild instantly when a medicine
-/// is added, edited, or deleted — no manual invalidation needed.
-final medicinesProvider = StreamProvider<List<Medicine>>((ref) {
-  final repo = ref.watch(authRepositoryProvider);
-  final userId = repo.currentUserId;
-  if (userId == null) return Stream.value([]);
-  final db = ref.watch(appDatabaseProvider);
-  return db.medicinesDao.watchAllMedicines(userId);
+final medicinesProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final userId = await ref.watch(managedUserIdProvider.future);
+  if (userId == null) return [];
+  return ref.read(supabaseDataServiceProvider).getMedicines(userId);
 });
 
-/// Provider for a single medicine by ID — also a stream so it reflects edits.
 final medicineByIdProvider =
-    StreamProvider.family<Medicine?, int>((ref, id) {
-  final db = ref.watch(appDatabaseProvider);
-  return db.medicinesDao.watchMedicineById(id);
+    FutureProvider.family<Map<String, dynamic>?, String>((ref, id) async {
+  return ref.read(supabaseDataServiceProvider).getMedicineById(id);
 });
 
-
-
-
+final remindersForMedicineProvider =
+    FutureProvider.family<List<Map<String, dynamic>>, String>((ref, medicineId) async {
+  final userId = await ref.watch(managedUserIdProvider.future);
+  if (userId == null) return [];
+  return ref.read(supabaseDataServiceProvider).getReminders(userId, medicineId: medicineId);
+});

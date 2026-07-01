@@ -12,15 +12,14 @@ import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../../core/widgets/glass_card.dart';
-import '../../../data/database/app_database.dart' show appDatabaseProvider;
-
-import '../../../core/providers/shared_preferences_provider.dart';
 import '../../../core/supabase/supabase_client.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../auth/providers/current_user_provider.dart';
-import '../../medicines/providers/medicines_provider.dart';
 import '../../../core/locale/locale_provider.dart';
 import '../../../data/services/notification_service.dart';
+import '../../../data/services/supabase_data_service.dart';
+import '../../../core/hooks/managed_user_id.dart';
+import '../profile_providers.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -28,7 +27,6 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userAsync = ref.watch(currentUserProvider);
-    final medicinesAsync = ref.watch(medicinesProvider);
     final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
 
     return Scaffold(
@@ -48,7 +46,6 @@ class ProfileScreen extends ConsumerWidget {
             if (user == null) {
               return const Center(child: Text('Not logged in'));
             }
-            final medicineCount = medicinesAsync.value?.length ?? 0;
 
             return Column(
               children: [
@@ -119,7 +116,6 @@ class ProfileScreen extends ConsumerWidget {
                       children: [
                         // Stats grid
                         _StatsGrid(
-                          medicineCount: medicineCount,
                           memberSince: user.createdAt,
                         ).animate().fadeIn(delay: 200.ms, duration: 300.ms),
 
@@ -267,21 +263,23 @@ class ProfileScreen extends ConsumerWidget {
                                 icon: Icons.person_rounded,
                                 iconColor: const Color(0xFF8B5CF6),
                                 label: 'Patient Status',
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      ref.watch(sharedPreferencesProvider).getString('linked_patient_name') ?? 'Not linked',
-                                      style: AppTypography.bodySmall(
-                                        color: ref.watch(sharedPreferencesProvider).getString('linked_patient_name') != null
-                                            ? Colors.white
-                                            : AppColors.textMuted,
+                                trailing: Builder(builder: (ctx) {
+                                  final patient = ref.watch(linkedPatientProvider);
+                                  final name = patient.value?['name'] as String?;
+                                  return Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        name ?? 'Not linked',
+                                        style: AppTypography.bodySmall(
+                                          color: name != null ? Colors.white : AppColors.textMuted,
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(width: AppDimensions.xs),
-                                    const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
-                                  ],
-                                ),
+                                      const SizedBox(width: AppDimensions.xs),
+                                      const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
+                                    ],
+                                  );
+                                }),
                                 onTap: () => context.push('/caregiver-dashboard'),
                               ),
                               _SettingsTile(
@@ -290,7 +288,7 @@ class ProfileScreen extends ConsumerWidget {
                                 label: 'Regenerate Invite Code',
                                 onTap: () => _regenerateCode(context, ref),
                               ),
-                              if (ref.watch(sharedPreferencesProvider).getString('linked_patient_name') != null)
+                              if (ref.watch(linkedPatientProvider).value != null)
                                 _SettingsTile(
                                   icon: Icons.link_off_rounded,
                                   iconColor: AppColors.error,
@@ -499,42 +497,41 @@ class ProfileScreen extends ConsumerWidget {
 
   // ── 3. Export & Share Data ──────────────────────────────────────────
   Future<void> _exportAndShareData(BuildContext context, WidgetRef ref) async {
-    final db = ref.read(appDatabaseProvider);
-    final repo = ref.read(authRepositoryProvider);
-    final userId = repo.currentUserId;
+    final userId = await ref.read(managedUserIdProvider.future);
     if (userId == null) return;
 
-    final medicines = await db.medicinesDao.getAllMedicines(userId);
-    final reminders = await db.remindersDao.getRemindersForUser(userId);
-    final history = await db.historyDao.getHistoryForUser(userId);
-    final health = await db.healthDao.getMeasurementsForUser(userId);
+    final svc = ref.read(supabaseDataServiceProvider);
+    final medicines = await svc.getMedicines(userId);
+    final reminders = await svc.getReminders(userId);
+    final history = await svc.getHistory(userId);
+    final health = await svc.getMeasurements(userId);
 
     final data = {
       'exportDate': DateTime.now().toIso8601String(),
       'medicines': medicines.map((m) => {
-        'name': m.verifiedName,
-        'brand': m.brandName,
-        'generic': m.genericName,
-        'strength': m.strength,
-        'form': m.form,
-        'category': m.category,
-        'notes': m.notes,
+        'name': m['verified_name'],
+        'brand': m['brand_name'],
+        'generic': m['generic_name'],
+        'strength': m['strength'],
+        'form': m['form'],
+        'category': m['category'],
+        'notes': m['notes'],
       }).toList(),
       'reminders': reminders.map((r) => {
-        'medicineId': r.medicineId,
-        'time': r.time,
-        'frequency': r.frequency,
+        'medicineId': r['medicine_id'],
+        'time': r['time'],
+        'frequency': r['frequency'],
       }).toList(),
       'history': history.map((h) => {
-        'status': h.status,
-        'scheduledTime': h.scheduledTime.toIso8601String(),
-        'actualTime': h.actualTime?.toIso8601String(),
+        'status': h['status'],
+        'scheduledTime': h['scheduled_time'],
+        'actualTime': h['actual_time'],
       }).toList(),
       'healthMeasurements': health.map((h) => {
-        'type': h.type,
-        'value': h.value,
-        'unit': h.unit,
-        'recordedAt': h.recordedAt.toIso8601String(),
+        'type': h['type'],
+        'value': h['value'],
+        'unit': h['unit'],
+        'recordedAt': h['recorded_at'],
       }).toList(),
     };
 
@@ -782,9 +779,11 @@ class ProfileScreen extends ConsumerWidget {
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
+              final uid = supabase.auth.currentUser?.id;
+              if (uid == null) return;
               final newCode = _generateCode();
-              final prefs = ref.read(sharedPreferencesProvider);
-              await prefs.setString('caregiver_invite_code', newCode);
+              await supabase.from('profiles').update({'invite_code': newCode}).eq('id', uid);
+              ref.invalidate(currentUserProvider);
 
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -804,7 +803,7 @@ class ProfileScreen extends ConsumerWidget {
 
   // ── 7. Unlink Patient ───────────────────────────────────────────────
   void _unlinkPatient(BuildContext context, WidgetRef ref) {
-    final patientName = ref.read(sharedPreferencesProvider).getString('linked_patient_name') ?? 'patient';
+    final patientName = ref.read(linkedPatientProvider).value?['name'] as String? ?? 'patient';
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -826,9 +825,15 @@ class ProfileScreen extends ConsumerWidget {
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              final prefs = ref.read(sharedPreferencesProvider);
-              await prefs.remove('linked_patient_name');
-              await prefs.remove('linked_patient_uid');
+              final uid = supabase.auth.currentUser?.id;
+              if (uid == null) return;
+              // Unlink by clearing caregiver_id on the patient's profile
+              await supabase
+                  .from('profiles')
+                  .update({'caregiver_id': null})
+                  .eq('caregiver_id', uid);
+              ref.invalidate(linkedPatientProvider);
+              ref.invalidate(currentUserProvider);
 
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -910,17 +915,18 @@ class ProfileScreen extends ConsumerWidget {
 
 // ── Stats Grid ────────────────────────────────────────────────────────────────
 
-class _StatsGrid extends StatelessWidget {
-  final int medicineCount;
+class _StatsGrid extends ConsumerWidget {
   final DateTime? memberSince;
 
-  const _StatsGrid({required this.medicineCount, this.memberSince});
+  const _StatsGrid({this.memberSince});
 
   @override
-  Widget build(BuildContext context) {
-    final joined = memberSince != null 
+  Widget build(BuildContext context, WidgetRef ref) {
+    final joined = memberSince != null
         ? '${memberSince!.day}/${memberSince!.month}/${memberSince!.year}'
         : 'N/A';
+    final stats = ref.watch(profileStatsProvider);
+    final s = stats.value;
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -929,11 +935,11 @@ class _StatsGrid extends StatelessWidget {
       mainAxisSpacing: AppDimensions.sm,
       childAspectRatio: 1.0,
       children: [
-        _StatBox('Medicines', '$medicineCount', Icons.medication_rounded, AppColors.neonCyan),
-        _StatBox('Reminders', '0', Icons.alarm_rounded, AppColors.info),
-        _StatBox('Doses Taken', '0', Icons.check_circle_rounded, AppColors.success),
-        _StatBox('Adherence', '—%', Icons.trending_up_rounded, AppColors.warning),
-        _StatBox('Day Streak', '0 🔥', Icons.local_fire_department_rounded, AppColors.error),
+        _StatBox('Medicines', '${s?['medicines'] ?? 0}', Icons.medication_rounded, AppColors.neonCyan),
+        _StatBox('Reminders', '${s?['reminders'] ?? 0}', Icons.alarm_rounded, AppColors.info),
+        _StatBox('Doses Taken', '${s?['taken'] ?? 0}', Icons.check_circle_rounded, AppColors.success),
+        _StatBox('Adherence', s != null ? '${s['adherence']}%' : '—%', Icons.trending_up_rounded, AppColors.warning),
+        _StatBox('Day Streak', '${s?['streak'] ?? 0} 🔥', Icons.local_fire_department_rounded, AppColors.error),
         _StatBox('Member Since', joined, Icons.calendar_month_rounded, AppColors.textSecondary),
       ],
     );

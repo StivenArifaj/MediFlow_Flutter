@@ -11,8 +11,8 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/services/pdf_export_service.dart';
-import '../../../data/database/app_database.dart' show appDatabaseProvider;
-import '../../auth/providers/auth_provider.dart';
+import '../../../data/services/supabase_data_service.dart';
+import '../../../core/hooks/managed_user_id.dart';
 import '../../auth/providers/current_user_provider.dart';
 
 class DataExportScreen extends ConsumerStatefulWidget {
@@ -29,42 +29,41 @@ class _DataExportScreenState extends ConsumerState<DataExportScreen> {
   Future<void> _exportJson() async {
     setState(() => _exportingJson = true);
     try {
-      final db = ref.read(appDatabaseProvider);
-      final repo = ref.read(authRepositoryProvider);
-      final userId = repo.currentUserId;
+      final userId = await ref.read(managedUserIdProvider.future);
       if (userId == null) return;
 
-      final medicines = await db.medicinesDao.getAllMedicines(userId);
-      final reminders = await db.remindersDao.getRemindersForUser(userId);
-      final history = await db.historyDao.getHistoryForUser(userId);
-      final health = await db.healthDao.getMeasurementsForUser(userId);
+      final svc = ref.read(supabaseDataServiceProvider);
+      final medicines = await svc.getMedicines(userId);
+      final reminders = await svc.getReminders(userId);
+      final history = await svc.getHistory(userId);
+      final health = await svc.getMeasurements(userId);
 
       final data = {
         'exportDate': DateTime.now().toIso8601String(),
         'medicines': medicines.map((m) => {
-              'name': m.verifiedName,
-              'brand': m.brandName,
-              'generic': m.genericName,
-              'strength': m.strength,
-              'form': m.form,
-              'category': m.category,
-              'notes': m.notes,
+              'name': m['verified_name'],
+              'brand': m['brand_name'],
+              'generic': m['generic_name'],
+              'strength': m['strength'],
+              'form': m['form'],
+              'category': m['category'],
+              'notes': m['notes'],
             }).toList(),
         'reminders': reminders.map((r) => {
-              'medicineId': r.medicineId,
-              'time': r.time,
-              'frequency': r.frequency,
+              'medicineId': r['medicine_id'],
+              'time': r['time'],
+              'frequency': r['frequency'],
             }).toList(),
         'history': history.map((h) => {
-              'status': h.status,
-              'scheduledTime': h.scheduledTime.toIso8601String(),
-              'actualTime': h.actualTime?.toIso8601String(),
+              'status': h['status'],
+              'scheduledTime': h['scheduled_time'],
+              'actualTime': h['actual_time'],
             }).toList(),
         'healthMeasurements': health.map((h) => {
-              'type': h.type,
-              'value': h.value,
-              'unit': h.unit,
-              'recordedAt': h.recordedAt.toIso8601String(),
+              'type': h['type'],
+              'value': h['value'],
+              'unit': h['unit'],
+              'recordedAt': h['recorded_at'],
             }).toList(),
       };
 
@@ -89,15 +88,14 @@ class _DataExportScreenState extends ConsumerState<DataExportScreen> {
   Future<void> _exportPdf() async {
     setState(() => _exportingPdf = true);
     try {
-      final db = ref.read(appDatabaseProvider);
-      final repo = ref.read(authRepositoryProvider);
-      final userId = repo.currentUserId;
+      final userId = await ref.read(managedUserIdProvider.future);
       if (userId == null) return;
 
       final user = ref.read(currentUserProvider).value;
-      final medicines = await db.medicinesDao.getAllMedicines(userId);
-      final history = await db.historyDao.getHistoryForUser(userId);
-      final health = await db.healthDao.getMeasurementsForUser(userId);
+      final svc = ref.read(supabaseDataServiceProvider);
+      final medicines = await svc.getMedicines(userId);
+      final history = await svc.getHistory(userId);
+      final health = await svc.getMeasurements(userId);
 
       await PdfExportService.generateAndShareReport(
         userName: user?.name ?? 'Patient',

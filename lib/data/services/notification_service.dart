@@ -3,8 +3,6 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz_data;
 
-import '../../data/database/app_database.dart';
-
 class NotificationService {
   NotificationService._();
   static final NotificationService instance = NotificationService._();
@@ -213,14 +211,20 @@ class NotificationService {
   }
 
   static Future<void> rescheduleAll(
-      List<Reminder> reminders, Map<int, String> medicineNames) async {
+      List<Map<String, dynamic>> reminders) async {
+    if (!_initialised) await init();
+    await _plugin.cancelAll();
     for (final r in reminders) {
-      if (!r.isActive) continue;
-      final notifId = r.notificationId ?? r.id;
-      final name = medicineNames[r.medicineId] ?? 'Medicine';
+      if (r['is_active'] == false) continue;
+      final medicineId = r['medicine_id'] as String? ?? '';
+      final notifId = medicineId.hashCode.abs() % 2147483647;
+      final medicine = r['medicines'] as Map<String, dynamic>?;
+      final name = medicine?['verified_name'] as String? ?? 'Medicine';
+      final time = r['time'] as String? ?? '08:00';
       await scheduleReminder(
-          notificationId: notifId, medicineName: name, time: r.time);
+          notificationId: notifId, medicineName: name, time: time);
     }
+    debugPrint('NotificationService: rescheduleAll — ${reminders.length} reminders rescheduled');
   }
 
   static Future<void> showImmediate({

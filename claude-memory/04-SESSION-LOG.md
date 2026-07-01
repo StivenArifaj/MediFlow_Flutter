@@ -3,6 +3,22 @@
 Append one entry per session, right before /clear. Keep entries short — 
 3-5 lines. This is a changelog, not a transcript.
 
+## 2026-07-01 — Session 2: Medicines screens migrated to Supabase
+- medicines_provider: FutureProvider<List<Map>> watching managedUserIdProvider; medicineByIdProvider and remindersForMedicineProvider added (String ID, not int)
+- add_medicine_screen: _submit() rewrites to svc.createMedicine + svc.createReminder + NotificationService.scheduleRemindersForMedicine; Firebase/Drift removed
+- medicine_detail_screen: fully rewritten to Map<String,dynamic>; delete cascades reminders then medicine; reminders via remindersForMedicineProvider
+- home_screen _MedicineCard updated to Map-based fields; router medicine/:id now passes String
+- 0 errors after changes (22 warnings, all pre-existing)
+- Next: Session 3 — home screen today's schedule + dose logging
+
+## 2026-07-01 — Session 1: Supabase data service
+- Created SupabaseDataService with all CRUD operations (medicines, reminders, history, health measurements, profile stats)
+- Created managedUserIdProvider hook — caregiver reads → linked patient's user_id
+- Fixed FetchOptions→.count(CountOption.exact) API for supabase_flutter v2
+- Zero new compile errors (still 22 warnings, all pre-existing)
+- No screens migrated yet — foundation only
+- Next: Session 2 (medicines migration)
+
 ## 2026-07-01 — Session: Package rename + google-services removal
 - Renamed Android package from com.example.mediflow → com.mediflow.app
 - Moved MainActivity.kt into com/mediflow/app/ directory, updated package declaration
@@ -48,3 +64,10 @@ Append one entry per session, right before /clear. Keep entries short —
 - Created claude-memory/ folder structure
 - Confirmed audit findings, no code changed yet
 - Next: Supabase Flutter SDK install + auth layer
+
+## 2026-07-01 — Session 2 verification
+- All 7 manual test steps passed on real device
+- DNS mismatch found: old anon key had wrong project ref
+  baked into JWT. Correct URL is vehkddgphgpjpojralyt
+- Always use fresh anon key from Supabase dashboard
+- Next: Session 3 (home screen + dose logging)

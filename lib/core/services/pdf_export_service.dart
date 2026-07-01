@@ -5,25 +5,21 @@ import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 
-import '../../data/database/app_database.dart';
-
-/// Generates a formatted PDF health report and shares it.
 class PdfExportService {
   static Future<void> generateAndShareReport({
     required String userName,
-    required List<Medicine> medicines,
-    required List<HistoryEntry> history,
-    required List<HealthMeasurement> healthData,
+    required List<Map<String, dynamic>> medicines,
+    required List<Map<String, dynamic>> history,
+    required List<Map<String, dynamic>> healthData,
   }) async {
     final pdf = pw.Document();
     final fmt = DateFormat('dd/MM/yyyy');
     final fmtLong = DateFormat('dd MMM yyyy, HH:mm');
     final now = DateTime.now();
 
-    // Calculate adherence stats
-    final taken = history.where((h) => h.status == 'taken').length;
-    final skipped = history.where((h) => h.status == 'skipped').length;
-    final missed = history.where((h) => h.status == 'missed').length;
+    final taken = history.where((h) => h['status'] == 'taken' || h['status'] == 'taken_late').length;
+    final skipped = history.where((h) => h['status'] == 'skipped').length;
+    final missed = history.where((h) => h['status'] == 'missed').length;
     final total = history.length;
     final pct = total == 0 ? 0 : (taken / total * 100).round();
 
@@ -38,15 +34,13 @@ class PdfExportService {
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
                 pw.Text('MediFlow — Health Report',
-                    style: pw.TextStyle(
-                        fontSize: 20, fontWeight: pw.FontWeight.bold)),
+                    style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
                 pw.Text('Generated: ${fmt.format(now)}',
                     style: const pw.TextStyle(fontSize: 10)),
               ],
             ),
             pw.SizedBox(height: 4),
-            pw.Text('Patient: $userName',
-                style: const pw.TextStyle(fontSize: 12)),
+            pw.Text('Patient: $userName', style: const pw.TextStyle(fontSize: 12)),
             pw.Divider(),
             pw.SizedBox(height: 8),
           ],
@@ -69,113 +63,89 @@ class PdfExportService {
           ],
         ),
         build: (pw.Context context) => [
-          // ── Medicines section
           pw.Text('MEDICINES (${medicines.length})',
-              style: pw.TextStyle(
-                  fontSize: 14, fontWeight: pw.FontWeight.bold)),
+              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
           pw.SizedBox(height: 6),
           if (medicines.isNotEmpty)
             pw.TableHelper.fromTextArray(
               headers: ['Name', 'Form', 'Strength', 'Category'],
-              data: medicines
-                  .map((m) => [
-                        m.verifiedName,
-                        m.form ?? '—',
-                        m.strength ?? '—',
-                        m.category ?? '—',
-                      ])
-                  .toList(),
-              headerStyle:
-                  pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
+              data: medicines.map((m) => [
+                m['verified_name'] ?? '—',
+                m['form'] ?? '—',
+                m['strength'] ?? '—',
+                m['category'] ?? '—',
+              ]).toList(),
+              headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
               cellStyle: const pw.TextStyle(fontSize: 9),
               border: pw.TableBorder.all(color: PdfColors.grey300),
-              headerDecoration:
-                  const pw.BoxDecoration(color: PdfColors.grey200),
+              headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
               cellAlignment: pw.Alignment.centerLeft,
             )
           else
             pw.Text('No medicines recorded.',
-                style:
-                    const pw.TextStyle(fontSize: 10, color: PdfColors.grey)),
+                style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey)),
           pw.SizedBox(height: 20),
 
-          // ── Adherence summary
           pw.Text('ADHERENCE SUMMARY',
-              style: pw.TextStyle(
-                  fontSize: 14, fontWeight: pw.FontWeight.bold)),
+              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
           pw.SizedBox(height: 6),
-          pw.Row(
-            children: [
-              _statBox('Total Doses', '$total'),
-              pw.SizedBox(width: 16),
-              _statBox('Taken', '$taken'),
-              pw.SizedBox(width: 16),
-              _statBox('Skipped', '$skipped'),
-              pw.SizedBox(width: 16),
-              _statBox('Missed', '$missed'),
-              pw.SizedBox(width: 16),
-              _statBox('Adherence', '$pct%'),
-            ],
-          ),
+          pw.Row(children: [
+            _statBox('Total Doses', '$total'),
+            pw.SizedBox(width: 16),
+            _statBox('Taken', '$taken'),
+            pw.SizedBox(width: 16),
+            _statBox('Skipped', '$skipped'),
+            pw.SizedBox(width: 16),
+            _statBox('Missed', '$missed'),
+            pw.SizedBox(width: 16),
+            _statBox('Adherence', '$pct%'),
+          ]),
           pw.SizedBox(height: 20),
 
-          // ── Recent history
           pw.Text('RECENT DOSE HISTORY (Last 30 entries)',
-              style: pw.TextStyle(
-                  fontSize: 14, fontWeight: pw.FontWeight.bold)),
+              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
           pw.SizedBox(height: 6),
           if (history.isNotEmpty)
             pw.TableHelper.fromTextArray(
               headers: ['Date/Time', 'Medicine', 'Status'],
               data: history.take(30).map((h) {
-                final medName = medicines
-                    .where((m) => m.id == h.medicineId)
-                    .map((m) => m.verifiedName)
-                    .firstOrNull ?? 'Unknown';
-                return [
-                  fmtLong.format(h.scheduledTime),
-                  medName,
-                  h.status.toUpperCase(),
-                ];
+                final scheduledTime = h['scheduled_time'] as String?;
+                final date = scheduledTime != null
+                    ? fmtLong.format(DateTime.parse(scheduledTime).toLocal())
+                    : '—';
+                final medName = (h['medicines'] as Map<String, dynamic>?)?['verified_name'] ?? 'Unknown';
+                return [date, medName, (h['status'] as String? ?? '').toUpperCase()];
               }).toList(),
-              headerStyle:
-                  pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
+              headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
               cellStyle: const pw.TextStyle(fontSize: 9),
               border: pw.TableBorder.all(color: PdfColors.grey300),
-              headerDecoration:
-                  const pw.BoxDecoration(color: PdfColors.grey200),
+              headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
               cellAlignment: pw.Alignment.centerLeft,
             )
           else
             pw.Text('No dose history recorded.',
-                style:
-                    const pw.TextStyle(fontSize: 10, color: PdfColors.grey)),
+                style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey)),
           pw.SizedBox(height: 20),
 
-          // ── Health data
           if (healthData.isNotEmpty) ...[
             pw.Text('HEALTH MEASUREMENTS (Last 20 entries)',
-                style: pw.TextStyle(
-                    fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
             pw.SizedBox(height: 6),
             pw.TableHelper.fromTextArray(
               headers: ['Date', 'Type', 'Value', 'Unit'],
               data: healthData.take(20).map((h) {
-                return [
-                  fmtLong.format(h.recordedAt),
-                  h.type,
-                  h.value % 1 == 0
-                      ? h.value.toInt().toString()
-                      : h.value.toStringAsFixed(1),
-                  h.unit,
-                ];
+                final recordedAt = h['recorded_at'] as String?;
+                final date = recordedAt != null
+                    ? fmtLong.format(DateTime.parse(recordedAt).toLocal())
+                    : '—';
+                final value = (h['value'] as num?)?.toDouble() ?? 0.0;
+                final valStr = value % 1 == 0 ? value.toInt().toString() : value.toStringAsFixed(1);
+                return [date, h['type'] ?? '—', valStr, h['unit'] ?? '—'];
               }).toList(),
-              headerStyle:
-                  pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
+              headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
               cellStyle: const pw.TextStyle(fontSize: 9),
               border: pw.TableBorder.all(color: PdfColors.grey300),
-              headerDecoration:
-                  const pw.BoxDecoration(color: PdfColors.grey200),
+              headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
               cellAlignment: pw.Alignment.centerLeft,
             ),
           ],
@@ -189,9 +159,7 @@ class PdfExportService {
 
     Directory? dir;
     try {
-      if (Platform.isAndroid) {
-        dir = await getExternalStorageDirectory();
-      }
+      if (Platform.isAndroid) dir = await getExternalStorageDirectory();
     } catch (_) {}
     dir ??= await getTemporaryDirectory();
 
@@ -213,20 +181,14 @@ class PdfExportService {
           border: pw.Border.all(color: PdfColors.grey300),
           borderRadius: pw.BorderRadius.circular(4),
         ),
-        child: pw.Column(
-          children: [
-            pw.Text(value,
-                style: pw.TextStyle(
-                    fontSize: 14, fontWeight: pw.FontWeight.bold)),
-            pw.SizedBox(height: 2),
-            pw.Text(label,
-                style: const pw.TextStyle(
-                    fontSize: 8, color: PdfColors.grey600)),
-          ],
-        ),
+        child: pw.Column(children: [
+          pw.Text(value,
+              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 2),
+          pw.Text(label,
+              style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
+        ]),
       ),
     );
   }
 }
-
-

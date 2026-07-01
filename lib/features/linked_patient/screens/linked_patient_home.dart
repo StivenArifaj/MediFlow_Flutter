@@ -4,9 +4,9 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/providers/shared_preferences_provider.dart';
 import '../../../core/supabase/supabase_client.dart';
-import '../../../data/services/firebase_service.dart';
+import '../../auth/providers/current_user_provider.dart';
+import '../../home/today_schedule_provider.dart';
 
 // ── Linked-patient warm color tokens ─────────────────────────────────────────
 class _LP {
@@ -20,101 +20,8 @@ class _LP {
   static const textMuted  = Color(0xFF8A8FA8);
 }
 
-class LinkedPatientHome extends ConsumerStatefulWidget {
+class LinkedPatientHome extends ConsumerWidget {
   const LinkedPatientHome({super.key});
-
-  @override
-  ConsumerState<LinkedPatientHome> createState() => _LinkedPatientHomeState();
-}
-
-class _LinkedPatientHomeState extends ConsumerState<LinkedPatientHome> {
-  String _caregiverName = '';
-  String _caregiverUid = '';
-  List<Map<String, dynamic>> _medicines = [];
-  List<Map<String, dynamic>> _reminders = [];
-  final Set<String> _doneToday = {}; // medicineId → status
-
-  @override
-  void initState() {
-    super.initState();
-    _loadData();
-  }
-
-  Future<void> _loadData() async {
-    final prefs = ref.read(sharedPreferencesProvider);
-    final cUid = prefs.getString('linked_caregiver_uid') ?? '';
-
-    // Resolve caregiver name from Supabase (survives reinstall)
-    String cName = prefs.getString('linked_caregiver_name') ?? '';
-    final userId = supabase.auth.currentUser?.id;
-    if (userId != null) {
-      final userRow = await supabase
-          .from('profiles')
-          .select('caregiver_id')
-          .eq('id', userId)
-          .maybeSingle();
-      if (userRow != null && userRow['caregiver_id'] != null) {
-        final caregiverRow = await supabase
-            .from('profiles')
-            .select('name')
-            .eq('id', userRow['caregiver_id'])
-            .maybeSingle();
-        cName = caregiverRow?['name'] as String? ?? cName;
-      }
-    }
-
-    setState(() {
-      _caregiverUid = cUid;
-      _caregiverName = cName;
-    });
-
-    if (cUid.isEmpty || !isFirebaseReady) return;
-
-    // Listen for medicines
-    streamCaregiverMedicines(cUid).listen((meds) {
-      if (mounted) setState(() => _medicines = meds);
-    });
-
-    // Listen for reminders
-    streamCaregiverReminders(cUid).listen((rems) {
-      if (mounted) setState(() => _reminders = rems);
-    });
-
-    // Load today's history
-    final history = await getTodayHistory(cUid);
-    for (final h in history) {
-      _doneToday.add(h['medicineId'] ?? '');
-    }
-    if (mounted) setState(() {});
-  }
-
-  Future<void> _takeMedicine(Map<String, dynamic> med) async {
-    final id = med['id']?.toString() ?? '';
-    if (id.isEmpty || _doneToday.contains(id)) return;
-
-    setState(() => _doneToday.add(id));
-
-    await logDoseAction(
-      caregiverUid: _caregiverUid,
-      status: 'taken',
-      medicineId: id,
-      medicineName: med['verifiedName'] ?? med['name'] ?? 'Medicine',
-    );
-  }
-
-  Future<void> _skipMedicine(Map<String, dynamic> med) async {
-    final id = med['id']?.toString() ?? '';
-    if (id.isEmpty || _doneToday.contains(id)) return;
-
-    setState(() => _doneToday.add(id));
-
-    await logDoseAction(
-      caregiverUid: _caregiverUid,
-      status: 'skipped',
-      medicineId: id,
-      medicineName: med['verifiedName'] ?? med['name'] ?? 'Medicine',
-    );
-  }
 
   String _greeting() {
     final h = DateTime.now().hour;
@@ -125,11 +32,11 @@ class _LinkedPatientHomeState extends ConsumerState<LinkedPatientHome> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final pendingMeds = _medicines
-        .where((m) => !_doneToday.contains(m['id']?.toString() ?? ''))
-        .toList();
-    final allDone = _medicines.isNotEmpty && pendingMeds.isEmpty;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scheduleAsync = ref.watch(todayScheduleProvider);
+
+    // Resolve caregiver name from profile data (non-blocking)
+    final caregiverName = _CaregiverNameResolver(ref: ref);
 
     return Scaffold(
       backgroundColor: _LP.bg,
@@ -170,37 +77,57 @@ class _LinkedPatientHomeState extends ConsumerState<LinkedPatientHome> {
 
               // ── Content ─────────────────────────────────────
               Expanded(
-                child: _medicines.isEmpty
-                    ? _EmptyState()
-                    : allDone
-                        ? _AllDoneState()
-                        : ListView.builder(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: AppDimensions.lg),
-                            itemCount: pendingMeds.length,
-                            itemBuilder: (ctx, i) {
-                              final med = pendingMeds[i];
-                              return _MedicineReminderCard(
-                                medicine: med,
-                                reminders: _reminders,
-                                onTakeIt: () => _takeMedicine(med),
-                                onSkip: () => _skipMedicine(med),
-                              ).animate().fadeIn(
-                                  delay: Duration(milliseconds: i * 60),
-                                  duration: 300.ms);
-                            },
-                          ),
+                child: scheduleAsync.when(
+                  loading: () => const Center(
+                    child: CircularProgressIndicator(color: _LP.amber, strokeWidth: 2),
+                  ),
+                  error: (_, __) => const Center(
+                    child: Text('Failed to load schedule',
+                        style: TextStyle(color: _LP.textMuted)),
+                  ),
+                  data: (slots) {
+                    final pending = slots.where((s) => !s.isDone).toList();
+                    final allDone = slots.isNotEmpty && pending.isEmpty;
+
+                    if (slots.isEmpty) return _EmptyState();
+                    if (allDone) return _AllDoneState();
+                    return ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: AppDimensions.lg),
+                      itemCount: pending.length,
+                      itemBuilder: (ctx, i) {
+                        final slot = pending[i];
+                        return _MedicineCard(
+                          slot: slot,
+                          onTakeIt: () => ref
+                              .read(doseLoggerProvider.notifier)
+                              .logDose(
+                                reminderId: slot.reminderId,
+                                medicineId: slot.medicineId,
+                                scheduledAt: slot.scheduledAt,
+                                action: 'taken',
+                                existingEntryId: slot.historyEntryId,
+                              ),
+                          onSkip: () => ref
+                              .read(doseLoggerProvider.notifier)
+                              .logDose(
+                                reminderId: slot.reminderId,
+                                medicineId: slot.medicineId,
+                                scheduledAt: slot.scheduledAt,
+                                action: 'skipped',
+                                existingEntryId: slot.historyEntryId,
+                              ),
+                        ).animate().fadeIn(
+                            delay: Duration(milliseconds: i * 60), duration: 300.ms);
+                      },
+                    );
+                  },
+                ),
               ),
 
               // ── Bottom label ────────────────────────────────
               Padding(
                 padding: const EdgeInsets.all(AppDimensions.md),
-                child: Text(
-                  'Managed by $_caregiverName',
-                  textAlign: TextAlign.center,
-                  style: AppTypography.bodySmall(color: _LP.textMuted)
-                      .copyWith(fontSize: 13),
-                ),
+                child: caregiverName,
               ),
             ],
           ),
@@ -210,37 +137,48 @@ class _LinkedPatientHomeState extends ConsumerState<LinkedPatientHome> {
   }
 }
 
-// ── Medicine Reminder Card ───────────────────────────────────────────────────
+// Resolves caregiver name from Supabase without blocking the screen.
+class _CaregiverNameResolver extends ConsumerWidget {
+  const _CaregiverNameResolver({required this.ref});
+  final WidgetRef ref;
 
-class _MedicineReminderCard extends StatelessWidget {
-  final Map<String, dynamic> medicine;
-  final List<Map<String, dynamic>> reminders;
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return FutureBuilder<String>(
+      future: _resolveName(ref),
+      builder: (ctx, snap) => Text(
+        snap.hasData ? 'Managed by ${snap.data}' : '',
+        textAlign: TextAlign.center,
+        style: AppTypography.bodySmall(color: _LP.textMuted).copyWith(fontSize: 13),
+      ),
+    );
+  }
+
+  Future<String> _resolveName(WidgetRef ref) async {
+    final user = await ref.read(currentUserProvider.future);
+    if (user?.caregiverId == null) return '';
+    final row = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', user!.caregiverId!)
+        .maybeSingle();
+    return row?['name'] as String? ?? '';
+  }
+}
+
+// ── Medicine Card ────────────────────────────────────────────────────────────
+
+class _MedicineCard extends StatelessWidget {
+  final TodaySlot slot;
   final VoidCallback onTakeIt;
   final VoidCallback onSkip;
 
-  const _MedicineReminderCard({
-    required this.medicine,
-    required this.reminders,
-    required this.onTakeIt,
-    required this.onSkip,
-  });
-
-  String _getTime() {
-    final medId = medicine['id']?.toString();
-    for (final r in reminders) {
-      if (r['medicineId']?.toString() == medId) {
-        return r['time'] ?? '';
-      }
-    }
-    return '';
-  }
+  const _MedicineCard({required this.slot, required this.onTakeIt, required this.onSkip});
 
   @override
   Widget build(BuildContext context) {
-    final name = medicine['verifiedName'] ?? medicine['name'] ?? 'Medicine';
-    final form = medicine['form'] ?? '';
-    final strength = medicine['strength'] ?? '';
-    final time = _getTime();
+    final time = '${slot.scheduledAt.hour.toString().padLeft(2, '0')}:${slot.scheduledAt.minute.toString().padLeft(2, '0')}';
+    final subtitle = [slot.form, slot.strength].where((s) => s != null && s.isNotEmpty).join(' · ');
 
     return Container(
       margin: const EdgeInsets.only(bottom: AppDimensions.md),
@@ -256,32 +194,25 @@ class _MedicineReminderCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (time.isNotEmpty)
-            Text('🕗 $time',
-                style: AppTypography.bodyMedium(color: _LP.textMuted).copyWith(fontSize: 16)),
+          Text('🕗 $time',
+              style: AppTypography.bodyMedium(color: _LP.textMuted).copyWith(fontSize: 16)),
           const SizedBox(height: 6),
-          Text(name,
+          Text(slot.medicineName,
               style: AppTypography.headlineMedium(color: _LP.textWhite)
                   .copyWith(fontSize: 22, fontWeight: FontWeight.bold)),
-          if (form.isNotEmpty || strength.isNotEmpty)
-            Text('${form.isNotEmpty ? form : ''}${strength.isNotEmpty ? ' · $strength' : ''}',
+          if (subtitle.isNotEmpty)
+            Text(subtitle,
                 style: AppTypography.bodyMedium(color: _LP.textMuted).copyWith(fontSize: 16)),
 
           const SizedBox(height: AppDimensions.md),
 
-          // Took It button
           SizedBox(
-            width: double.infinity,
-            height: 68,
+            width: double.infinity, height: 68,
             child: _TookItButton(onTap: onTakeIt),
           ),
-
           const SizedBox(height: 10),
-
-          // Skip button
           SizedBox(
-            width: double.infinity,
-            height: 68,
+            width: double.infinity, height: 68,
             child: _SkipButton(onTap: onSkip),
           ),
         ],
@@ -303,13 +234,9 @@ class _TookItButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         child: Container(
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF00C896), Color(0xFF00A878)],
-            ),
+            gradient: const LinearGradient(colors: [Color(0xFF00C896), Color(0xFF00A878)]),
             borderRadius: BorderRadius.circular(14),
-            boxShadow: const [
-              BoxShadow(color: Color(0x3300C896), blurRadius: 16, offset: Offset(0, 4)),
-            ],
+            boxShadow: const [BoxShadow(color: Color(0x3300C896), blurRadius: 16, offset: Offset(0, 4))],
           ),
           child: Center(
             child: Text('✅  TOOK IT',
@@ -362,19 +289,17 @@ class _EmptyState extends StatelessWidget {
           const Text('💊', style: TextStyle(fontSize: 64)),
           const SizedBox(height: AppDimensions.md),
           Text('Nothing scheduled today',
-              style: AppTypography.headlineMedium(color: _LP.textWhite)
-                  .copyWith(fontSize: 22)),
+              style: AppTypography.headlineMedium(color: _LP.textWhite).copyWith(fontSize: 22)),
           const SizedBox(height: AppDimensions.sm),
           Text('Your caregiver will set up your medicines',
-              style: AppTypography.bodyMedium(color: _LP.textMuted)
-                  .copyWith(fontSize: 16)),
+              style: AppTypography.bodyMedium(color: _LP.textMuted).copyWith(fontSize: 16)),
         ],
       ),
     ).animate().fadeIn(duration: 400.ms);
   }
 }
 
-// ── All Done State ──────────────────────────────────────────────────────────
+// ── All Done State ───────────────────────────────────────────────────────────
 
 class _AllDoneState extends StatelessWidget {
   @override
@@ -387,9 +312,7 @@ class _AllDoneState extends StatelessWidget {
           color: const Color(0xFF0D2820),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: const Color(0x3300C896)),
-          boxShadow: const [
-            BoxShadow(color: Color(0x2200C896), blurRadius: 40),
-          ],
+          boxShadow: const [BoxShadow(color: Color(0x2200C896), blurRadius: 40)],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -402,16 +325,10 @@ class _AllDoneState extends StatelessWidget {
             const SizedBox(height: AppDimensions.sm),
             Text('Great job keeping up with your health 🎉',
                 textAlign: TextAlign.center,
-                style: AppTypography.bodyLarge(color: _LP.textMuted)
-                    .copyWith(fontSize: 18)),
+                style: AppTypography.bodyLarge(color: _LP.textMuted).copyWith(fontSize: 18)),
           ],
         ),
       ),
     ).animate().fadeIn(duration: 500.ms).scale(begin: const Offset(0.9, 0.9));
   }
 }
-
-
-
-
-
