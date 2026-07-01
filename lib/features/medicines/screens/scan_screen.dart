@@ -10,6 +10,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../utils/medicine_text_parser.dart';
+import '../../../data/services/openfda_service.dart';
 
 enum _ScanMode { ocr, barcode }
 enum _ScanState { idle, processing, noText, success }
@@ -30,6 +31,7 @@ class _ScanScreenState extends State<ScanScreen> with WidgetsBindingObserver {
   String? _errorMessage;
   bool _cameraReady = false;
   bool _isCapturing = false;
+  bool _isLookingUpBarcode = false;
 
   final _textRecognizer = TextRecognizer();
   final _imagePicker = ImagePicker();
@@ -117,8 +119,34 @@ class _ScanScreenState extends State<ScanScreen> with WidgetsBindingObserver {
 
   void _onBarcodeDetected(BarcodeCapture capture) {
     final code = capture.barcodes.firstOrNull?.rawValue;
-    if (code == null) return;
-    context.push('/home/add-medicine', extra: {'barcode': code});
+    if (code == null || _isLookingUpBarcode) return;
+    _lookupBarcode(code);
+  }
+
+  Future<void> _lookupBarcode(String code) async {
+    setState(() { _isLookingUpBarcode = true; _scanState = _ScanState.processing; _errorMessage = null; });
+    try {
+      final result = await OpenFDAService.lookupBarcode(code);
+      if (!mounted) return;
+      if (result != null) {
+        // remap to AddMedicineScreen's expected Map<String, String?> shape
+        final prefill = <String, String?>{
+          'verifiedName': result['name'] as String?,
+          'brandName': result['brandName'] as String?,
+          'strength': result['strength'] as String?,
+          'form': result['form'] as String?,
+          'source': 'barcode',
+        };
+        context.push('/home/add-medicine', extra: prefill);
+      } else {
+        setState(() {
+          _scanState = _ScanState.noText;
+          _errorMessage = 'Medicine not found in database. Try OCR or enter manually.';
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _isLookingUpBarcode = false);
+    }
   }
 
   @override
@@ -131,7 +159,7 @@ class _ScanScreenState extends State<ScanScreen> with WidgetsBindingObserver {
           if (_mode == _ScanMode.ocr) Positioned.fill(child: _ScanOverlay()),
           Positioned(top: 0, left: 0, right: 0, child: _buildTopBar()),
           Positioned(bottom: 0, left: 0, right: 0, child: _buildBottomControls()),
-          if (_scanState == _ScanState.processing) Positioned.fill(child: _ProcessingOverlay()),
+          if (_scanState == _ScanState.processing) Positioned.fill(child: _ProcessingOverlay(label: _isLookingUpBarcode ? 'Looking up medicine...' : 'Analyzing medicine...')),
           if (_scanState == _ScanState.noText && _errorMessage != null)
             Positioned(
               bottom: 120, left: AppDimensions.md, right: AppDimensions.md,
@@ -385,6 +413,9 @@ class _CircleButton extends StatelessWidget {
 
 // ── Processing Overlay ──────────────────────────────────────────────────────
 class _ProcessingOverlay extends StatelessWidget {
+  final String label;
+  const _ProcessingOverlay({this.label = 'Analyzing medicine...'});
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -395,7 +426,7 @@ class _ProcessingOverlay extends StatelessWidget {
           children: [
             const CircularProgressIndicator(color: AppColors.neonCyan, strokeWidth: 3),
             const SizedBox(height: AppDimensions.md),
-            Text('Analyzing medicine...', style: AppTypography.titleMedium()),
+            Text(label, style: AppTypography.titleMedium()),
           ],
         ),
       ),

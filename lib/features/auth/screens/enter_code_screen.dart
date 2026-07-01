@@ -9,7 +9,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/providers/shared_preferences_provider.dart';
-import '../../../data/services/firebase_service.dart';
+import '../../../data/services/invite_service.dart';
 import '../providers/auth_provider.dart';
 
 class EnterCodeScreen extends ConsumerStatefulWidget {
@@ -52,11 +52,6 @@ class _EnterCodeScreenState extends ConsumerState<EnterCodeScreen> {
     });
 
     try {
-      if (!isFirebaseReady) {
-        setState(() => _error = 'No internet connection. Firebase is not available.');
-        return;
-      }
-
       final result = await lookupInviteCode(code);
       if (result == null) {
         setState(() => _error = 'Invalid code. Please check and try again.');

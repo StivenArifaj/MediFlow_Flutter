@@ -1,20 +1,17 @@
-import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import '../../../../core/widgets/app_background.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_typography.dart';
-import '../../../core/constants/app_dimensions.dart';
 import '../../../core/widgets/glass_card.dart';
-import '../../../data/database/app_database.dart';
-import '../../auth/providers/auth_provider.dart';
+import '../../../core/hooks/managed_user_id.dart';
+import '../../../data/services/supabase_data_service.dart';
 import '../../../data/services/notification_service.dart';
+import '../../../features/medicines/providers/medicines_provider.dart';
 
 class ReminderSetupScreen extends ConsumerStatefulWidget {
-  final int medicineId;
+  final String medicineId;
   final String medicineName;
 
   const ReminderSetupScreen({
@@ -28,24 +25,19 @@ class ReminderSetupScreen extends ConsumerStatefulWidget {
 }
 
 class _ReminderSetupScreenState extends ConsumerState<ReminderSetupScreen> {
-  // Step 1 — Frequency
-  String _frequency = 'daily'; // daily | weekly | interval | as_needed
+  String _frequency = 'daily';
 
-  // Step 2 — Time(s)
   final List<String> _times = [];
 
-  // Step 3 — Duration
-  String _durationType = 'ongoing'; // ongoing | until_date | for_days
+  String _durationType = 'ongoing';
   DateTime? _endDate;
   final _daysController = TextEditingController();
 
-  // Step 4 — Options
   bool _snoozeEnabled = true;
   int _snoozeDuration = 15;
   bool _soundEnabled = true;
   bool _vibrationEnabled = true;
 
-  // Weekly days
   final Set<String> _selectedDays = {};
 
   bool _isLoading = false;
@@ -122,51 +114,37 @@ class _ReminderSetupScreenState extends ConsumerState<ReminderSetupScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final db = ref.read(appDatabaseProvider);
-      final repo = ref.read(authRepositoryProvider);
-      final userId = repo.currentUserId;
+      final userId = await ref.read(managedUserIdProvider.future);
       if (userId == null) { _snack('Not logged in'); return; }
 
-      // Fetch medicine name from DB for reliable display in notifications
-      final medicine = await db.medicinesDao.getMedicineById(widget.medicineId);
-      final medicineName = medicine?.verifiedName ?? widget.medicineName;
-
-
-
+      final svc = ref.read(supabaseDataServiceProvider);
       final durationDays = _durationType == 'for_days'
           ? int.tryParse(_daysController.text.trim())
           : null;
 
-      // Save one reminder per time slot
       for (final time in _times) {
-        final notifId = DateTime.now().millisecondsSinceEpoch % 100000 + _times.indexOf(time);
-
-        await db.remindersDao.insertReminder(
-          RemindersCompanion.insert(
-            medicineId: widget.medicineId,
-            userId: userId,
-            time: time,
-            frequency: Value(_frequency),
-            days: Value(_frequency == 'weekly' ? _selectedDays.join(',') : null),
-            durationType: Value(_durationType),
-            endDate: Value(_endDate),
-            durationDays: Value(durationDays),
-            isActive: const Value(true),
-            snoozeDuration: Value(_snoozeEnabled ? _snoozeDuration : 0),
-            notificationId: Value(notifId),
-            createdAt: DateTime.now(),
-          ),
+        await svc.createReminder(
+          userId: userId,
+          medicineId: widget.medicineId,
+          time: time,
+          frequency: _frequency,
+          days: _frequency == 'weekly' ? _selectedDays.toList() : null,
+          durationType: _durationType,
+          endDate: _endDate?.toIso8601String().split('T').first,
+          durationDays: durationDays,
+          snoozeDuration: _snoozeEnabled ? _snoozeDuration : 0,
         );
       }
 
-      // Schedule notifications for each saved reminder time
       await NotificationService.instance.scheduleRemindersForMedicine(
-        medicineId: widget.medicineId,
-        medicineName: medicineName,
+        medicineId: widget.medicineId.hashCode.abs() % 2147483647,
+        medicineName: widget.medicineName,
         times: _times,
         frequency: _frequency,
-        days: _selectedDays.map((d) => _dayNameToInt(d)).toList(),
+        days: _selectedDays.map(_dayNameToInt).toList(),
       );
+
+      ref.invalidate(remindersForMedicineProvider(widget.medicineId));
 
       if (mounted) {
         _snack('✅ Reminders saved & scheduled!');
@@ -192,7 +170,7 @@ class _ReminderSetupScreenState extends ConsumerState<ReminderSetupScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                 child: Row(children: [
                   GestureDetector(
-                    
+
                     onTap: () => context.pop(),
                     child: Container(
                       width: 40, height: 40,
@@ -239,7 +217,6 @@ class _ReminderSetupScreenState extends ConsumerState<ReminderSetupScreen> {
                         )).toList(),
                       ),
 
-                      // Weekly day selector
                       if (_frequency == 'weekly') ...[
                         const SizedBox(height: 12),
                         Wrap(
@@ -558,8 +535,3 @@ class _OptionRow extends StatelessWidget {
     );
   }
 }
-
-
-
-
-

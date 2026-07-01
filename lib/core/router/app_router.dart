@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' show AuthChangeEvent;
+import 'package:supabase_flutter/supabase_flutter.dart'
+    show AuthChangeEvent, AuthState; // AuthChangeEvent used in event comparison
 
 import '../../core/supabase/supabase_client.dart';
+import '../../data/services/notification_service.dart';
 import '../../features/auth/screens/splash_screen.dart';
 import '../../features/auth/screens/onboarding_screen.dart';
 import '../../features/auth/screens/role_selection_screen.dart';
@@ -37,12 +39,31 @@ const _publicRoutes = {
 };
 
 class _SupabaseAuthNotifier extends ChangeNotifier {
-  late final StreamSubscription<AuthChangeEvent> _sub;
+  late final StreamSubscription<AuthState> _sub;
 
   _SupabaseAuthNotifier() {
-    _sub = supabase.auth.onAuthStateChange
-        .map((e) => e.event)
-        .listen((_) => notifyListeners());
+    _sub = supabase.auth.onAuthStateChange.listen((AuthState state) {
+      if (state.event == AuthChangeEvent.signedIn) {
+        _rescheduleNotifications();
+      }
+      notifyListeners();
+    });
+  }
+
+  static Future<void> _rescheduleNotifications() async {
+    try {
+      final userId = supabase.auth.currentUser?.id;
+      if (userId == null) return;
+      final reminders = await supabase
+          .from('reminders')
+          .select('*, medicines(verified_name)')
+          .eq('user_id', userId)
+          .eq('is_active', true);
+      await NotificationService.rescheduleAll(
+          List<Map<String, dynamic>>.from(reminders));
+    } catch (e) {
+      debugPrint('rescheduleAll error: $e');
+    }
   }
 
   @override
@@ -141,16 +162,17 @@ final appRouter = GoRouter(
         GoRoute(
           path: 'medicine/:id',
           builder: (context, state) {
-            final id = int.tryParse(state.pathParameters['id'] ?? '');
+            final id = state.pathParameters['id'];
             return MedicineDetailScreen(medicineId: id);
           },
         ),
         GoRoute(
           path: 'reminder-setup',
           builder: (context, state) {
-            final medicineId = state.uri.queryParameters['medicineId'];
+            final medicineId = state.uri.queryParameters['medicineId'] ?? '';
+            final medicineName = state.uri.queryParameters['medicineName'] ?? '';
             return ReminderSetupScreen(
-                medicineId: int.tryParse(medicineId ?? '') ?? 0);
+                medicineId: medicineId, medicineName: medicineName);
           },
         ),
         GoRoute(

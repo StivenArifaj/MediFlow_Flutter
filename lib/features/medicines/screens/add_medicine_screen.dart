@@ -1,4 +1,3 @@
-import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,9 +7,10 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../data/database/app_database.dart';
-import '../../../data/services/firebase_service.dart';
-import '../../auth/providers/auth_provider.dart';
+import '../../../core/hooks/managed_user_id.dart';
+import '../../../data/services/supabase_data_service.dart';
+import '../../../data/services/notification_service.dart';
+import '../providers/medicines_provider.dart';
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 class AddMedicineScreen extends ConsumerStatefulWidget {
@@ -145,111 +145,50 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final repo = ref.read(authRepositoryProvider);
-      final userId = repo.currentUserId;
+      final userId = await ref.read(managedUserIdProvider.future);
       if (userId == null) { _showSnack('Not logged in.'); return; }
 
-      final db = ref.read(appDatabaseProvider);
-      final quantity = int.tryParse(_quantityCtrl.text.trim());
+      final svc = ref.read(supabaseDataServiceProvider);
 
-      final medId = await db.medicinesDao.insertMedicine(
-        MedicinesCompanion.insert(
-          userId: userId,
-          verifiedName: _nameCtrl.text.trim(),
-          brandName: Value(_brandCtrl.text.trim().isNotEmpty ? _brandCtrl.text.trim() : null),
-          strength: Value(_strengthCtrl.text.trim().isNotEmpty ? _strengthCtrl.text.trim() : null),
-          form: Value(_selectedForm),
-          quantity: Value(quantity),
-          notes: Value(_notesCtrl.text.trim().isNotEmpty ? _notesCtrl.text.trim() : null),
-          expiryDate: Value(_expiryDate),
-          apiSource: const Value('manual'),
-          createdAt: DateTime.now(),
-        ),
+      final medicine = await svc.createMedicine(
+        userId: userId,
+        verifiedName: _nameCtrl.text.trim(),
+        brandName: _brandCtrl.text.trim().isNotEmpty ? _brandCtrl.text.trim() : null,
+        strength: _strengthCtrl.text.trim().isNotEmpty ? _strengthCtrl.text.trim() : null,
+        form: _selectedForm,
+        quantity: int.tryParse(_quantityCtrl.text.trim()),
+        notes: _notesCtrl.text.trim().isNotEmpty ? _notesCtrl.text.trim() : null,
+        expiryDate: _expiryDate?.toIso8601String().split('T').first,
+        apiSource: widget.prefillData != null ? 'openfda' : 'manual',
       );
 
-      // Sync to Firestore
-      final role = repo.selectedRole;
-      final medicineData = {
-        'verifiedName': _nameCtrl.text.trim(),
-        'brandName': _brandCtrl.text.trim().isNotEmpty ? _brandCtrl.text.trim() : null,
-        'strength': _strengthCtrl.text.trim().isNotEmpty ? _strengthCtrl.text.trim() : null,
-        'form': _selectedForm,
-        'quantity': quantity,
-        'notes': _notesCtrl.text.trim().isNotEmpty ? _notesCtrl.text.trim() : null,
-        'isActive': true,
-        'createdAt': DateTime.now().toIso8601String(),
-      };
+      final medicineId = medicine['id'] as String;
 
-      final uid = repo.firebaseUid ?? userId.toString();
-
-      if (role == 'caregiver') {
-        await syncMedicineToFirestore(
-          caregiverUid: uid,
-          medicineId: medId.toString(),
-          data: medicineData,
-        );
-      } else {
-        await syncPatientMedicineToFirestore(
-          patientUid: uid,
-          medicineId: medId.toString(),
-          data: medicineData,
+      for (final t in _reminderTimes) {
+        await svc.createReminder(
+          userId: userId,
+          medicineId: medicineId,
+          time: t,
+          frequency: _frequency,
+          days: _frequency == 'specific' && _selectedDays.isNotEmpty ? _selectedDays : null,
+          intervalDays: _frequency == 'interval' ? _intervalDays : null,
+          durationType: _durationType,
+          endDate: _durationType == 'date' ? _endDate?.toIso8601String().split('T').first : null,
+          durationDays: _durationType == 'days' ? _durationDays : null,
+          snoozeDuration: _snoozeDuration,
         );
       }
 
-      // Save reminders if any times were set
       if (_reminderTimes.isNotEmpty) {
-        final days = _frequency == 'specific' ? _selectedDays.join(',') : null;
-        final interval = _frequency == 'interval' ? _intervalDays : null;
-        final dur = _durationType == 'days' ? _durationDays : null;
-        final end = _durationType == 'date' ? _endDate : null;
-
-        for (final t in _reminderTimes) {
-          await db.remindersDao.insertReminder(
-            RemindersCompanion.insert(
-              medicineId: medId,
-              userId: userId,
-              time: t,
-              frequency: Value(_frequency),
-              days: Value(days),
-              intervalDays: Value(interval),
-              durationType: Value(_durationType),
-              endDate: Value(end),
-              durationDays: Value(dur),
-              snoozeDuration: Value(_snoozeDuration),
-              createdAt: DateTime.now(),
-            ),
-          );
-
-          // Sync reminder to Firestore
-          final reminderData = {
-            'medicineId': medId.toString(),
-            'time': t,
-            'frequency': _frequency,
-            'days': days,
-            'intervalDays': interval,
-            'durationType': _durationType,
-            'endDate': end?.toIso8601String(),
-            'durationDays': dur,
-            'snoozeDuration': _snoozeDuration,
-            'isActive': true,
-            'createdAt': DateTime.now().toIso8601String(),
-          };
-
-          if (role == 'caregiver') {
-            await syncReminderToFirestore(
-              caregiverUid: uid,
-              reminderId: '${medId}_$t',
-              data: reminderData,
-            );
-          } else {
-            await syncPatientReminderToFirestore(
-              patientUid: uid,
-              reminderId: '${medId}_$t',
-              data: reminderData,
-            );
-          }
-        }
+        await NotificationService.instance.scheduleRemindersForMedicine(
+          medicineId: medicineId.hashCode.abs() % 2147483647,
+          medicineName: _nameCtrl.text.trim(),
+          times: _reminderTimes,
+          frequency: _frequency,
+        );
       }
+
+      ref.invalidate(medicinesProvider);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -257,7 +196,7 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
           backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
         ));
-        context.pop();
+        context.go('/home/medicine/$medicineId');
       }
     } catch (e) {
       _showSnack('Error saving medicine: $e');
@@ -332,6 +271,26 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
                 controller: _scrollController,
                 padding: const EdgeInsets.only(bottom: 120),
                 children: [
+
+                  // ── Barcode prefill banner ───────────────────────────────
+                  if (widget.prefillData?['source'] == 'barcode')
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF00D4D4).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF00D4D4).withValues(alpha: 0.3)),
+                        ),
+                        child: const Row(children: [
+                          Icon(Icons.check_circle, color: Color(0xFF00D4D4), size: 18),
+                          SizedBox(width: 8),
+                          Text('Auto-filled from barcode scan',
+                              style: TextStyle(color: Color(0xFF00D4D4), fontSize: 13)),
+                        ]),
+                      ),
+                    ),
 
                   // ══ BASIC INFORMATION ════════════════════════════════════
                   _sectionTitle('Basic Information'),
