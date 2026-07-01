@@ -1,6 +1,11 @@
 # MediFlow Flutter — Project State
 
-Last updated: 2026-07-01 (Session 5 — Profile, caregiver dashboard, export, linked patient home migrated)
+Last updated: 2026-07-01 (Session 6 — Drift removed, OpenFDA wired, backend complete)
+
+## Overall Status
+BACKEND COMPLETE — all data on Supabase,
+Drift removed, 0 errors
+Tagged: v0.2-backend-complete
 
 ## Current Phase
 Migrating from Firebase + Drift/SQLite to Supabase (single backend).
@@ -83,8 +88,11 @@ Migrating from Firebase + Drift/SQLite to Supabase (single backend).
   - Banner shown in add_medicine_screen when data from barcode scan
 
 ## What's NOT Done Yet
-- [ ] Fix duplicate route registration (caregiver-dashboard)
-- [ ] Delete password-bypass security bug in local auth fallback
+- [ ] Full QA pass on all 3 roles (OpenCode)
+- [ ] UI redesign for target audience
+- [ ] iOS build verification
+- [ ] Release signing config
+- [ ] Play Store submission
 
 ## Known Bugs From Audit (see 02-BUGS.md for full detail)
 - [FIXED] Bug #1: Caregiver dashboard reads own SQLite instead of patient's data

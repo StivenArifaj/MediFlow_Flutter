@@ -20,16 +20,16 @@ class AuthRepository {
       data: {'name': name, 'role': 'patient'},
     );
     if (role == 'caregiver') {
-      // Wait for trigger to create profile row, then call RPC to upgrade
-      String? uid;
-      for (int i = 0; i < 30; i++) {
-        await Future.delayed(const Duration(milliseconds: 100));
-        uid = _client.auth.currentUser?.id ?? uid;
-        if (uid == null) continue;
-        final row = await _client.from('profiles').select('id').eq('id', uid).maybeSingle();
-        if (row != null) break;
-      }
+      // Wait for handle_new_user trigger to create the profile row (DB race).
+      final uid = _client.auth.currentUser?.id;
       if (uid == null) throw Exception('No user after signup');
+      bool profileReady = false;
+      for (int i = 0; i < 10; i++) {
+        await Future.delayed(const Duration(milliseconds: 500));
+        final row = await _client.from('profiles').select('id').eq('id', uid).maybeSingle();
+        if (row != null) { profileReady = true; break; }
+      }
+      if (!profileReady) throw Exception('Profile not ready. Please try again.');
       await _client.rpc('become_caregiver');
       // Read back invite code
       for (int i = 0; i < 10; i++) {

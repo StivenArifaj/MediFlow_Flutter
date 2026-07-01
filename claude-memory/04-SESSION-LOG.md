@@ -3,6 +3,16 @@
 Append one entry per session, right before /clear. Keep entries short — 
 3-5 lines. This is a changelog, not a transcript.
 
+## 2026-07-01 — QA bug fixes (5 bugs)
+- B4 FIXED: Linked patient routing — router redirect checks profiles.role from Supabase on /login and /welcome, routes linked_patient → /linked-patient-home
+- B1 NOT FOUND: "100mg by by" — no display code produces this; may be stale test data in Supabase
+- B2 FIXED: Save Reminder button moved from GestureDetector in ListView → ElevatedButton in Scaffold.bottomNavigationBar
+- B3 FIXED: Caregiver home _loadPatientData() rewritten from SharedPreferences → Supabase profiles query
+- B5 FIXED: become_caregiver retry hardened 30×100ms → 10×500ms with explicit profileReady guard
+- UX3: add_medicine_screen already had bottomNavigationBar + resizeToAvoidBottomInset default=true — no change needed
+- flutter analyze: 0 errors, 16 warnings (all pre-existing)
+- Next: UI redesign
+
 ## 2026-07-01 — Session 2: Medicines screens migrated to Supabase
 - medicines_provider: FutureProvider<List<Map>> watching managedUserIdProvider; medicineByIdProvider and remindersForMedicineProvider added (String ID, not int)
 - add_medicine_screen: _submit() rewrites to svc.createMedicine + svc.createReminder + NotificationService.scheduleRemindersForMedicine; Firebase/Drift removed
@@ -71,3 +81,12 @@ Append one entry per session, right before /clear. Keep entries short —
   baked into JWT. Correct URL is vehkddgphgpjpojralyt
 - Always use fresh anon key from Supabase dashboard
 - Next: Session 3 (home screen + dose logging)
+
+## 2026-07-01 — Session 6 complete + checkpoint
+- Drift removed: 17 files deleted
+- OpenFDA barcode: 4-strategy lookup working
+- invite_service.dart extracted from firebase_service
+- pubspec cleaned of 8 unused packages
+- Committed v0.2-backend-complete tag
+- Backend phase DONE
+- Next: full QA pass then UI redesign

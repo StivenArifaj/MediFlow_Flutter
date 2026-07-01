@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
+import '../../../core/supabase/supabase_client.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
@@ -632,10 +631,24 @@ class _MyPatientCard extends StatelessWidget {
   }
 
   Future<Map<String, String?>> _loadPatientData() async {
-    final prefs = await SharedPreferences.getInstance();
+    final userId = supabase.auth.currentUser?.id;
+    if (userId == null) return {};
+
+    final patient = await supabase
+        .from('profiles')
+        .select('name, email')
+        .eq('caregiver_id', userId)
+        .maybeSingle();
+
+    final me = await supabase
+        .from('profiles')
+        .select('invite_code')
+        .eq('id', userId)
+        .maybeSingle();
+
     return {
-      'patientName': prefs.getString('linked_patient_name'),
-      'inviteCode': prefs.getString('caregiver_invite_code'),
+      'patientName': patient?['name'] as String?,
+      'inviteCode': me?['invite_code'] as String?,
     };
   }
 }

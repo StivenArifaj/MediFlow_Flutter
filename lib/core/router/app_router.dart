@@ -86,12 +86,21 @@ final appRouter = GoRouter(
       return _publicRoutes.contains(loc) ? null : '/welcome';
     }
 
-    // Authenticated on a public route — let the screen handle its own
-    // post-auth navigation so registration flows (caregiver conversion, etc.)
-    // complete before any redirect.
-    if (_publicRoutes.contains(loc)) {
-      return null;
+    // After login/welcome, redirect to role-appropriate home.
+    // Leave registration flows (/register, /role-selection, etc.) alone so
+    // caregiver conversion can complete before any redirect fires.
+    if (loc == '/login' || loc == '/welcome') {
+      final row = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .maybeSingle();
+      final role = row?['role'] as String? ?? 'patient';
+      if (role == 'linked_patient') return '/linked-patient-home';
+      return '/home';
     }
+
+    if (_publicRoutes.contains(loc)) return null;
 
     return null;
   },

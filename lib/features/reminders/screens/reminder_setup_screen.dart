@@ -161,6 +161,27 @@ class _ReminderSetupScreenState extends ConsumerState<ReminderSetupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF070B12),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: ElevatedButton(
+            onPressed: _isLoading ? null : _save,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF00E5FF),
+              foregroundColor: const Color(0xFF070B12),
+              disabledBackgroundColor: const Color(0xFF1A2535),
+              minimumSize: const Size(double.infinity, 52),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+            ),
+            child: _isLoading
+                ? const SizedBox(width: 24, height: 24,
+                    child: CircularProgressIndicator(color: Color(0xFF00E5FF), strokeWidth: 2))
+                : const Text('Save Reminder',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+          ),
+        ),
+      ),
       body: AppBackground(
         child: SafeArea(
           child: Column(
@@ -407,36 +428,7 @@ class _ReminderSetupScreenState extends ConsumerState<ReminderSetupScreen> {
                         ]),
                       ),
 
-                      const SizedBox(height: 28),
-
-                      // ── Save button ───────────────────────────────
-                      GestureDetector(
-                        onTap: _isLoading ? null : _save,
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 150),
-                          height: 56,
-                          decoration: BoxDecoration(
-                            gradient: _isLoading ? null
-                                : const LinearGradient(colors: [Color(0xFF00E5FF), Color(0xFF0055FF)]),
-                            color: _isLoading ? const Color(0xFF1A2535) : null,
-                            borderRadius: BorderRadius.circular(100),
-                            boxShadow: _isLoading ? [] : [
-                              BoxShadow(color: const Color(0xFF00E5FF).withValues(alpha: 0.4),
-                                  blurRadius: 20, offset: const Offset(0, 6)),
-                            ],
-                          ),
-                          child: Center(
-                            child: _isLoading
-                                ? const SizedBox(width: 24, height: 24,
-                                    child: CircularProgressIndicator(color: Color(0xFF00E5FF), strokeWidth: 2))
-                                : const Text('Save Reminder',
-                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700,
-                                        color: Color(0xFF070B12))),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 16),
                     ],
                   ),
                 ),
