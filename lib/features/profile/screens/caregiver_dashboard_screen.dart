@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
+import '../../../core/widgets/app_background.dart';
 import '../../auth/providers/current_user_provider.dart';
 import '../profile_providers.dart';
 import '../../home/today_schedule_provider.dart';
@@ -142,10 +143,17 @@ class _ConnectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasPatient = patientName != null && patientName!.isNotEmpty;
     return Container(
-      padding: const EdgeInsets.all(20),
       decoration: AppColors.gradientCard(
           const [Color(0xFF5B6EF5), Color(0xFF7C8AFF)]),
-      child: Column(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Stack(
+          children: [
+            const Positioned(
+                top: -55, right: -45, child: DecorCircle(size: 160)),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
@@ -232,6 +240,10 @@ class _ConnectionCard extends StatelessWidget {
             ]),
           ],
         ],
+              ),
+            ),
+          ],
+        ),
       ),
     ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.05, end: 0);
   }

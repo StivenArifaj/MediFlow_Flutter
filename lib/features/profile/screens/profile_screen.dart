@@ -10,6 +10,7 @@ import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
+import '../../../core/widgets/app_background.dart';
 import '../../../core/supabase/supabase_client.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../auth/providers/current_user_provider.dart';
@@ -28,7 +29,7 @@ class ProfileScreen extends ConsumerWidget {
 
 
     return Scaffold(
-      backgroundColor: AppColors.pageBackground,
+      backgroundColor: Colors.transparent,
       body: userAsync.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (_, __) => const Center(child: Text('Error loading profile')),
@@ -44,11 +45,22 @@ class ProfileScreen extends ConsumerWidget {
                   bottom: false,
                   child: Container(
                     margin: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                    padding: const EdgeInsets.all(24),
                     decoration: AppColors.gradientCard(
                         const [Color(0xFF1E3A5F), Color(0xFF2D7DD2)],
                         radius: 28),
-                    child: Row(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(28),
+                      child: Stack(
+                        children: [
+                          const Positioned(
+                              top: -60, right: -50,
+                              child: DecorCircle(size: 170)),
+                          const Positioned(
+                              bottom: -80, left: -30,
+                              child: DecorCircle(size: 150, opacity: 0.05)),
+                          Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Row(
                       children: [
                         Container(
                           width: 72, height: 72,
@@ -113,6 +125,10 @@ class ProfileScreen extends ConsumerWidget {
                           ),
                         ),
                       ],
+                    ),
+                          ),
+                        ],
+                      ),
                     ),
                   )
                       .animate()

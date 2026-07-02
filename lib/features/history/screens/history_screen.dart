@@ -75,7 +75,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     final histAsync = ref.watch(historyProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.pageBackground,
+      backgroundColor: Colors.transparent,
       body: histAsync.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2)),
         error: (_, __) => const Center(child: Text('Error loading history')),

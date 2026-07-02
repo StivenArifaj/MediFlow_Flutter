@@ -189,3 +189,10 @@ Append one entry per session, right before /clear. Keep entries short —
 - Profile: in-flow gradient hero card replaces pinned SliverAppBar
 - Nav active item → white pill with dark icon/label
 - flutter analyze: 0 errors
+
+## 2026-07-02 — Creative polish pass (post-overhaul)
+- AppBackground: ambient top gradient fade (primary 0.10 → caregiver 0.04 → transparent, 320px) + DecorCircle shared widget for gradient-card depth
+- MainTabScreen wraps tabs in AppBackground; home/health/history/profile scaffolds now transparent so fade shows through
+- Home: greeting flipped ("Hello, Name 👋" small / time-greeting 30px big), new _WeekStrip (7 pill days, today = dark pill), decor circles in progress hero + health tip
+- Profile hero + caregiver connection card: translucent decor circles inside gradient
+- 0 errors

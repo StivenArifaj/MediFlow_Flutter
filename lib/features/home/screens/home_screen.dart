@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/supabase/supabase_client.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
+import '../../../core/widgets/app_background.dart';
 import '../../../features/auth/providers/current_user_provider.dart';
 import '../../medicines/providers/medicines_provider.dart';
 import '../../../data/services/notification_service.dart';
@@ -19,10 +20,10 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   String _greetingText() {
     final h = DateTime.now().hour;
-    if (h >= 5 && h < 12) return 'Good Morning,';
-    if (h >= 12 && h < 18) return 'Good Afternoon,';
-    if (h >= 18 && h < 23) return 'Good Evening,';
-    return 'Good Night,';
+    if (h >= 5 && h < 12) return 'Good Morning';
+    if (h >= 12 && h < 18) return 'Good Afternoon';
+    if (h >= 18 && h < 23) return 'Good Evening';
+    return 'Good Night';
   }
 
   final _tips = const [
@@ -169,7 +170,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         : 'U';
 
     return Scaffold(
-      backgroundColor: AppColors.pageBackground,
+      backgroundColor: Colors.transparent,
       floatingActionButton: Container(
         width: 56,
         height: 56,
@@ -199,7 +200,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _greetingText(),
+                            'Hello, $name 👋',
                             style: const TextStyle(
                               fontSize: 14,
                               color: AppColors.textSecondary,
@@ -207,7 +208,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             ),
                           ),
                           Text(
-                            name,
+                            _greetingText(),
                             style: const TextStyle(
                               fontSize: 30,
                               fontWeight: FontWeight.w800,
@@ -272,6 +273,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     duration: 300.ms,
                     curve: Curves.easeOutCubic,
                   ),
+            ),
+
+            // Week day strip
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 18, 24, 0),
+                child: const _WeekStrip(),
+              ).animate(delay: 60.ms).fadeIn(duration: 300.ms),
             ),
 
             // Progress card
@@ -411,6 +420,59 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
+// ── Week Strip ─────────────────────────────────────────────────────────────────
+
+class _WeekStrip extends StatelessWidget {
+  const _WeekStrip();
+
+  @override
+  Widget build(BuildContext context) {
+    const letters = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    final now = DateTime.now();
+    final monday = now.subtract(Duration(days: now.weekday - 1));
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: List.generate(7, (i) {
+        final day = monday.add(Duration(days: i));
+        final isToday = day.day == now.day && day.month == now.month;
+        return Container(
+          width: 42,
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isToday ? AppColors.darkButton : AppColors.surface,
+            borderRadius: BorderRadius.circular(21),
+            boxShadow: isToday ? AppColors.md : AppColors.xs,
+          ),
+          child: Column(
+            children: [
+              Text(
+                letters[i],
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: isToday
+                      ? Colors.white.withValues(alpha: 0.7)
+                      : AppColors.textTertiary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${day.day}',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: isToday ? Colors.white : AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+        );
+      }),
+    );
+  }
+}
+
 // ── Progress Card ──────────────────────────────────────────────────────────────
 
 class _ProgressCard extends StatelessWidget {
@@ -420,14 +482,32 @@ class _ProgressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progress = total > 0 ? taken / total : 0.0;
-    final complete = taken == total && total > 0;
-
     return Container(
-      padding: const EdgeInsets.all(22),
       decoration: AppColors.gradientCard(
           const [Color(0xFF1E40AF), Color(0xFF3B82F6)]),
-      child: Column(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Stack(
+          children: [
+            const Positioned(
+                top: -50, right: -40, child: DecorCircle(size: 160)),
+            const Positioned(
+                bottom: -70, right: 40,
+                child: DecorCircle(size: 140, opacity: 0.05)),
+            Padding(
+              padding: const EdgeInsets.all(22),
+              child: _content(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _content() {
+    final progress = total > 0 ? taken / total : 0.0;
+    final complete = taken == total && total > 0;
+    return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -533,8 +613,7 @@ class _ProgressCard extends StatelessWidget {
             ],
           ),
         ],
-      ),
-    );
+      );
   }
 }
 
@@ -1168,7 +1247,6 @@ class _HealthTipCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFF7C3AED), Color(0xFF4F46E5)],
@@ -1178,7 +1256,24 @@ class _HealthTipCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: AppColors.coloredShadow(const Color(0xFF7C3AED)),
       ),
-      child: Row(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Stack(
+          children: [
+            const Positioned(
+                top: -45, right: -35, child: DecorCircle(size: 120)),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: _row(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _row() {
+    return Row(
         children: [
           Container(
             width: 44,
@@ -1216,7 +1311,6 @@ class _HealthTipCard extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
+      );
   }
 }

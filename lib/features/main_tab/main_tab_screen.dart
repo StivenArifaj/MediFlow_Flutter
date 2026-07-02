@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/widgets/app_background.dart';
 
 import '../../features/home/screens/home_screen.dart';
 import '../../features/health/screens/health_screen.dart';
@@ -35,7 +36,8 @@ class MainTabScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.pageBackground,
-      body: Stack(
+      body: AppBackground(
+        child: Stack(
         children: [
           Padding(
             padding: const EdgeInsets.only(bottom: 90),
@@ -90,6 +92,7 @@ class MainTabScreen extends ConsumerWidget {
             ),
           ),
         ],
+        ),
       ),
     );
   }

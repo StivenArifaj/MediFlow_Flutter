@@ -125,7 +125,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
     final measAsync = ref.watch(latestMeasurementsProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.pageBackground,
+      backgroundColor: Colors.transparent,
       body: measAsync.when(
         loading: () => const Center(
             child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2)),
