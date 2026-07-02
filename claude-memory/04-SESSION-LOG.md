@@ -196,3 +196,12 @@ Append one entry per session, right before /clear. Keep entries short —
 - Home: greeting flipped ("Hello, Name 👋" small / time-greeting 30px big), new _WeekStrip (7 pill days, today = dark pill), decor circles in progress hero + health tip
 - Profile hero + caregiver connection card: translucent decor circles inside gradient
 - 0 errors
+
+## 2026-07-02 — Linked patient fixes + emergency alert system
+- LinkedPatientHome rewritten: modern header (Hello + greeting + date), logout CircleButton w/ confirm dialog, "Cared for by X" pill, amber medication icon circles (no more 💊 emoji), stadium buttons, redesigned empty/all-done states
+- EMERGENCY ALERT feature: red "Alert My Caregiver" button pinned as bottomNavigationBar on linked patient home → optional message dialog → inserts into emergency_alerts table
+- Caregiver side: MainTabScreen (now stateful) subscribes to Supabase realtime inserts filtered by caregiver_id → full-screen alert dialog (pulsing SOS icon, patient name, message, Acknowledge). Pending unacknowledged alerts also shown on app open + as red shaking banner on caregiver dashboard
+- New files: lib/data/services/alert_service.dart, lib/core/widgets/emergency_alert_dialog.dart, supabase/emergency_alerts.sql
+- REQUIRED: run supabase/emergency_alerts.sql in Supabase SQL editor (table + RLS + realtime publication) before the feature works
+- Health tip card → pastel AI-suggestion style (peach→lavender→blue, sparkle icon, dark text)
+- 0 errors

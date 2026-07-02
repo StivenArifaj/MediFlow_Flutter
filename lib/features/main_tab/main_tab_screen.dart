@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 import '../../core/constants/app_colors.dart';
+import '../../core/supabase/supabase_client.dart';
 import '../../core/widgets/app_background.dart';
+import '../../core/widgets/emergency_alert_dialog.dart';
+import '../../data/services/alert_service.dart';
+import '../auth/providers/current_user_provider.dart';
 
 import '../../features/home/screens/home_screen.dart';
 import '../../features/health/screens/health_screen.dart';
@@ -18,11 +23,61 @@ class MainTabIndex extends Notifier<int> {
 final mainTabIndexProvider =
     NotifierProvider<MainTabIndex, int>(MainTabIndex.new);
 
-class MainTabScreen extends ConsumerWidget {
+class MainTabScreen extends ConsumerStatefulWidget {
   const MainTabScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MainTabScreen> createState() => _MainTabScreenState();
+}
+
+class _MainTabScreenState extends ConsumerState<MainTabScreen> {
+  sb.RealtimeChannel? _alertChannel;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _initAlerts());
+  }
+
+  Future<void> _initAlerts() async {
+    final user = await ref.read(currentUserProvider.future);
+    if (user == null || user.role != 'caregiver' || !mounted) return;
+
+    // Anything sent while the app was closed
+    try {
+      final pending = await AlertService.pendingAlertsFor(user.id);
+      if (mounted && pending.isNotEmpty) {
+        await showEmergencyAlert(context, pending.first);
+      }
+    } catch (_) {}
+
+    // Live alerts while the app is open
+    _alertChannel = supabase
+        .channel('emergency-alerts-${user.id}')
+        .onPostgresChanges(
+          event: sb.PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'emergency_alerts',
+          filter: sb.PostgresChangeFilter(
+            type: sb.PostgresChangeFilterType.eq,
+            column: 'caregiver_id',
+            value: user.id,
+          ),
+          callback: (payload) {
+            if (mounted) showEmergencyAlert(context, payload.newRecord);
+          },
+        )
+        .subscribe();
+  }
+
+  @override
+  void dispose() {
+    if (_alertChannel != null) supabase.removeChannel(_alertChannel!);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final currentIndex = ref.watch(mainTabIndexProvider);
     void setIndex(int i) =>
         ref.read(mainTabIndexProvider.notifier).setIndex(i);

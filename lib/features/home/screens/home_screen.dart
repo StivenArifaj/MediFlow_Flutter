@@ -1249,19 +1249,20 @@ class _HealthTipCard extends StatelessWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF7C3AED), Color(0xFF4F46E5)],
+          colors: [Color(0xFFFFE9DC), Color(0xFFEDE4FF), Color(0xFFDDEBFF)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: AppColors.coloredShadow(const Color(0xFF7C3AED)),
+        boxShadow: AppColors.sm,
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: Stack(
           children: [
             const Positioned(
-                top: -45, right: -35, child: DecorCircle(size: 120)),
+                top: -45, right: -35,
+                child: DecorCircle(size: 120, opacity: 0.4)),
             Padding(
               padding: const EdgeInsets.all(20),
               child: _row(),
@@ -1279,11 +1280,12 @@ class _HealthTipCard extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(12),
+              boxShadow: AppColors.xs,
             ),
-            child: const Icon(Icons.lightbulb_outline,
-                color: Colors.white, size: 22),
+            child: const Icon(Icons.auto_awesome_rounded,
+                color: Color(0xFF9333EA), size: 22),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -1293,16 +1295,16 @@ class _HealthTipCard extends StatelessWidget {
                 const Text(
                   'Health Tip',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.textPrimary,
                     fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   tip,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.9),
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
                     fontSize: 13,
                     height: 1.4,
                   ),

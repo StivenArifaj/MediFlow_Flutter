@@ -9,15 +9,41 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/widgets/app_background.dart';
+import '../../../core/widgets/emergency_alert_dialog.dart';
+import '../../../data/services/alert_service.dart';
 import '../../auth/providers/current_user_provider.dart';
 import '../profile_providers.dart';
 import '../../home/today_schedule_provider.dart';
 
-class CaregiverDashboardScreen extends ConsumerWidget {
+class CaregiverDashboardScreen extends ConsumerStatefulWidget {
   const CaregiverDashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CaregiverDashboardScreen> createState() =>
+      _CaregiverDashboardScreenState();
+}
+
+class _CaregiverDashboardScreenState
+    extends ConsumerState<CaregiverDashboardScreen> {
+  List<Map<String, dynamic>> _pendingAlerts = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAlerts();
+  }
+
+  Future<void> _loadAlerts() async {
+    final user = await ref.read(currentUserProvider.future);
+    if (user == null) return;
+    try {
+      final alerts = await AlertService.pendingAlertsFor(user.id);
+      if (mounted) setState(() => _pendingAlerts = alerts);
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final userAsync = ref.watch(currentUserProvider);
     final patientAsync = ref.watch(linkedPatientProvider);
     final dataAsync = ref.watch(caregiverPatientDataProvider);
@@ -37,6 +63,16 @@ class CaregiverDashboardScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Emergency alerts needing acknowledgement
+                  for (final alert in _pendingAlerts) ...[
+                    _AlertBanner(
+                      alert: alert,
+                      onTap: () => showEmergencyAlert(context, alert,
+                          onAcknowledged: _loadAlerts),
+                    ),
+                    const SizedBox(height: AppDimensions.md),
+                  ],
+
                   // Connection card
                   _ConnectionCard(
                     inviteCode: userAsync.value?.inviteCode,
@@ -128,6 +164,84 @@ class CaregiverDashboardScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+}
+
+// ── Emergency Alert Banner ──────────────────────────────────────────────────
+
+class _AlertBanner extends StatelessWidget {
+  final Map<String, dynamic> alert;
+  final VoidCallback onTap;
+  const _AlertBanner({required this.alert, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final message = alert['message'] as String?;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: AppColors.coloredShadow(AppColors.danger, opacity: 0.35),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
+              child:
+                  const Icon(Icons.sos_rounded, color: Colors.white, size: 24),
+            )
+                .animate(onPlay: (c) => c.repeat(reverse: true))
+                .scale(
+                    begin: const Offset(1, 1),
+                    end: const Offset(1.1, 1.1),
+                    duration: 600.ms),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'EMERGENCY ALERT',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.5,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    message != null && message.isNotEmpty
+                        ? message
+                        : 'Your patient needs your attention',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.white.withValues(alpha: 0.9),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded,
+                color: Colors.white, size: 24),
+          ],
+        ),
+      ),
+    ).animate().fadeIn(duration: 250.ms).shake(hz: 3, duration: 500.ms);
   }
 }
 
