@@ -33,7 +33,7 @@ class LinkedPatientHome extends ConsumerWidget {
     final scheduleAsync = ref.watch(todayScheduleProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.pageBackground,
       body: SafeArea(
         child: Column(
           children: [
@@ -150,7 +150,6 @@ class _CaregiverBanner extends ConsumerWidget {
           decoration: BoxDecoration(
             color: AppColors.linkedLight,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.linked.withValues(alpha: 0.3)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -202,11 +201,7 @@ class _PendingCard extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
+      decoration: AppColors.card,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -266,8 +261,7 @@ class _PendingCard extends StatelessWidget {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.textSecondary,
                       side: const BorderSide(color: AppColors.border),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
+                      shape: const StadiumBorder(),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: const Text('Skip',
@@ -286,8 +280,7 @@ class _PendingCard extends StatelessWidget {
                       backgroundColor: AppColors.success,
                       foregroundColor: Colors.white,
                       elevation: 0,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
+                      shape: const StadiumBorder(),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       textStyle: const TextStyle(
                           fontSize: 15, fontWeight: FontWeight.w600),
@@ -314,12 +307,10 @@ class _TakenCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border(
-          left: const BorderSide(color: AppColors.success, width: 4),
-          top: BorderSide(color: AppColors.border),
-          right: BorderSide(color: AppColors.border),
-          bottom: BorderSide(color: AppColors.border),
+        border: const Border(
+          left: BorderSide(color: AppColors.success, width: 4),
         ),
+        boxShadow: AppColors.sm,
       ),
       child: Padding(
         padding:

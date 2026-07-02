@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../../../core/widgets/app_background.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-import '../../../core/widgets/glass_card.dart';
+import '../../../core/constants/app_colors.dart';
 import '../../../core/hooks/managed_user_id.dart';
+import '../../../core/widgets/circle_button.dart';
 import '../../../data/services/supabase_data_service.dart';
 import '../../../data/services/notification_service.dart';
 import '../../../features/medicines/providers/medicines_provider.dart';
@@ -62,13 +62,7 @@ class _ReminderSetupScreenState extends ConsumerState<ReminderSetupScreen> {
 
   Future<void> _pickCustomTime() async {
     if (_times.length >= 5) { _snack('Maximum 5 reminder times allowed.'); return; }
-    final picked = await showTimePicker(context: context, initialTime: TimeOfDay.now(),
-        builder: (ctx, child) => Theme(
-          data: Theme.of(ctx).copyWith(
-            colorScheme: const ColorScheme.dark(primary: Color(0xFF00E5FF), surface: Color(0xFF0D1826)),
-          ),
-          child: child!,
-        ));
+    final picked = await showTimePicker(context: context, initialTime: TimeOfDay.now());
     if (picked == null) return;
     final formatted = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
     if (!_times.contains(formatted)) setState(() { _times.add(formatted); _times.sort(); });
@@ -80,12 +74,6 @@ class _ReminderSetupScreenState extends ConsumerState<ReminderSetupScreen> {
       initialDate: DateTime.now().add(const Duration(days: 30)),
       firstDate: DateTime.now(),
       lastDate: DateTime(2040),
-      builder: (ctx, child) => Theme(
-        data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.dark(primary: Color(0xFF00E5FF), surface: Color(0xFF0D1826)),
-        ),
-        child: child!,
-      ),
     );
     if (picked != null) setState(() => _endDate = picked);
   }
@@ -93,7 +81,7 @@ class _ReminderSetupScreenState extends ConsumerState<ReminderSetupScreen> {
   void _snack(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg),
-      backgroundColor: const Color(0xFF0D1826),
+      backgroundColor: AppColors.darkButton,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ));
@@ -160,298 +148,345 @@ class _ReminderSetupScreenState extends ConsumerState<ReminderSetupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF070B12),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-          child: ElevatedButton(
-            onPressed: _isLoading ? null : _save,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00E5FF),
-              foregroundColor: const Color(0xFF070B12),
-              disabledBackgroundColor: const Color(0xFF1A2535),
-              minimumSize: const Size(double.infinity, 52),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
-            ),
-            child: _isLoading
-                ? const SizedBox(width: 24, height: 24,
-                    child: CircularProgressIndicator(color: Color(0xFF00E5FF), strokeWidth: 2))
-                : const Text('Save Reminder',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+      backgroundColor: AppColors.pageBackground,
+      appBar: AppBar(
+        title: const Text('Set Reminder'),
+        leading: Center(
+          child: CircleButton(
+            icon: Icons.arrow_back_rounded,
+            size: 38,
+            onTap: () => context.pop(),
           ),
         ),
       ),
-      body: AppBackground(
-        child: SafeArea(
-          child: Column(
-            children: [
-              // ── AppBar ────────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                child: Row(children: [
-                  GestureDetector(
-
-                    onTap: () => context.pop(),
-                    child: Container(
-                      width: 40, height: 40,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0D1826),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFF00E5FF).withValues(alpha: 0.2)),
-                      ),
-                      child: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF00E5FF), size: 18),
-                    ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+          child: ElevatedButton(
+            onPressed: _isLoading ? null : _save,
+            child: _isLoading
+                ? const SizedBox(width: 22, height: 22,
+                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : const Text('Save Reminder'),
+          ),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // ── Medicine info ─────────────────────────────────
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: AppColors.card,
+              child: Row(children: [
+                Container(
+                  width: 48, height: 48,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primaryLight,
+                    shape: BoxShape.circle,
                   ),
-                  const SizedBox(width: 14),
-                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const Text('Setup Reminder',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white)),
-                    Text(widget.medicineName,
-                        style: const TextStyle(fontSize: 13, color: Color(0xFF8A9BB5))),
-                  ])),
-                ]).animate().fadeIn(duration: 300.ms),
-              ),
-
-              const SizedBox(height: 16),
-
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: const Icon(Icons.medication_rounded,
+                      color: AppColors.primary, size: 24),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // ── Step 1: Frequency ─────────────────────────
-                      _sectionHeader('Step 1 — Frequency'),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8, runSpacing: 8,
-                        children: {
-                          'daily': 'Daily',
-                          'weekly': 'Weekly',
-                          'interval': 'Every N Days',
-                          'as_needed': 'As Needed',
-                        }.entries.map((e) => _ChoiceChip(
-                          label: e.value,
-                          selected: _frequency == e.key,
-                          onTap: () => setState(() => _frequency = e.key),
-                        )).toList(),
-                      ),
-
-                      if (_frequency == 'weekly') ...[
-                        const SizedBox(height: 12),
-                        Wrap(
-                          spacing: 8, runSpacing: 8,
-                          children: _weekDays.map((d) => _ChoiceChip(
-                            label: d,
-                            selected: _selectedDays.contains(d),
-                            onTap: () => setState(() {
-                              if (_selectedDays.contains(d)) _selectedDays.remove(d);
-                              else _selectedDays.add(d);
-                            }),
-                          )).toList(),
-                        ),
-                      ],
-
-                      const SizedBox(height: 20),
-
-                      // ── Step 2: Times ─────────────────────────────
-                      _sectionHeader('Step 2 — Reminder Times'),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8, runSpacing: 8,
-                        children: [
-                          ..._presetTimes.map((t) => _ChoiceChip(
-                            label: t,
-                            selected: _times.contains(t),
-                            onTap: () => _times.contains(t)
-                                ? setState(() => _times.remove(t))
-                                : _addPresetTime(t),
-                          )),
-                          _ChoiceChip(
-                            label: '+ Custom',
-                            selected: false,
-                            onTap: _pickCustomTime,
-                            accent: const Color(0xFF8B5CF6),
-                          ),
-                        ],
-                      ),
-                      if (_times.isNotEmpty) ...[
-                        const SizedBox(height: 10),
-                        Wrap(
-                          spacing: 8,
-                          children: _times.map((t) => Chip(
-                            label: Text(t, style: const TextStyle(color: Color(0xFF00E5FF), fontSize: 13)),
-                            deleteIcon: const Icon(Icons.close, size: 14, color: Color(0xFF8A9BB5)),
-                            onDeleted: () => setState(() => _times.remove(t)),
-                            backgroundColor: const Color(0xFF00E5FF).withValues(alpha: 0.08),
-                            side: BorderSide(color: const Color(0xFF00E5FF).withValues(alpha: 0.3)),
-                            shape: const StadiumBorder(),
-                          )).toList(),
-                        ),
-                      ],
-
-                      const SizedBox(height: 20),
-
-                      // ── Step 3: Duration ──────────────────────────
-                      _sectionHeader('Step 3 — Duration'),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8, runSpacing: 8,
-                        children: {
-                          'ongoing': 'Ongoing',
-                          'until_date': 'Until Date',
-                          'for_days': 'For X Days',
-                        }.entries.map((e) => _ChoiceChip(
-                          label: e.value,
-                          selected: _durationType == e.key,
-                          onTap: () => setState(() => _durationType = e.key),
-                        )).toList(),
-                      ),
-
-                      if (_durationType == 'until_date') ...[
-                        const SizedBox(height: 12),
-                        GestureDetector(
-                          onTap: _pickEndDate,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF0D1826),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: const Color(0xFF00E5FF).withValues(alpha: 0.2)),
-                            ),
-                            child: Row(children: [
-                              const Icon(Icons.calendar_today_rounded, color: Color(0xFF00E5FF), size: 18),
-                              const SizedBox(width: 10),
-                              Text(
-                                _endDate != null
-                                    ? '${_endDate!.day}/${_endDate!.month}/${_endDate!.year}'
-                                    : 'Select end date',
-                                style: TextStyle(
-                                  color: _endDate != null ? Colors.white : const Color(0xFF4A5A72),
-                                  fontSize: 15,
-                                ),
-                              ),
-                            ]),
-                          ),
-                        ),
-                      ],
-
-                      if (_durationType == 'for_days') ...[
-                        const SizedBox(height: 12),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF0D1826),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: const Color(0xFF00E5FF).withValues(alpha: 0.12)),
-                          ),
-                          child: TextField(
-                            controller: _daysController,
-                            keyboardType: TextInputType.number,
-                            style: const TextStyle(color: Colors.white, fontSize: 15),
-                            decoration: const InputDecoration(
-                              hintText: 'Number of days (e.g. 30)',
-                              hintStyle: TextStyle(color: Color(0xFF4A5A72)),
-                              prefixIcon: Icon(Icons.today_rounded, color: Color(0xFF4A5A72), size: 20),
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                            ),
-                          ),
-                        ),
-                      ],
-
-                      const SizedBox(height: 20),
-
-                      // ── Step 4: Options ───────────────────────────
-                      _sectionHeader('Step 4 — Options'),
-                      const SizedBox(height: 10),
-
-                      GlassCard(
-                        child: Column(children: [
-                          _OptionRow(
-                            icon: Icons.snooze_rounded,
-                            label: 'Snooze',
-                            subtitle: 'Allow snoozing reminders',
-                            value: _snoozeEnabled,
-                            onChanged: (v) => setState(() => _snoozeEnabled = v),
-                          ),
-                          if (_snoozeEnabled) ...[
-                            const Divider(color: Color(0x1A00E5FF), height: 1),
-                            const SizedBox(height: 12),
-                            Row(children: [
-                              const Text('Snooze duration:',
-                                  style: TextStyle(color: Color(0xFF8A9BB5), fontSize: 13)),
-                              const SizedBox(width: 8),
-                              ...([5, 10, 15, 30]).map((m) => GestureDetector(
-                                onTap: () => setState(() => _snoozeDuration = m),
-                                child: Container(
-                                  margin: const EdgeInsets.only(right: 6),
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: _snoozeDuration == m
-                                        ? const Color(0xFF00E5FF).withValues(alpha: 0.15)
-                                        : const Color(0xFF1A2535),
-                                    borderRadius: BorderRadius.circular(100),
-                                    border: Border.all(
-                                      color: _snoozeDuration == m
-                                          ? const Color(0xFF00E5FF).withValues(alpha: 0.5)
-                                          : Colors.transparent,
-                                    ),
-                                  ),
-                                  child: Text('${m}m',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: _snoozeDuration == m ? const Color(0xFF00E5FF) : const Color(0xFF8A9BB5),
-                                      fontWeight: _snoozeDuration == m ? FontWeight.w700 : FontWeight.normal,
-                                    )),
-                                ),
-                              )),
-                            ]),
-                            const SizedBox(height: 8),
-                          ],
-                          const Divider(color: Color(0x1A00E5FF), height: 1),
-                          _OptionRow(
-                            icon: Icons.volume_up_rounded,
-                            label: 'Sound',
-                            subtitle: 'Play notification sound',
-                            value: _soundEnabled,
-                            onChanged: (v) => setState(() => _soundEnabled = v),
-                          ),
-                          const Divider(color: Color(0x1A00E5FF), height: 1),
-                          _OptionRow(
-                            icon: Icons.vibration_rounded,
-                            label: 'Vibration',
-                            subtitle: 'Vibrate on reminder',
-                            value: _vibrationEnabled,
-                            onChanged: (v) => setState(() => _vibrationEnabled = v),
-                          ),
-                        ]),
-                      ),
-
-                      const SizedBox(height: 16),
+                      Text(widget.medicineName.isNotEmpty ? widget.medicineName : 'Medicine',
+                          style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary)),
+                      const SizedBox(height: 2),
+                      const Text('Set up when to be reminded',
+                          style: TextStyle(
+                              fontSize: 13, color: AppColors.textSecondary)),
                     ],
                   ),
                 ),
+              ]),
+            ).animate().fadeIn(duration: 300.ms),
+
+            const SizedBox(height: 12),
+
+            // ── Frequency ─────────────────────────────────────
+            _SectionCard(
+              title: 'Frequency',
+              accent: AppColors.primary,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    spacing: 8, runSpacing: 8,
+                    children: {
+                      'daily': 'Daily',
+                      'weekly': 'Weekly',
+                      'interval': 'Every N Days',
+                      'as_needed': 'As Needed',
+                    }.entries.map((e) => _ChoiceChip(
+                      label: e.value,
+                      selected: _frequency == e.key,
+                      onTap: () => setState(() => _frequency = e.key),
+                    )).toList(),
+                  ),
+                  if (_frequency == 'weekly') ...[
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8, runSpacing: 8,
+                      children: _weekDays.map((d) => _ChoiceChip(
+                        label: d,
+                        selected: _selectedDays.contains(d),
+                        onTap: () => setState(() {
+                          if (_selectedDays.contains(d)) {
+                            _selectedDays.remove(d);
+                          } else {
+                            _selectedDays.add(d);
+                          }
+                        }),
+                      )).toList(),
+                    ),
+                  ],
+                ],
               ),
-            ],
-          ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // ── Times ─────────────────────────────────────────
+            _SectionCard(
+              title: 'Reminder Times',
+              accent: AppColors.success,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    spacing: 8, runSpacing: 8,
+                    children: [
+                      ..._presetTimes.map((t) => _ChoiceChip(
+                        label: t,
+                        selected: _times.contains(t),
+                        onTap: () => _times.contains(t)
+                            ? setState(() => _times.remove(t))
+                            : _addPresetTime(t),
+                      )),
+                      _ChoiceChip(
+                        label: '+ Custom',
+                        selected: false,
+                        onTap: _pickCustomTime,
+                      ),
+                    ],
+                  ),
+                  if (_times.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      children: _times.map((t) => Chip(
+                        label: Text(t,
+                            style: const TextStyle(
+                                color: AppColors.primary,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600)),
+                        deleteIcon: const Icon(Icons.close,
+                            size: 14, color: AppColors.textSecondary),
+                        onDeleted: () => setState(() => _times.remove(t)),
+                        backgroundColor: AppColors.primaryLight,
+                        side: BorderSide.none,
+                        shape: const StadiumBorder(),
+                      )).toList(),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // ── Duration ──────────────────────────────────────
+            _SectionCard(
+              title: 'Duration',
+              accent: AppColors.warning,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    spacing: 8, runSpacing: 8,
+                    children: {
+                      'ongoing': 'Ongoing',
+                      'until_date': 'Until Date',
+                      'for_days': 'For X Days',
+                    }.entries.map((e) => _ChoiceChip(
+                      label: e.value,
+                      selected: _durationType == e.key,
+                      onTap: () => setState(() => _durationType = e.key),
+                    )).toList(),
+                  ),
+                  if (_durationType == 'until_date') ...[
+                    const SizedBox(height: 12),
+                    GestureDetector(
+                      onTap: _pickEndDate,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceVariant,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Row(children: [
+                          const Icon(Icons.calendar_today_rounded,
+                              color: AppColors.primary, size: 18),
+                          const SizedBox(width: 10),
+                          Text(
+                            _endDate != null
+                                ? '${_endDate!.day}/${_endDate!.month}/${_endDate!.year}'
+                                : 'Select end date',
+                            style: TextStyle(
+                              color: _endDate != null
+                                  ? AppColors.textPrimary
+                                  : AppColors.textTertiary,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ]),
+                      ),
+                    ),
+                  ],
+                  if (_durationType == 'for_days') ...[
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _daysController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        hintText: 'Number of days (e.g. 30)',
+                        prefixIcon: Icon(Icons.today_rounded,
+                            color: AppColors.textTertiary, size: 20),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // ── Options ───────────────────────────────────────
+            _SectionCard(
+              title: 'Options',
+              accent: AppColors.caregiver,
+              child: Column(children: [
+                _OptionRow(
+                  icon: Icons.snooze_rounded,
+                  label: 'Snooze',
+                  subtitle: 'Allow snoozing reminders',
+                  value: _snoozeEnabled,
+                  onChanged: (v) => setState(() => _snoozeEnabled = v),
+                ),
+                if (_snoozeEnabled) ...[
+                  const Divider(color: AppColors.divider, height: 1),
+                  const SizedBox(height: 12),
+                  Row(children: [
+                    const Text('Duration:',
+                        style: TextStyle(
+                            color: AppColors.textSecondary, fontSize: 13)),
+                    const SizedBox(width: 8),
+                    ...([5, 10, 15, 30]).map((m) => GestureDetector(
+                      onTap: () => setState(() => _snoozeDuration = m),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        margin: const EdgeInsets.only(right: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: _snoozeDuration == m
+                              ? AppColors.darkButton
+                              : AppColors.surfaceVariant,
+                          borderRadius: BorderRadius.circular(100),
+                        ),
+                        child: Text('${m}m',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: _snoozeDuration == m
+                                  ? Colors.white
+                                  : AppColors.textSecondary,
+                              fontWeight: _snoozeDuration == m
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                            )),
+                      ),
+                    )),
+                  ]),
+                  const SizedBox(height: 8),
+                ],
+                const Divider(color: AppColors.divider, height: 1),
+                _OptionRow(
+                  icon: Icons.volume_up_rounded,
+                  label: 'Sound',
+                  subtitle: 'Play notification sound',
+                  value: _soundEnabled,
+                  onChanged: (v) => setState(() => _soundEnabled = v),
+                ),
+                const Divider(color: AppColors.divider, height: 1),
+                _OptionRow(
+                  icon: Icons.vibration_rounded,
+                  label: 'Vibration',
+                  subtitle: 'Vibrate on reminder',
+                  value: _vibrationEnabled,
+                  onChanged: (v) => setState(() => _vibrationEnabled = v),
+                ),
+              ]),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _sectionHeader(String text) {
-    return Row(children: [
-      Container(width: 3, height: 16, decoration: BoxDecoration(
-        color: const Color(0xFF00E5FF), borderRadius: BorderRadius.circular(2))),
-      const SizedBox(width: 8),
-      Text(text, style: const TextStyle(color: Color(0xFF00E5FF), fontSize: 14, fontWeight: FontWeight.w600)),
-    ]);
-  }
-
   int _dayNameToInt(String day) {
     const map = {'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6, 'Sun': 7};
     return map[day] ?? 1;
+  }
+}
+
+// ── Section Card ──────────────────────────────────────────────────────────────
+
+class _SectionCard extends StatelessWidget {
+  final String title;
+  final Color accent;
+  final Widget child;
+  const _SectionCard({required this.title, required this.accent, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: AppColors.card,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Container(
+              width: 3, height: 16,
+              decoration: BoxDecoration(
+                color: accent,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(title,
+                style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary)),
+          ]),
+          const SizedBox(height: 14),
+          child,
+        ],
+      ),
+    );
   }
 }
 
@@ -461,27 +496,25 @@ class _ChoiceChip extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
-  final Color? accent;
-  const _ChoiceChip({required this.label, required this.selected, required this.onTap, this.accent});
+  const _ChoiceChip({required this.label, required this.selected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final color = accent ?? const Color(0xFF00E5FF);
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
         decoration: BoxDecoration(
-          color: selected ? color.withValues(alpha: 0.15) : const Color(0xFF0D1826),
-          borderRadius: BorderRadius.circular(100),
-          border: Border.all(color: selected ? color.withValues(alpha: 0.5) : const Color(0x1A00E5FF)),
+          color: selected ? AppColors.darkButton : AppColors.surfaceVariant,
+          borderRadius: BorderRadius.circular(50),
+          boxShadow: selected ? AppColors.sm : null,
         ),
         child: Text(label,
             style: TextStyle(
               fontSize: 13,
-              fontWeight: selected ? FontWeight.w700 : FontWeight.normal,
-              color: selected ? color : const Color(0xFF8A9BB5),
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              color: selected ? Colors.white : AppColors.textSecondary,
             )),
       ),
     );
@@ -505,23 +538,26 @@ class _OptionRow extends StatelessWidget {
         Container(
           width: 36, height: 36,
           decoration: BoxDecoration(
-            color: const Color(0xFF00E5FF).withValues(alpha: 0.08),
+            color: AppColors.primaryLight,
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(icon, color: const Color(0xFF00E5FF), size: 18),
+          child: Icon(icon, color: AppColors.primary, size: 18),
         ),
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
-          Text(subtitle, style: const TextStyle(color: Color(0xFF8A9BB5), fontSize: 12)),
+          Text(label,
+              style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600)),
+          Text(subtitle,
+              style: const TextStyle(
+                  color: AppColors.textSecondary, fontSize: 12)),
         ])),
-        Switch(
+        Switch.adaptive(
           value: value,
           onChanged: onChanged,
-          activeColor: const Color(0xFF00E5FF),
-          trackColor: WidgetStateProperty.all(
-            value ? const Color(0xFF00E5FF).withValues(alpha: 0.2) : const Color(0xFF1A2535),
-          ),
+          activeThumbColor: AppColors.primary,
         ),
       ]),
     );

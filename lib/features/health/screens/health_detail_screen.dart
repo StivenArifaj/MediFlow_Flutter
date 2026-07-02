@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
+import '../../../core/widgets/circle_button.dart';
 import '../health_providers.dart';
 
 class HealthDetailScreen extends ConsumerWidget {
@@ -24,15 +25,15 @@ class HealthDetailScreen extends ConsumerWidget {
     final measAsync = ref.watch(measurementsForTypeProvider(type));
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.pageBackground,
       appBar: AppBar(
         title: Text(type),
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        leading: BackButton(color: AppColors.primary),
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Divider(height: 1, color: AppColors.border),
+        leading: Center(
+          child: CircleButton(
+            icon: Icons.arrow_back_rounded,
+            size: 38,
+            onTap: () => Navigator.of(context).maybePop(),
+          ),
         ),
       ),
       body: measAsync.when(
@@ -48,11 +49,18 @@ class HealthDetailScreen extends ConsumerWidget {
           ref: ref,
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'health_detail_fab',
-        backgroundColor: AppColors.primary,
-        onPressed: () => _openAddSheet(context, ref),
-        child: const Icon(Icons.add_rounded, color: Colors.white),
+      floatingActionButton: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          color: AppColors.darkButton,
+          shape: BoxShape.circle,
+          boxShadow: AppColors.lg,
+        ),
+        child: IconButton(
+          icon: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+          onPressed: () => _openAddSheet(context, ref),
+        ),
       ),
     );
   }
@@ -135,19 +143,15 @@ class _Body extends StatelessWidget {
           child: Container(
             margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
-            ),
+            decoration: AppColors.cardLg,
             child: Row(
               children: [
                 Container(
                   width: 52,
                   height: 52,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(14),
+                  decoration: const BoxDecoration(
+                    color: AppColors.primaryLight,
+                    shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.show_chart_rounded,
                       color: AppColors.primary, size: 26),
@@ -161,13 +165,15 @@ class _Body extends StatelessWidget {
                             fontSize: 13, color: AppColors.textSecondary)),
                     Text(latestValue ?? '—',
                         style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 32,
+                            fontWeight: FontWeight.w900,
                             color: AppColors.textPrimary)),
                     if (unit.isNotEmpty)
                       Text(unit,
                           style: const TextStyle(
-                              fontSize: 13, color: AppColors.textTertiary)),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary)),
                   ],
                 ),
               ],
@@ -180,11 +186,7 @@ class _Body extends StatelessWidget {
           child: Container(
             margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
-            ),
+            decoration: AppColors.card,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -452,7 +454,7 @@ class _EntryRow extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.border),
+          boxShadow: AppColors.sm,
         ),
         child: Row(
           children: [
@@ -626,30 +628,15 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
             ),
           ),
           const SizedBox(height: 24),
-          GestureDetector(
-            onTap: _saving ? null : _save,
-            child: Container(
-              width: double.infinity,
-              height: 54,
-              decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
-                borderRadius: BorderRadius.circular(100),
-                boxShadow: const [AppColors.cyanGlow],
-              ),
-              child: Center(
-                child: _saving
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2))
-                    : const Text('Save Reading',
-                        style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white)),
-              ),
-            ),
+          ElevatedButton(
+            onPressed: _saving ? null : _save,
+            child: _saving
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                        color: Colors.white, strokeWidth: 2))
+                : const Text('Save Reading'),
           ),
         ],
       ),

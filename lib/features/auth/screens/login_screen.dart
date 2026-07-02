@@ -10,6 +10,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/supabase/supabase_client.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/widgets/app_background.dart';
+import '../../../core/widgets/circle_button.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -189,7 +190,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 40),
+                const SizedBox(height: 16),
+
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: CircleButton(
+                    icon: Icons.arrow_back_rounded,
+                    size: 36,
+                    onTap: () => context.go('/welcome'),
+                  ),
+                ),
+
+                const SizedBox(height: 24),
 
                 // ── Header ───────────────────────────────────
                 Text(l10n.auth_welcomeBack, style: AppTypography.h1)
@@ -284,10 +296,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   style: OutlinedButton.styleFrom(
                     backgroundColor: AppColors.surface,
                     foregroundColor: AppColors.textPrimary,
-                    minimumSize: const Size(double.infinity, 54),
-                    side: const BorderSide(color: AppColors.border),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
+                    minimumSize: const Size(double.infinity, 56),
+                    side: BorderSide.none,
+                    shape: const StadiumBorder(),
+                  ).copyWith(
+                    shadowColor: WidgetStatePropertyAll(
+                        Colors.black.withValues(alpha: 0.08)),
+                    elevation: const WidgetStatePropertyAll(2),
                   ),
                 ).animate().fadeIn(delay: 310.ms, duration: 400.ms),
 

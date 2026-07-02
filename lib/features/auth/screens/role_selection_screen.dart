@@ -5,7 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
-import '../../../core/constants/app_dimensions.dart';
+import '../../../core/widgets/app_background.dart';
 import '../providers/auth_provider.dart';
 
 enum UserRole { patient, caregiver, linkedPatient }
@@ -22,16 +22,12 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
 
   Future<void> _continuePressed() async {
     if (_selectedRole == null) return;
-
     final repo = ref.read(authRepositoryProvider);
-
     if (_selectedRole == UserRole.linkedPatient) {
-      // Linked patient skips registration → enter code screen
       await repo.setSelectedRole('linked_patient');
       if (mounted) context.go('/enter-code');
       return;
     }
-
     await repo.setSelectedRole(_selectedRole!.name);
     if (mounted) context.go('/register');
   }
@@ -39,116 +35,72 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment(0, -0.8),
-            radius: 1.5,
-            colors: [Color(0xFF0D1F35), Color(0xFF070B12)],
-          ),
-        ),
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
         child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(AppDimensions.lg),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: AppDimensions.xl),
-                Text(
-                  'Who are you?',
-                  style: AppTypography.headlineLarge(color: AppColors.textPrimary),
-                )
-                    .animate()
-                    .fadeIn(duration: 400.ms)
-                    .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOutCubic),
-                const SizedBox(height: AppDimensions.sm),
-                Text(
-                  'Choose how you\'ll use MediFlow',
-                  style: AppTypography.bodyLarge(color: AppColors.textSecondary),
-                )
-                    .animate()
-                    .fadeIn(delay: 100.ms, duration: 400.ms)
-                    .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOutCubic),
-                const SizedBox(height: AppDimensions.xl),
+                const SizedBox(height: 32),
 
-                // Card 1 — Independent Patient
+                Text('Who are you?', style: AppTypography.h1)
+                    .animate().fadeIn(duration: 400.ms).slideY(begin: 0.1),
+                const SizedBox(height: 6),
+                Text("Choose how you'll use MediFlow",
+                    style: AppTypography.body.copyWith(color: AppColors.textSecondary))
+                    .animate().fadeIn(delay: 80.ms, duration: 400.ms),
+
+                const SizedBox(height: 32),
+
                 _RoleCard(
                   icon: Icons.medication_rounded,
-                  emoji: '💊',
                   label: 'I manage my own medicines',
                   subtitle: 'Full app for self-management',
                   isSelected: _selectedRole == UserRole.patient,
-                  accentColor: AppColors.neonCyan,
+                  accentColor: AppColors.primary,
                   onTap: () => setState(() => _selectedRole = UserRole.patient),
-                ).animate().fadeIn(delay: 200.ms, duration: 400.ms).slideY(begin: 0.1, end: 0),
+                ).animate().fadeIn(delay: 160.ms, duration: 400.ms),
 
-                const SizedBox(height: AppDimensions.md),
+                const SizedBox(height: 12),
 
-                // Card 2 — Caregiver
                 _RoleCard(
                   icon: Icons.people_rounded,
-                  emoji: '🤝',
-                  label: 'I manage someone else\'s medicines',
+                  label: "I manage someone else's medicines",
                   subtitle: 'Set up medicines for a family member',
                   isSelected: _selectedRole == UserRole.caregiver,
-                  accentColor: AppColors.caregiverAccent,
+                  accentColor: AppColors.caregiver,
                   onTap: () => setState(() => _selectedRole = UserRole.caregiver),
-                ).animate().fadeIn(delay: 300.ms, duration: 400.ms).slideY(begin: 0.1, end: 0),
+                ).animate().fadeIn(delay: 240.ms, duration: 400.ms),
 
-                const SizedBox(height: AppDimensions.md),
+                const SizedBox(height: 12),
 
-                // Card 3 — Linked Patient
                 _RoleCard(
                   icon: Icons.link_rounded,
-                  emoji: '🔗',
                   label: 'I was invited by a caregiver',
                   subtitle: 'Enter your invite code to get started',
                   isSelected: _selectedRole == UserRole.linkedPatient,
-                  accentColor: AppColors.warning,
+                  accentColor: AppColors.linked,
                   onTap: () => setState(() => _selectedRole = UserRole.linkedPatient),
-                ).animate().fadeIn(delay: 400.ms, duration: 400.ms).slideY(begin: 0.1, end: 0),
+                ).animate().fadeIn(delay: 320.ms, duration: 400.ms),
 
-                const SizedBox(height: AppDimensions.xxl),
+                const Spacer(),
 
-                // Continue button
-                Container(
-                  height: 56,
-                  decoration: _selectedRole != null
-                      ? const BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Color(0xFF00E5FF), Color(0xFF0066FF)],
-                          ),
-                          borderRadius: BorderRadius.all(Radius.circular(100)),
-                          boxShadow: [
-                            BoxShadow(color: Color(0x4000E5FF), blurRadius: 20, offset: Offset(0, 6)),
-                          ],
-                        )
-                      : BoxDecoration(
-                          color: AppColors.bgCardLight,
-                          borderRadius: BorderRadius.circular(100),
-                        ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: _selectedRole != null ? _continuePressed : null,
-                      borderRadius: BorderRadius.circular(100),
-                      child: Center(
-                        child: Text(
-                          'Continue',
-                          style: AppTypography.titleMedium(
-                            color: _selectedRole != null
-                                ? const Color(0xFF070B12)
-                                : AppColors.textMuted,
-                          ),
-                        ),
-                      ),
-                    ),
+                ElevatedButton(
+                  onPressed: _selectedRole != null ? _continuePressed : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _selectedRole != null
+                        ? AppColors.darkButton
+                        : AppColors.surfaceVariant,
+                    foregroundColor: _selectedRole != null
+                        ? Colors.white
+                        : AppColors.textTertiary,
                   ),
-                )
-                    .animate()
-                    .fadeIn(delay: 500.ms, duration: 400.ms)
-                    .slideY(begin: 0.1, end: 0),
+                  child: const Text('Continue'),
+                ).animate().fadeIn(delay: 400.ms, duration: 400.ms),
+
+                const SizedBox(height: 8),
               ],
             ),
           ),
@@ -159,9 +111,15 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
 }
 
 class _RoleCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String subtitle;
+  final bool isSelected;
+  final Color accentColor;
+  final VoidCallback onTap;
+
   const _RoleCard({
     required this.icon,
-    required this.emoji,
     required this.label,
     required this.subtitle,
     required this.isSelected,
@@ -169,73 +127,59 @@ class _RoleCard extends StatelessWidget {
     required this.onTap,
   });
 
-  final IconData icon;
-  final String emoji;
-  final String label;
-  final String subtitle;
-  final bool isSelected;
-  final Color accentColor;
-  final VoidCallback onTap;
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: 200.ms,
-        padding: const EdgeInsets.all(AppDimensions.md),
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF0D1826),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected ? accentColor : const Color(0x1A00E5FF),
-            width: isSelected ? 2 : 1,
+          color: isSelected
+              ? Color.alphaBlend(
+                  accentColor.withValues(alpha: 0.04), AppColors.surface)
+              : AppColors.surface,
+          borderRadius: BorderRadius.circular(28),
+          border: Border(
+            left: BorderSide(
+                color: isSelected ? accentColor : Colors.transparent, width: 4),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: isSelected
-                  ? accentColor.withValues(alpha: 0.2)
-                  : const Color(0x1200E5FF),
-              blurRadius: isSelected ? 20 : 16,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          boxShadow: AppColors.md,
         ),
-        child: Row(
-          children: [
-            // Icon container
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: accentColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Center(
-                child: Icon(icon, color: accentColor, size: 28),
-              ),
+        child: Row(children: [
+          Container(
+            width: 56, height: 56,
+            decoration: BoxDecoration(
+              color: accentColor.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
             ),
-            const SizedBox(width: AppDimensions.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label, style: AppTypography.titleMedium(color: AppColors.textPrimary)),
-                  const SizedBox(height: 4),
-                  Text(subtitle, style: AppTypography.bodySmall(color: AppColors.textSecondary)),
-                ],
-              ),
-            ),
-            if (isSelected)
-              Icon(Icons.check_circle_rounded, color: accentColor, size: 24),
-          ],
-        ),
+            child: Icon(icon, color: accentColor, size: 26),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(label,
+                  style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary)),
+              const SizedBox(height: 2),
+              Text(subtitle,
+                  style: const TextStyle(
+                      fontSize: 13, color: AppColors.textSecondary)),
+            ]),
+          ),
+          isSelected
+              ? Icon(Icons.check_circle_rounded, color: accentColor, size: 24)
+              : Container(
+                  width: 22, height: 22,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.border, width: 2),
+                  ),
+                ),
+        ]),
       ),
     );
   }
 }
-
-
-
-
-

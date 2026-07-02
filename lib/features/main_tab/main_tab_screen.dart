@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/constants/app_colors.dart';
+
 import '../../features/home/screens/home_screen.dart';
 import '../../features/health/screens/health_screen.dart';
 import '../../features/history/screens/history_screen.dart';
@@ -21,6 +23,8 @@ class MainTabScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = ref.watch(mainTabIndexProvider);
+    void setIndex(int i) =>
+        ref.read(mainTabIndexProvider.notifier).setIndex(i);
 
     const screens = [
       HomeScreen(),
@@ -29,100 +33,120 @@ class MainTabScreen extends ConsumerWidget {
       ProfileScreen(),
     ];
 
-    final tabs = [
-      _TabItem(icon: Icons.home_rounded,      label: 'Home'),
-      _TabItem(icon: Icons.favorite_rounded,   label: 'Health'),
-      _TabItem(icon: Icons.history_rounded,    label: 'History'),
-      _TabItem(icon: Icons.person_rounded,     label: 'Profile'),
-    ];
-
     return Scaffold(
-      body: IndexedStack(
-        index: currentIndex,
-        children: screens,
-      ),
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFF0A1628),
-          border: Border(
-            top: BorderSide(color: Color(0x1A00E5FF), width: 1),
+      backgroundColor: AppColors.pageBackground,
+      body: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 90),
+            child: IndexedStack(index: currentIndex, children: screens),
           ),
-        ),
-        child: SafeArea(
-          top: false,
-          child: SizedBox(
-            height: 62,
-            child: Row(
-              children: List.generate(tabs.length, (i) {
-                final selected = currentIndex == i;
-                return Expanded(
-                  child: GestureDetector(
-                    onTap: () =>
-                        ref.read(mainTabIndexProvider.notifier).setIndex(i),
-                    behavior: HitTestBehavior.opaque,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            tabs[i].icon,
-                            size: 24,
-                            color: selected
-                                ? const Color(0xFF00E5FF)
-                                : const Color(0xFF3D5068),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            tabs[i].label,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: selected
-                                  ? FontWeight.w600
-                                  : FontWeight.w400,
-                              color: selected
-                                  ? const Color(0xFF00E5FF)
-                                  : const Color(0xFF3D5068),
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          // Cyan dot indicator
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            width: selected ? 4 : 0,
-                            height: selected ? 4 : 0,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF00E5FF),
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Color(0x8800E5FF),
-                                  blurRadius: 6,
-                                  spreadRadius: 1,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+          Positioned(
+            left: 20,
+            right: 20,
+            bottom: 20,
+            child: Container(
+              height: 68,
+              decoration: BoxDecoration(
+                color: AppColors.darkButton,
+                borderRadius: BorderRadius.circular(34),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.18),
+                    blurRadius: 30,
+                    offset: const Offset(0, 8),
                   ),
-                );
-              }),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _NavItem(
+                    icon: Icons.home_rounded,
+                    label: 'Home',
+                    selected: currentIndex == 0,
+                    onTap: () => setIndex(0),
+                  ),
+                  _NavItem(
+                    icon: Icons.favorite_rounded,
+                    label: 'Health',
+                    selected: currentIndex == 1,
+                    onTap: () => setIndex(1),
+                  ),
+                  _NavItem(
+                    icon: Icons.history_rounded,
+                    label: 'History',
+                    selected: currentIndex == 2,
+                    onTap: () => setIndex(2),
+                  ),
+                  _NavItem(
+                    icon: Icons.person_rounded,
+                    label: 'Profile',
+                    selected: currentIndex == 3,
+                    onTap: () => setIndex(3),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 }
 
-class _TabItem {
+class _NavItem extends StatelessWidget {
   final IconData icon;
   final String label;
-  const _TabItem({required this.icon, required this.label});
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        padding: EdgeInsets.symmetric(
+          horizontal: selected ? 16 : 12,
+          vertical: 8,
+        ),
+        decoration: BoxDecoration(
+          color: selected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: selected
+                  ? AppColors.darkButton
+                  : Colors.white.withValues(alpha: 0.4),
+              size: 22,
+            ),
+            if (selected) ...[
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: AppColors.darkButton,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
 }
-
-
-
-

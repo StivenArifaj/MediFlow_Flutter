@@ -1,95 +1,104 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_colors.dart';
-import '../constants/app_dimensions.dart';
 import '../constants/app_typography.dart';
 
 class AppTheme {
   AppTheme._();
 
   static ThemeData get lightTheme {
+    final font = GoogleFonts.inter().fontFamily;
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      fontFamily: GoogleFonts.inter().fontFamily,
+      fontFamily: font,
+      scaffoldBackgroundColor: AppColors.pageBackground,
       colorScheme: const ColorScheme.light(
         primary: AppColors.primary,
         surface: AppColors.surface,
         error: AppColors.danger,
-        onPrimary: AppColors.textOnPrimary,
+        onPrimary: Colors.white,
         onSurface: AppColors.textPrimary,
-        onError: AppColors.textOnPrimary,
-      ),
-      scaffoldBackgroundColor: AppColors.background,
-      cardTheme: CardThemeData(
-        color: AppColors.surface,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: AppColors.border),
-        ),
-        margin: const EdgeInsets.symmetric(
-          horizontal: AppDimensions.md,
-          vertical: AppDimensions.sm,
-        ),
+        onError: Colors.white,
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.surface,
-        foregroundColor: AppColors.textPrimary,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        titleTextStyle: AppTypography.h3,
+        centerTitle: true,
+        titleTextStyle: TextStyle(
+          fontFamily: font,
+          fontSize: 17,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textPrimary,
+        ),
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: AppColors.textOnPrimary,
-          minimumSize: const Size(double.infinity, 54),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-          textStyle: AppTypography.button,
+          backgroundColor: AppColors.darkButton,
+          foregroundColor: Colors.white,
+          minimumSize: const Size(double.infinity, 56),
+          shape: const StadiumBorder(),
           elevation: 0,
+          shadowColor: Colors.transparent,
+          textStyle: TextStyle(
+            fontFamily: font,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.1,
+          ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primary,
-          side: const BorderSide(color: AppColors.primary, width: 1.5),
-          minimumSize: const Size(double.infinity, 54),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+          foregroundColor: AppColors.textPrimary,
+          side: const BorderSide(color: AppColors.border, width: 1.5),
+          minimumSize: const Size(double.infinity, 56),
+          shape: const StadiumBorder(),
+          textStyle: TextStyle(
+            fontFamily: font,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          foregroundColor: AppColors.primary,
-        ),
+        style: TextButton.styleFrom(foregroundColor: AppColors.primary),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surfaceVariant,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.border, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: AppColors.danger, width: 1),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        labelStyle: const TextStyle(color: AppColors.textSecondary, fontSize: 16),
-        hintStyle: const TextStyle(color: AppColors.textTertiary, fontSize: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        labelStyle:
+            const TextStyle(color: AppColors.textSecondary, fontSize: 15),
+        hintStyle:
+            const TextStyle(color: AppColors.textTertiary, fontSize: 15),
+      ),
+      cardTheme: CardThemeData(
+        color: AppColors.surface,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        margin: EdgeInsets.zero,
       ),
       textTheme: TextTheme(
         displayLarge: AppTypography.displayLarge(color: AppColors.textPrimary),
@@ -102,13 +111,6 @@ class AppTheme {
         bodyMedium: AppTypography.bodyMedium(color: AppColors.textSecondary),
         bodySmall: AppTypography.bodySmall(color: AppColors.textSecondary),
         labelLarge: AppTypography.labelLarge(color: AppColors.primary),
-      ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: AppColors.surface,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textTertiary,
-        type: BottomNavigationBarType.fixed,
-        elevation: 0,
       ),
     );
   }

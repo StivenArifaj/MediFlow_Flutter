@@ -125,46 +125,116 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
     final measAsync = ref.watch(latestMeasurementsProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text(
-          'Health',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-        ),
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Divider(height: 1, color: AppColors.border),
-        ),
-      ),
+      backgroundColor: AppColors.pageBackground,
       body: measAsync.when(
         loading: () => const Center(
             child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2)),
         error: (_, __) => const Center(
             child: Text('Error loading data')),
         data: (latest) {
-          return GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 1.1,
-            ),
-            itemCount: _metrics.length,
-            itemBuilder: (ctx, i) {
-              final metric = _metrics[i];
-              final m = latest[metric.type];
-              return _MetricCard(
-                metric: metric,
-                measurement: m,
-                onTap: () => _openSheet(metric, m),
-              )
-                  .animate()
-                  .fadeIn(delay: Duration(milliseconds: i * 45), duration: 300.ms)
-                  .scale(begin: const Offset(0.88, 0.88), curve: Curves.easeOutBack);
-            },
+          final metricsLogged = latest.length;
+          final updatedToday = metricsLogged > 0;
+
+          return CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text('Health',
+                            style: TextStyle(
+                                fontSize: 28, fontWeight: FontWeight.w800,
+                                color: AppColors.textPrimary,
+                                letterSpacing: -0.5)),
+                        SizedBox(height: 2),
+                        Text('Track your vitals',
+                            style: TextStyle(
+                                fontSize: 14, color: AppColors.textSecondary)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              // Summary card
+              SliverToBoxAdapter(
+                child: Container(
+                  margin: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(AppColors.cardRadius),
+                    boxShadow: AppColors.cardShadow,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Health Overview',
+                        style: TextStyle(
+                          fontSize: 14, color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w500)),
+                      const SizedBox(height: 6),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text('$metricsLogged',
+                            style: const TextStyle(
+                              fontSize: 40, fontWeight: FontWeight.w800,
+                              color: AppColors.textPrimary, letterSpacing: -1.5)),
+                          const Padding(
+                            padding: EdgeInsets.only(bottom: 6, left: 6),
+                            child: Text('metrics logged',
+                              style: TextStyle(
+                                fontSize: 14, color: AppColors.textSecondary))),
+                          const Spacer(),
+                          if (updatedToday)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: AppColors.successLight,
+                                borderRadius: BorderRadius.circular(AppColors.chipRadius)),
+                              child: const Text('Updated today',
+                                style: TextStyle(
+                                  fontSize: 12, color: AppColors.success,
+                                  fontWeight: FontWeight.w600)),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ).animate().fadeIn(duration: 400.ms),
+              ),
+              // Metric grid
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                sliver: SliverGrid(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 0.95,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (ctx, i) {
+                      final metric = _metrics[i];
+                      final m = latest[metric.type];
+                      return _MetricCard(
+                        metric: metric,
+                        measurement: m,
+                        onTap: () => _openSheet(metric, m),
+                      )
+                          .animate(delay: Duration(milliseconds: i * 60))
+                          .fadeIn(duration: 300.ms)
+                          .scale(begin: const Offset(0.95, 0.95), end: const Offset(1.0, 1.0), duration: 300.ms, curve: Curves.easeOutBack);
+                    },
+                    childCount: _metrics.length,
+                  ),
+                ),
+              ),
+            ],
           );
         },
       ),
@@ -199,55 +269,61 @@ class _MetricCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppColors.cardRadius),
+        boxShadow: AppColors.cardShadow,
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppColors.cardRadius),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                width: 44, height: 44,
+                width: 40, height: 40,
                 decoration: BoxDecoration(
-                  color: metric.color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(metric.icon, color: metric.color, size: 24),
+                  color: metric.color.withValues(alpha: 0.1),
+                  shape: BoxShape.circle),
+                child: Icon(metric.icon, color: metric.color, size: 20),
               ),
-              const Spacer(),
-              Text(
-                _displayValue,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 2),
-              if (metric.unit.isNotEmpty)
-                Text(
-                  metric.unit,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textTertiary,
-                    fontWeight: FontWeight.w500,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _displayValue,
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w900,
+                      color: measurement != null
+                          ? AppColors.textPrimary
+                          : AppColors.textTertiary,
+                      letterSpacing: -0.8,
+                      height: 1.0,
+                    ),
                   ),
-                ),
-              const SizedBox(height: 4),
-              Text(
-                metric.type,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textSecondary,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                  const SizedBox(height: 2),
+                  if (metric.unit.isNotEmpty)
+                    Text(
+                      metric.unit,
+                      style: TextStyle(
+                        fontSize: 11, color: metric.color,
+                        fontWeight: FontWeight.w700, letterSpacing: 0.5,
+                      ),
+                    ),
+                  const SizedBox(height: 6),
+                  Text(
+                    metric.type,
+                    style: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w500,
+                      color: AppColors.textSecondary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
             ],
           ),
@@ -393,7 +469,7 @@ class _MetricSheetState extends ConsumerState<_MetricSheet> {
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       padding: EdgeInsets.fromLTRB(24, 12, 24, bottomPad),
       child: Column(

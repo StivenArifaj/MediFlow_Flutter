@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
@@ -27,17 +28,7 @@ class ProfileScreen extends ConsumerWidget {
 
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Profile'),
-        backgroundColor: AppColors.surface,
-        foregroundColor: AppColors.textPrimary,
-        elevation: 0,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Divider(height: 1, color: AppColors.border),
-        ),
-      ),
+      backgroundColor: AppColors.pageBackground,
       body: userAsync.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (_, __) => const Center(child: Text('Error loading profile')),
@@ -46,109 +37,119 @@ class ProfileScreen extends ConsumerWidget {
 
           final initial = user.name.isNotEmpty ? user.name[0].toUpperCase() : 'M';
 
-          return SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ── Avatar + Name ──────────────────────────────────────────
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 28),
-                  color: AppColors.surface,
-                  child: Column(
-                    children: [
-                      Stack(
-                        alignment: Alignment.bottomRight,
-                        children: [
-                          CircleAvatar(
-                            radius: 44,
-                            backgroundColor: AppColors.primaryLight,
-                            child: Text(
-                              initial,
-                              style: const TextStyle(
-                                fontSize: 36,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.primary,
+          return CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: SafeArea(
+                  bottom: false,
+                  child: Container(
+                    margin: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                    padding: const EdgeInsets.all(24),
+                    decoration: AppColors.gradientCard(
+                        const [Color(0xFF1E3A5F), Color(0xFF2D7DD2)],
+                        radius: 28),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 72, height: 72,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.15),
+                            border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.4),
+                                width: 2),
+                          ),
+                          child: Center(
+                            child: Text(initial,
+                                style: const TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white)),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(user.name,
+                                  style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white)),
+                              const SizedBox(height: 3),
+                              Text(user.email,
+                                  style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.white
+                                          .withValues(alpha: 0.75))),
+                              const SizedBox(height: 10),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color:
+                                      Colors.white.withValues(alpha: 0.18),
+                                  borderRadius: BorderRadius.circular(50),
+                                  border: Border.all(
+                                      color: Colors.white
+                                          .withValues(alpha: 0.4)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(_roleIcon(user.role),
+                                        size: 12, color: Colors.white),
+                                    const SizedBox(width: 5),
+                                    Text(_roleLabel(user.role),
+                                        style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.white)),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ),
-                          Container(
-                            width: 28,
-                            height: 28,
-                            decoration: BoxDecoration(
-                              color: AppColors.primary,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
-                            child: const Icon(Icons.edit, size: 14, color: Colors.white),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-                      Text(
-                        user.name,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        user.email,
-                        style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
-                      ),
-                      const SizedBox(height: 10),
-                      // Role badge
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: _roleBadgeColor(user.role).withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: _roleBadgeColor(user.role).withValues(alpha: 0.3),
+                            ],
                           ),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(_roleIcon(user.role), size: 14, color: _roleBadgeColor(user.role)),
-                            const SizedBox(width: 6),
-                            Text(
-                              _roleLabel(user.role),
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: _roleBadgeColor(user.role),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+                  )
+                      .animate()
+                      .fadeIn(duration: 300.ms, delay: 50.ms)
+                      .slideY(
+                          begin: 0.04,
+                          end: 0,
+                          duration: 350.ms,
+                          curve: Curves.easeOutCubic),
                 ),
+              ),
+              SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
 
-                // ── Stats Grid ─────────────────────────────────────────────
+                // ── Stats Row ─────────────────────────────────────────────
                 Container(
-                  margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.border),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(AppColors.cardRadius),
+                    boxShadow: AppColors.cardShadow,
                   ),
-                  child: _StatsGrid(memberSince: user.createdAt),
+                  child: _StatsRow(memberSince: user.createdAt),
                 ),
 
                 // ── Invite Code (caregiver only) ───────────────────────────
                 if (user.role == 'caregiver' && user.inviteCode != null)
                   Container(
-                    margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                    margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.border),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(AppColors.cardRadius),
+                      boxShadow: AppColors.cardShadow,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -180,20 +181,19 @@ class ProfileScreen extends ConsumerWidget {
                         const SizedBox(height: 16),
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          padding: const EdgeInsets.symmetric(vertical: 20),
                           decoration: BoxDecoration(
                             color: AppColors.caregiverLight,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppColors.caregiver.withValues(alpha: 0.3)),
+                            borderRadius: BorderRadius.circular(24),
                           ),
                           child: Center(
                             child: Text(
                               user.inviteCode!,
                               style: const TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.w800,
+                                fontSize: 36,
+                                fontWeight: FontWeight.w900,
                                 color: AppColors.caregiver,
-                                letterSpacing: 8,
+                                letterSpacing: 10,
                               ),
                             ),
                           ),
@@ -213,7 +213,8 @@ class ProfileScreen extends ConsumerWidget {
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: AppColors.caregiver,
                                 side: const BorderSide(color: AppColors.caregiver),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                shape: const StadiumBorder(),
+                                minimumSize: const Size(0, 44),
                               ),
                             ),
                           ),
@@ -226,7 +227,8 @@ class ProfileScreen extends ConsumerWidget {
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: AppColors.textSecondary,
                                 side: const BorderSide(color: AppColors.border),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                shape: const StadiumBorder(),
+                                minimumSize: const Size(0, 44),
                               ),
                             ),
                           ),
@@ -245,11 +247,11 @@ class ProfileScreen extends ConsumerWidget {
                     ),
                   ),
                   Container(
-                    margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                    margin: const EdgeInsets.fromLTRB(20, 0, 20, 0),
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.border),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: AppColors.cardShadow,
                     ),
                     child: Column(children: [
                       _SettingsTile(
@@ -300,11 +302,11 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 ),
                 Container(
-                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                  margin: const EdgeInsets.fromLTRB(20, 0, 20, 0),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.border),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: AppColors.cardShadow,
                   ),
                   child: Column(children: [
                     _SettingsTile(
@@ -340,11 +342,11 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 ),
                 Container(
-                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                  margin: const EdgeInsets.fromLTRB(20, 0, 20, 0),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.border),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: AppColors.cardShadow,
                   ),
                   child: Column(children: [
                     _SettingsTile(
@@ -390,11 +392,11 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 ),
                 Container(
-                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                  margin: const EdgeInsets.fromLTRB(20, 0, 20, 0),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.border),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: AppColors.cardShadow,
                   ),
                   child: Column(children: [
                     _SettingsTile(
@@ -424,7 +426,7 @@ class ProfileScreen extends ConsumerWidget {
 
                 // ── Delete Account ──────────────────────────────────────────
                 Container(
-                  margin: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+                  margin: const EdgeInsets.fromLTRB(20, 12, 20, 40),
                   child: OutlinedButton.icon(
                     icon: const Icon(Icons.delete_forever_outlined, size: 18),
                     label: const Text('Delete Account'),
@@ -432,26 +434,22 @@ class ProfileScreen extends ConsumerWidget {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.danger,
                       side: BorderSide(color: AppColors.danger.withValues(alpha: 0.4)),
-                      minimumSize: const Size(double.infinity, 48),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      minimumSize: const Size(double.infinity, 52),
+                      shape: const StadiumBorder(),
                     ),
                   ),
                 ),
-              ],
-            ),
+                  ],
+                ),
+              ),
+            ],
           );
         },
       ),
     );
   }
 
-  Color _roleBadgeColor(String role) {
-    switch (role) {
-      case 'caregiver': return AppColors.caregiver;
-      case 'linked_patient': return AppColors.linked;
-      default: return AppColors.primary;
-    }
-  }
+
 
   IconData _roleIcon(String role) {
     switch (role) {
@@ -804,67 +802,60 @@ class ProfileScreen extends ConsumerWidget {
   }
 }
 
-// ── Stats Grid ────────────────────────────────────────────────────────────────
+// ── Stats Row ─────────────────────────────────────────────────────────────────
 
-class _StatsGrid extends ConsumerWidget {
+class _StatsRow extends ConsumerWidget {
   final DateTime? memberSince;
-  const _StatsGrid({this.memberSince});
+  const _StatsRow({this.memberSince});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final joined = memberSince != null
-        ? '${memberSince!.day}/${memberSince!.month}/${memberSince!.year}'
-        : 'N/A';
     final stats = ref.watch(profileStatsProvider);
     final s = stats.value;
 
-    return GridView.count(
-      crossAxisCount: 3,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 1.1,
+    return Row(
       children: [
-        _StatCell('Medicines', '${s?['medicines'] ?? 0}', Icons.medication_outlined, AppColors.primary),
-        _StatCell('Reminders', '${s?['reminders'] ?? 0}', Icons.alarm_outlined, AppColors.caregiver),
-        _StatCell('Taken', '${s?['taken'] ?? 0}', Icons.check_circle_outline, AppColors.success),
-        _StatCell('Adherence', s != null ? '${s['adherence']}%' : '—%', Icons.trending_up_outlined, AppColors.primary),
-        _StatCell('Streak', '${s?['streak'] ?? 0}d', Icons.local_fire_department_outlined, AppColors.warning),
-        _StatCell('Member', joined, Icons.calendar_today_outlined, AppColors.textSecondary),
+        _ProfileStat('${s?['medicines'] ?? 0}', 'Medicines', Icons.medication_rounded),
+        _VerticalDivider(),
+        _ProfileStat(s != null ? '${s['adherence']}%' : '—%', 'Adherence', Icons.trending_up_rounded),
+        _VerticalDivider(),
+        _ProfileStat('${s?['streak'] ?? 0}d', 'Streak', Icons.local_fire_department_rounded),
       ],
     );
   }
 }
 
-class _StatCell extends StatelessWidget {
-  final String label, value;
+class _ProfileStat extends StatelessWidget {
+  final String value, label;
   final IconData icon;
-  final Color color;
-
-  const _StatCell(this.label, this.value, this.icon, this.color);
+  const _ProfileStat(this.value, this.label, this.icon);
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(border: Border.all(color: AppColors.border, width: 0.5)),
+    return Expanded(
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: color, size: 22),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-            overflow: TextOverflow.ellipsis,
-          ),
+          Icon(icon, color: AppColors.primary, size: 20),
+          const SizedBox(height: 8),
+          Text(value,
+            style: const TextStyle(
+              fontSize: 22, fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary, letterSpacing: -0.5)),
           const SizedBox(height: 2),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-            textAlign: TextAlign.center,
-          ),
+          Text(label,
+            style: const TextStyle(
+              fontSize: 11, color: AppColors.textSecondary,
+              fontWeight: FontWeight.w500)),
         ],
       ),
     );
+  }
+}
+
+class _VerticalDivider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(width: 1, height: 50, color: AppColors.border);
   }
 }
 

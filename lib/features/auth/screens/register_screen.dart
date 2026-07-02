@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../core/widgets/app_background.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mediflow/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
@@ -9,10 +8,10 @@ import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
-import '../../../core/constants/app_dimensions.dart';
 import '../../../core/supabase/supabase_client.dart';
+import '../../../core/widgets/app_background.dart';
+import '../../../core/widgets/circle_button.dart';
 import '../providers/auth_provider.dart';
-import '../../../data/repositories/auth_repository.dart';
 import '../../../core/utils/validators.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -53,7 +52,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           _confirmPasswordController.text == _passwordController.text) {
         setState(() => _confirmPasswordError = null);
       }
-      setState(() {}); // rebuild for strength bar
+      setState(() {});
     });
     _confirmPasswordController.addListener(() {
       if (_confirmPasswordController.text == _passwordController.text) {
@@ -111,21 +110,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       if (!mounted) return;
       final session = supabase.auth.currentSession;
       if (session == null) {
-        if (mounted) {
-          context.go('/email-confirmation', extra: _emailController.text.trim());
-        }
+        if (mounted) context.go('/email-confirmation', extra: _emailController.text.trim());
         return;
       }
-
       if (!mounted) return;
       if (role == 'caregiver') {
         final prefs = await SharedPreferences.getInstance();
         final code = prefs.getString('caregiver_invite_code') ?? '';
         if (mounted) {
-          context.pushReplacement('/invite-patient', extra: {
-            'inviteCode': code,
-            'patientName': null,
-          });
+          context.pushReplacement('/invite-patient',
+              extra: {'inviteCode': code, 'patientName': null});
         }
         return;
       }
@@ -138,9 +132,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       String msg = 'Something went wrong. Please try again.';
       if (e is sb.AuthException) {
         msg = e.message;
-        if (e.statusCode == '429') {
-          msg = 'Too many attempts. Please wait a few minutes.';
-        }
+        if (e.statusCode == '429') msg = 'Too many attempts. Please wait a few minutes.';
       } else if (e is Exception) {
         msg = e.toString().replaceAll('Exception: ', '');
       }
@@ -166,13 +158,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final l10n = AppLocalizations.of(context)!;
     final repo = ref.watch(authRepositoryProvider);
     final role = repo.selectedRole ?? 'patient';
-    final roleLabel = role == 'caregiver' ? 'Caregiver' : 'Patient';
-    final roleColor = role == 'caregiver' ? const Color(0xFF8B5CF6) : const Color(0xFF00E5FF);
-    final roleIcon = role == 'caregiver' ? Icons.people_rounded : Icons.medication_rounded;
     final strength = _passwordStrength(_passwordController.text);
 
+    final (roleLabel, roleColor, roleIcon) = switch (role) {
+      'caregiver'     => ('Caregiver', AppColors.caregiver, Icons.people_rounded),
+      'linked_patient'=> ('Linked Patient', AppColors.linked, Icons.link_rounded),
+      _               => ('Patient', AppColors.primary, Icons.medication_rounded),
+    };
+
     return Scaffold(
-      backgroundColor: const Color(0xFF070B12),
+      backgroundColor: Colors.transparent,
       body: AppBackground(
         child: SafeArea(
           child: SingleChildScrollView(
@@ -182,42 +177,32 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               children: [
                 const SizedBox(height: 24),
 
-                // ── Back + Title ────────────────────────────
+                // ── Back + title ─────────────────────────────
                 Row(children: [
-                  GestureDetector(
+                  CircleButton(
+                    icon: Icons.arrow_back_rounded,
+                    size: 40,
                     onTap: () => context.go('/welcome'),
-                    child: Container(
-                      width: 40, height: 40,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0D1826),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFF00E5FF).withValues(alpha: 0.2)),
-                      ),
-                      child: const Icon(Icons.arrow_back_ios_new_rounded,
-                          color: Color(0xFF00E5FF), size: 18),
-                    ),
                   ),
                   const SizedBox(width: 16),
-                  const Text('Create Account',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white)),
+                  Text('Create Account', style: AppTypography.h2),
                 ]).animate().fadeIn(duration: 300.ms),
 
-                const SizedBox(height: 8),
-                const Padding(
-                  padding: EdgeInsets.only(left: 56),
+                const SizedBox(height: 4),
+                Padding(
+                  padding: const EdgeInsets.only(left: 56),
                   child: Text('Fill in your details to get started',
-                    style: TextStyle(fontSize: 13, color: Color(0xFF8A9BB5))),
-                ).animate().fadeIn(delay: 80.ms, duration: 300.ms),
+                      style: AppTypography.bodySmallStyle),
+                ).animate().fadeIn(delay: 60.ms, duration: 300.ms),
 
-                const SizedBox(height: 28),
+                const SizedBox(height: 24),
 
-                // ── Role badge ──────────────────────────────
+                // ── Role badge ───────────────────────────────
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     color: roleColor.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: roleColor.withValues(alpha: 0.3)),
                   ),
                   child: Row(children: [
                     Container(
@@ -230,52 +215,44 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ),
                     const SizedBox(width: 12),
                     Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      const Text('Registering as',
-                        style: TextStyle(fontSize: 11, color: Color(0xFF8A9BB5))),
+                      Text('Registering as',
+                          style: AppTypography.labelSmall),
                       Text(roleLabel,
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: roleColor)),
+                          style: AppTypography.label.copyWith(color: roleColor)),
                     ]),
                   ]),
-                ).animate().fadeIn(delay: 100.ms, duration: 300.ms),
+                ).animate().fadeIn(delay: 80.ms, duration: 300.ms),
 
                 const SizedBox(height: 20),
 
-                // ── Full Name ───────────────────────────────
-                _RegField(
-                  controller: _nameController,
-                  hint: 'Full Name',
+                // ── Fields ───────────────────────────────────
+                _LightField(
+                  controller: _nameController, hint: 'Full Name',
                   icon: Icons.person_outline_rounded,
-                  keyboardType: TextInputType.name,
-                  errorText: _nameError,
-                ).animate().fadeIn(delay: 140.ms, duration: 300.ms).slideY(begin: 0.06),
+                  keyboardType: TextInputType.name, errorText: _nameError,
+                ).animate().fadeIn(delay: 100.ms, duration: 300.ms),
 
                 const SizedBox(height: 12),
 
-                // ── Email ───────────────────────────────────
-                _RegField(
-                  controller: _emailController,
-                  hint: 'Email address',
+                _LightField(
+                  controller: _emailController, hint: 'Email address',
                   icon: Icons.mail_outline_rounded,
-                  keyboardType: TextInputType.emailAddress,
-                  errorText: _emailError,
-                ).animate().fadeIn(delay: 180.ms, duration: 300.ms).slideY(begin: 0.06),
+                  keyboardType: TextInputType.emailAddress, errorText: _emailError,
+                ).animate().fadeIn(delay: 130.ms, duration: 300.ms),
 
                 const SizedBox(height: 12),
 
-                // ── Password ────────────────────────────────
-                _RegField(
-                  controller: _passwordController,
-                  hint: 'Password',
+                _LightField(
+                  controller: _passwordController, hint: 'Password',
                   icon: Icons.lock_outline_rounded,
-                  obscureText: _obscurePassword,
-                  errorText: _passwordError,
+                  obscureText: _obscurePassword, errorText: _passwordError,
                   suffixIcon: GestureDetector(
                     onTap: () => setState(() => _obscurePassword = !_obscurePassword),
                     child: Icon(
                       _obscurePassword ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                      color: const Color(0xFF4A5A72), size: 20),
+                      color: AppColors.textTertiary, size: 20),
                   ),
-                ).animate().fadeIn(delay: 220.ms, duration: 300.ms).slideY(begin: 0.06),
+                ).animate().fadeIn(delay: 160.ms, duration: 300.ms),
 
                 if (_passwordController.text.isNotEmpty) ...[
                   const SizedBox(height: 8),
@@ -285,86 +262,52 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                 const SizedBox(height: 12),
 
-                // ── Confirm Password ────────────────────────
-                _RegField(
+                _LightField(
                   controller: _confirmPasswordController,
                   hint: 'Confirm Password',
                   icon: Icons.lock_outline_rounded,
-                  obscureText: _obscureConfirm,
-                  errorText: _confirmPasswordError,
+                  obscureText: _obscureConfirm, errorText: _confirmPasswordError,
                   suffixIcon: GestureDetector(
                     onTap: () => setState(() => _obscureConfirm = !_obscureConfirm),
                     child: Icon(
                       _obscureConfirm ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                      color: const Color(0xFF4A5A72), size: 20),
+                      color: AppColors.textTertiary, size: 20),
                   ),
-                ).animate().fadeIn(delay: 260.ms, duration: 300.ms).slideY(begin: 0.06),
+                ).animate().fadeIn(delay: 190.ms, duration: 300.ms),
 
-                // ── Submit error ────────────────────────────
                 if (_submitError != null) ...[
                   const SizedBox(height: 14),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFF4D6A).withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFFF4D6A).withValues(alpha: 0.3)),
-                    ),
-                    child: Row(children: [
-                      const Icon(Icons.error_outline_rounded, color: Color(0xFFFF4D6A), size: 16),
-                      const SizedBox(width: 8),
-                      Expanded(child: Text(_submitError!,
-                          style: const TextStyle(color: Color(0xFFFF4D6A), fontSize: 13))),
-                    ]),
-                  ),
+                  _ErrorBanner(message: _submitError!),
                 ],
 
                 const SizedBox(height: 28),
 
-                // ── Create Account button ───────────────────
-                GestureDetector(
-                  onTap: _isLoading ? null : _submit,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    height: 56,
-                    decoration: BoxDecoration(
-                      gradient: _isLoading ? null
-                          : const LinearGradient(colors: [Color(0xFF00E5FF), Color(0xFF0055FF)]),
-                      color: _isLoading ? const Color(0xFF1A2535) : null,
-                      borderRadius: BorderRadius.circular(100),
-                      boxShadow: _isLoading ? [] : [
-                        BoxShadow(color: const Color(0xFF00E5FF).withValues(alpha: 0.4),
-                            blurRadius: 20, offset: const Offset(0, 6)),
-                      ],
-                    ),
-                    child: Center(
-                      child: _isLoading
-                          ? const SizedBox(width: 24, height: 24,
-                              child: CircularProgressIndicator(
-                                  color: Color(0xFF00E5FF), strokeWidth: 2))
-                          : Text(l10n.auth_createAccount,
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700,
-                                  color: Color(0xFF070B12))),
-                    ),
-                  ),
-                ).animate().fadeIn(delay: 300.ms, duration: 300.ms),
+                // ── Create Account button ────────────────────
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _submit,
+                  child: _isLoading
+                      ? const SizedBox(width: 22, height: 22,
+                          child: CircularProgressIndicator(
+                              color: AppColors.textOnPrimary, strokeWidth: 2))
+                      : Text(l10n.auth_createAccount),
+                ).animate().fadeIn(delay: 220.ms, duration: 300.ms),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
 
-                // ── Login link ──────────────────────────────
-                GestureDetector(
-                  onTap: () => context.go('/login'),
-                  child: const Center(
+                // ── Login link ───────────────────────────────
+                Center(
+                  child: GestureDetector(
+                    onTap: () => context.go('/login'),
                     child: Text.rich(TextSpan(
                       text: 'Already have an account? ',
-                      style: TextStyle(color: Color(0xFF8A9BB5), fontSize: 14),
+                      style: AppTypography.bodySmallStyle,
                       children: [
                         TextSpan(text: 'Log In',
-                          style: TextStyle(color: Color(0xFF00E5FF), fontWeight: FontWeight.w600)),
+                          style: AppTypography.label.copyWith(color: AppColors.primary)),
                       ],
                     )),
                   ),
-                ).animate().fadeIn(delay: 340.ms, duration: 300.ms),
+                ).animate().fadeIn(delay: 250.ms, duration: 300.ms),
 
                 const SizedBox(height: 40),
               ],
@@ -376,8 +319,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 }
 
-// ── Reg Field ─────────────────────────────────────────────────────────────────
-class _RegField extends StatelessWidget {
+class _LightField extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
   final IconData icon;
@@ -386,7 +328,7 @@ class _RegField extends StatelessWidget {
   final String? errorText;
   final Widget? suffixIcon;
 
-  const _RegField({
+  const _LightField({
     required this.controller,
     required this.hint,
     required this.icon,
@@ -398,83 +340,68 @@ class _RegField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasError = errorText != null;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFF0D1826),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: hasError
-                  ? const Color(0xFFFF4D6A).withValues(alpha: 0.6)
-                  : const Color(0xFF00E5FF).withValues(alpha: 0.12),
-              width: hasError ? 1.5 : 1,
-            ),
-          ),
-          child: TextField(
-            controller: controller,
-            keyboardType: keyboardType,
-            obscureText: obscureText,
-            style: const TextStyle(color: Colors.white, fontSize: 15),
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: const TextStyle(color: Color(0xFF4A5A72), fontSize: 15),
-              prefixIcon: Icon(icon, color: const Color(0xFF4A5A72), size: 20),
-              suffixIcon: suffixIcon,
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            ),
-          ),
-        ),
-        if (hasError) ...[
-          const SizedBox(height: 5),
-          Padding(
-            padding: const EdgeInsets.only(left: 4),
-            child: Text(errorText!,
-                style: const TextStyle(color: Color(0xFFFF4D6A), fontSize: 12)),
-          ),
-        ],
-      ],
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      obscureText: obscureText,
+      style: AppTypography.body,
+      decoration: InputDecoration(
+        hintText: hint,
+        prefixIcon: Icon(icon, color: AppColors.textTertiary, size: 20),
+        suffixIcon: suffixIcon,
+        errorText: errorText,
+      ),
     );
   }
 }
 
-// ── Password Strength Bar ─────────────────────────────────────────────────────
 class _PasswordStrengthBar extends StatelessWidget {
   final int strength; // 0=weak, 1=medium, 2=strong
   const _PasswordStrengthBar({required this.strength});
 
   @override
   Widget build(BuildContext context) {
-    final colors = [
-      const Color(0xFFFF4D6A),
-      const Color(0xFFFFB800),
-      const Color(0xFF00C896),
-    ];
+    final colors = [AppColors.danger, AppColors.warning, AppColors.success];
     final labels = ['Weak', 'Medium', 'Strong'];
     final color = colors[strength];
 
     return Row(children: [
       ...List.generate(3, (i) => Expanded(
         child: Container(
-          height: 3,
+          height: 4,
           margin: EdgeInsets.only(right: i < 2 ? 4 : 0),
           decoration: BoxDecoration(
-            color: i <= strength ? color : const Color(0xFF1A2535),
+            color: i <= strength ? color : AppColors.border,
             borderRadius: BorderRadius.circular(2),
           ),
         ),
       )),
       const SizedBox(width: 10),
       Text(labels[strength],
-          style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
+          style: AppTypography.labelSmall.copyWith(color: color)),
     ]);
   }
 }
 
+class _ErrorBanner extends StatelessWidget {
+  final String message;
+  const _ErrorBanner({required this.message});
 
-
-
-
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.dangerLight,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.danger.withValues(alpha: 0.3)),
+      ),
+      child: Row(children: [
+        const Icon(Icons.error_outline_rounded, color: AppColors.danger, size: 16),
+        const SizedBox(width: 8),
+        Expanded(child: Text(message,
+            style: AppTypography.bodySmallStyle.copyWith(color: AppColors.danger))),
+      ]),
+    );
+  }
+}

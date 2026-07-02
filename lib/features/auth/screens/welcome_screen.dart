@@ -17,9 +17,35 @@ class WelcomeScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: AppBackground(
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Stack(
+          children: [
+            Positioned(
+              top: -80, right: -50,
+              child: Container(
+                width: 220, height: 220,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [Color(0x262D7DD2), Color(0x002D7DD2)],
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 140, left: -70,
+              child: Container(
+                width: 180, height: 180,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [Color(0x1F5B6EF5), Color(0x005B6EF5)],
+                  ),
+                ),
+              ),
+            ),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -31,11 +57,15 @@ class WelcomeScreen extends StatelessWidget {
                     Container(
                       width: 80, height: 80,
                       decoration: BoxDecoration(
-                        color: AppColors.primary,
+                        gradient: const LinearGradient(
+                          colors: [AppColors.primary, AppColors.primaryDark],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
                         shape: BoxShape.circle,
                         boxShadow: [
-                          BoxShadow(color: AppColors.primary.withValues(alpha: 0.25),
-                              blurRadius: 24, offset: const Offset(0, 8)),
+                          BoxShadow(color: AppColors.primary.withValues(alpha: 0.3),
+                              blurRadius: 32, offset: const Offset(0, 12)),
                         ],
                       ),
                       child: const Icon(Icons.medication_rounded,
@@ -90,11 +120,9 @@ class WelcomeScreen extends StatelessWidget {
 
                 const SizedBox(height: 12),
 
-                TextButton(
+                OutlinedButton(
                   onPressed: () => context.go('/login'),
-                  child: Text(l10n.auth_alreadyHaveAccount,
-                      style: AppTypography.label.copyWith(
-                          color: AppColors.primary)),
+                  child: Text(l10n.auth_alreadyHaveAccount),
                 ).animate().fadeIn(delay: 450.ms, duration: 400.ms),
 
                 const SizedBox(height: 16),
@@ -110,6 +138,8 @@ class WelcomeScreen extends StatelessWidget {
             ),
           ),
         ),
+          ],
+        ),
       ),
     );
   }
@@ -123,17 +153,18 @@ class _FeaturePill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(100),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: AppColors.sm,
       ),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(icon, size: 14, color: AppColors.primary),
         const SizedBox(width: 6),
         Text(label, style: AppTypography.labelSmall.copyWith(
-            color: AppColors.textPrimary, fontSize: 13)),
+            color: AppColors.textPrimary, fontSize: 13,
+            fontWeight: FontWeight.w500)),
       ]),
     );
   }

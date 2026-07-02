@@ -3,189 +3,111 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // ── NEW LIGHT PALETTE ─────────────────────────────────────────────────────
-
-  // Backgrounds
-  static const Color background     = Color(0xFFF8FAFB);
+  // ── Backgrounds ─────────────────────────────
+  static const Color pageBackground = Color(0xFFF2F4F8);
   static const Color surface        = Color(0xFFFFFFFF);
-  static const Color surfaceVariant = Color(0xFFF0F4F8);
+  static const Color surfaceVariant = Color(0xFFF7F9FC);
 
-  // Primary — trustworthy blue
-  static const Color primary        = Color(0xFF2D7DD2);
-  static const Color primaryLight   = Color(0xFFEBF4FF);
-  static const Color primaryDark    = Color(0xFF1A5BA8);
+  // ── Brand palette ────────────────────────────
+  static const Color primary      = Color(0xFF2D7DD2);
+  static const Color primaryDark  = Color(0xFF1A4F8A);
+  static const Color primaryLight = Color(0xFFE8F1FB);
+  static const Color darkButton   = Color(0xFF141B2D);
 
-  // Status
-  static const Color success        = Color(0xFF27AE60);
-  static const Color successLight   = Color(0xFFE8F8EF);
-  static const Color warning        = Color(0xFFF39C12);
-  static const Color warningLight   = Color(0xFFFFF8E8);
-  static const Color danger         = Color(0xFFE74C3C);
-  static const Color dangerLight    = Color(0xFFFFEBE9);
-
-  // Caregiver accent — warm indigo
+  // ── Role accents ─────────────────────────────
   static const Color caregiver      = Color(0xFF5B6EF5);
   static const Color caregiverLight = Color(0xFFEEF0FF);
-
-  // Linked patient accent — warm amber
   static const Color linked         = Color(0xFFF5A623);
   static const Color linkedLight    = Color(0xFFFFF3E0);
 
-  // Text
-  static const Color textPrimary    = Color(0xFF1A2332);
-  static const Color textSecondary  = Color(0xFF6B7C93);
-  static const Color textTertiary   = Color(0xFF9BABBF);
-  static const Color textOnPrimary  = Color(0xFFFFFFFF);
+  // ── Semantic ─────────────────────────────────
+  static const Color success      = Color(0xFF22C55E);
+  static const Color successLight = Color(0xFFDCFCE7);
+  static const Color warning      = Color(0xFFF59E0B);
+  static const Color warningLight = Color(0xFFFEF3C7);
+  static const Color danger       = Color(0xFFEF4444);
+  static const Color dangerLight  = Color(0xFFFEE2E2);
 
-  // Borders / dividers
-  static const Color border         = Color(0xFFE8ECF0);
-  static const Color divider        = Color(0xFFF0F4F8);
+  // ── Text ─────────────────────────────────────
+  static const Color textPrimary   = Color(0xFF0F172A);
+  static const Color textSecondary = Color(0xFF64748B);
+  static const Color textTertiary  = Color(0xFFCBD5E1);
+  static const Color border        = Color(0xFFE2E8F0);
+  static const Color divider       = Color(0xFFF1F5F9);
 
-  // ── LEGACY ALIASES (keep for non-auth screens during redesign) ───────────
-
-  static const Color bgPrimary      = Color(0xFF08090F);
-  static const Color bgDark         = Color(0xFF08090F);
-  static const Color bgCard         = Color(0xFF0D1520);
-  static const Color bgCardGlass    = Color(0x0DFFFFFF);
-  static const Color bgCardLight    = Color(0xFF162032);
-  static const Color bgInput        = Color(0xFF111927);
-  static const Color bgLight        = Color(0xFFF0FAFA);
-  static const Color bgCardLight_lm = Color(0xFFFFFFFF);
-  static const Color bgCardMid_lm   = Color(0xFFF5FAFA);
-
-  // Camera scan UI accent — visible on dark camera background
-  static const Color scanAccent     = Color(0xFF00D4D4);
-
-  static const Color info           = Color(0xFF2D7DD2); // was 0xFF6B7FCC
-  static const Color premiumFrom    = Color(0xFF8B5CF6);
-  static const Color premiumTo      = Color(0xFFEC4899);
-  static const Color neonCyanDark   = Color(0xFF00B8CC);
-  static const Color caregiverAccent = Color(0xFF5B6EF5);
-
-  static const Color textPrimary_lm    = Color(0xFF1A2332);
-  static const Color textSecondary_lm  = Color(0xFF6B7C93);
-  static const Color textMuted         = Color(0xFF4A5A72);
-  static const Color error             = Color(0xFFE74C3C);
-
-  static const Color statusPending  = Color(0xFFF39C12);
-  static const Color statusTaken    = Color(0xFF2D7DD2);
-  static const Color statusMissed   = Color(0xFFE74C3C);
-  static const Color statusSkipped  = Color(0xFF5B6EF5);
-
-  // Dark theme values for future use
-  static const Color darkBackground = Color(0xFF0D1B2A);
-  static const Color darkSurface    = Color(0xFF162032);
-
-  // ── GRADIENTS ─────────────────────────────────────────────────────────────
-
-  static const LinearGradient headerGradient = LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
-    colors: [Color(0xFF0D1A2A), Color(0xFF08090F)],
-  );
-
-  static const LinearGradient primaryGradient = LinearGradient(
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
-    colors: [Color(0xFF2D7DD2), Color(0xFF1A5BA8)],
-  );
-
-  static const LinearGradient premiumGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [Color(0xFF8B5CF6), Color(0xFFEC4899)],
-    transform: GradientRotation(2.356),
-  );
-
-  static const LinearGradient successGradient = LinearGradient(
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
-    colors: [Color(0xFF27AE60), Color(0xFF2D7DD2)],
-  );
-
-  static const LinearGradient tipGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [Color(0xFF27AE60), Color(0xFF2D7DD2)],
-    transform: GradientRotation(2.356),
-  );
-
-  static const RadialGradient spaceBg = RadialGradient(
-    center: Alignment(0, -0.5),
-    radius: 1.2,
-    colors: [Color(0xFF0D1A2A), Color(0xFF08090F)],
-  );
-
-  // ── GLOW SHADOWS (kept for compatibility) ─────────────────────────────────
-
-  static const BoxShadow cyanGlow = BoxShadow(
-    color: Color(0x4D2D7DD2),
-    blurRadius: 20,
-    offset: Offset(0, 4),
-  );
-
-  static const BoxShadow cyanGlowStrong = BoxShadow(
-    color: Color(0x662D7DD2),
-    blurRadius: 30,
-    offset: Offset(0, 6),
-  );
-
-  // ── THEME-AWARE HELPERS ───────────────────────────────────────────────────
-
-  static bool _dark(BuildContext ctx) =>
-      Theme.of(ctx).brightness == Brightness.dark;
-
-  static Color scaffoldBg(BuildContext ctx) =>
-      _dark(ctx) ? const Color(0xFF060E1B) : background;
-
-  static Color cardBg(BuildContext ctx) =>
-      _dark(ctx) ? const Color(0xFF0D1826) : surface;
-
-  static Color cardBorder(BuildContext ctx) =>
-      _dark(ctx) ? const Color(0x1A2D7DD2) : border;
-
-  static Color inputBg(BuildContext ctx) =>
-      _dark(ctx) ? const Color(0xFF111927) : surfaceVariant;
-
-  static Color textH(BuildContext ctx) =>
-      _dark(ctx) ? const Color(0xFFFFFFFF) : textPrimary;
-
-  static Color textBody(BuildContext ctx) =>
-      _dark(ctx) ? const Color(0xFFCDD8E8) : textPrimary;
-
-  static Color textHint(BuildContext ctx) =>
-      _dark(ctx) ? const Color(0xFF4A5A72) : textTertiary;
-
-  static Color textSub(BuildContext ctx) =>
-      _dark(ctx) ? const Color(0xFF8A9BB5) : textSecondary;
-
-  static Color accent(BuildContext ctx) =>
-      _dark(ctx) ? const Color(0xFF00E5FF) : primary;
-
-  static Color dividerColor(BuildContext ctx) =>
-      _dark(ctx) ? const Color(0x1AFFFFFF) : border;
-
-  static Color navBg(BuildContext ctx) =>
-      _dark(ctx) ? const Color(0xFF0A1520) : surface;
-
-  static Color navSelected(BuildContext ctx) =>
-      _dark(ctx) ? const Color(0xFF00E5FF) : primary;
-
-  static Color navUnselected(BuildContext ctx) =>
-      _dark(ctx) ? const Color(0xFF4A5A72) : textTertiary;
-
-  static List<BoxShadow> cardShadow(BuildContext ctx) => [
+  // ── Shadows ──────────────────────────────────
+  static List<BoxShadow> get xs => const [
+    BoxShadow(color: Color(0x0A000000), blurRadius: 4, offset: Offset(0, 1)),
+  ];
+  static List<BoxShadow> get sm => const [
+    BoxShadow(color: Color(0x0D000000), blurRadius: 8, offset: Offset(0, 2)),
+    BoxShadow(color: Color(0x05000000), blurRadius: 3, offset: Offset(0, 1)),
+  ];
+  static List<BoxShadow> get md => const [
+    BoxShadow(color: Color(0x0F000000), blurRadius: 20, offset: Offset(0, 6)),
+    BoxShadow(color: Color(0x06000000), blurRadius: 6, offset: Offset(0, 2)),
+  ];
+  static List<BoxShadow> get lg => const [
+    BoxShadow(color: Color(0x14000000), blurRadius: 40, offset: Offset(0, 12)),
+    BoxShadow(color: Color(0x08000000), blurRadius: 10, offset: Offset(0, 4)),
+  ];
+  static List<BoxShadow> coloredShadow(Color c, {double opacity = 0.25}) => [
     BoxShadow(
-      color: Colors.black.withValues(alpha: _dark(ctx) ? 0.18 : 0.06),
-      blurRadius: 12,
-      offset: const Offset(0, 4),
+      color: c.withValues(alpha: opacity),
+      blurRadius: 20,
+      offset: const Offset(0, 8),
     ),
   ];
 
-  static BoxDecoration cardDecoration(BuildContext ctx) => BoxDecoration(
-    color: cardBg(ctx),
-    borderRadius: BorderRadius.circular(16),
-    border: Border.all(color: cardBorder(ctx), width: 1),
-    boxShadow: cardShadow(ctx),
+  // ── Decorations ──────────────────────────────
+  static BoxDecoration get card => BoxDecoration(
+    color: surface,
+    borderRadius: BorderRadius.circular(20),
+    boxShadow: md,
   );
+  static BoxDecoration get cardLg => BoxDecoration(
+    color: surface,
+    borderRadius: BorderRadius.circular(28),
+    boxShadow: md,
+  );
+  static BoxDecoration gradientCard(List<Color> colors, {double radius = 24}) =>
+      BoxDecoration(
+        borderRadius: BorderRadius.circular(radius),
+        gradient: LinearGradient(
+          colors: colors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: coloredShadow(colors.first),
+      );
+  static BoxDecoration pill(Color c, {bool filled = true, double opacity = 0.1}) =>
+      BoxDecoration(
+        color: filled ? c : c.withValues(alpha: opacity),
+        borderRadius: BorderRadius.circular(100),
+        border: filled ? null : Border.all(color: c.withValues(alpha: 0.2)),
+      );
+
+  // ── Scan accent ──────────────────────────────
+  static const Color scanAccent = Color(0xFF00D4D4);
+
+  // ── Legacy aliases still referenced ──────────
+  static const Color background    = pageBackground;
+  static const Color textOnPrimary = Color(0xFFFFFFFF);
+  static const Color error         = danger;
+  static const Color textMuted     = textSecondary;
+  static const Color bgPrimary     = pageBackground;
+  static const Color bgCard        = surface;
+  static const double cardRadius   = 24.0;
+  static const double chipRadius   = 50.0;
+  static List<BoxShadow> get cardShadow => md;
+  static List<BoxShadow> get softShadow => md;
+  static const LinearGradient primaryGradient = LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [primary, primaryDark],
+  );
+  static const BoxShadow cyanGlow =
+      BoxShadow(color: Color(0x4D2D7DD2), blurRadius: 20, offset: Offset(0, 4));
+  static const BoxShadow cyanGlowStrong =
+      BoxShadow(color: Color(0x662D7DD2), blurRadius: 30, offset: Offset(0, 6));
 }

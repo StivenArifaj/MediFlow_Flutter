@@ -17,8 +17,8 @@ class MedicineDetailScreen extends ConsumerWidget {
     final medAsync = ref.watch(medicineByIdProvider(medicineId!));
     return medAsync.when(
       loading: () => const Scaffold(
-        backgroundColor: AppColors.background,
-        body: const Center(child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2)),
+        backgroundColor: AppColors.pageBackground,
+        body: Center(child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2)),
       ),
       error: (_, __) => const _ErrorScaffold(message: 'Error loading medicine'),
       data: (medicine) {
@@ -34,9 +34,9 @@ class _ErrorScaffold extends StatelessWidget {
   const _ErrorScaffold({required this.message});
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: AppColors.background,
+    backgroundColor: AppColors.pageBackground,
     appBar: AppBar(
-      backgroundColor: AppColors.surface,
+      backgroundColor: AppColors.pageBackground,
       elevation: 0,
       leading: BackButton(color: AppColors.textPrimary),
     ),
@@ -104,49 +104,60 @@ class _DetailViewState extends ConsumerState<_DetailView> {
     final createdAt = createdRaw != null ? DateTime.tryParse(createdRaw) : null;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.pageBackground,
       appBar: AppBar(
+        backgroundColor: AppColors.pageBackground,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: Container(
+          margin: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: AppColors.cardShadow),
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary, size: 20),
+            onPressed: () => context.pop(),
+            padding: EdgeInsets.zero)),
         title: Text(
           m['verified_name'] as String,
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700,
               color: AppColors.textPrimary),
         ),
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        leading: BackButton(color: AppColors.textPrimary),
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Divider(height: 1, color: AppColors.border),
-        ),
+        centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.delete_outline, color: AppColors.danger),
-            onPressed: _deleteMedicine,
-          ),
+          Container(
+            margin: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: AppColors.cardShadow),
+            child: IconButton(
+              icon: const Icon(Icons.delete_outline_rounded, color: AppColors.danger, size: 20),
+              onPressed: _deleteMedicine,
+              padding: EdgeInsets.zero)),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
         children: [
 
-          // ── Medicine header card ──────────────────────────────────────
+          // ── Medicine hero card ────────────────────────────────────────
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: AppColors.cardShadow,
             ),
             child: Row(children: [
               Container(
-                width: 64, height: 64,
+                width: 72, height: 72,
                 decoration: BoxDecoration(
                   color: AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Center(
-                  child: Text('💊', style: TextStyle(fontSize: 32)),
-                ),
+                child: const Icon(Icons.medication_rounded, color: AppColors.primary, size: 36),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -158,43 +169,24 @@ class _DetailViewState extends ConsumerState<_DetailView> {
                             fontSize: 20, fontWeight: FontWeight.w700,
                             color: AppColors.textPrimary)),
                     if (m['strength'] != null) ...[
-                      const SizedBox(height: 3),
+                      const SizedBox(height: 4),
                       Text(m['strength'] as String,
                           style: const TextStyle(
                               fontSize: 15, color: AppColors.textSecondary)),
                     ],
-                    if (m['form'] != null) ...[
-                      const SizedBox(height: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryLight,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(m['form'] as String,
-                            style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w600)),
-                      ),
-                    ],
-                    if (m['api_source'] == 'openfda') ...[
-                      const SizedBox(height: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.successLight,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Text('OpenFDA ✓',
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.success,
-                                fontWeight: FontWeight.w600)),
-                      ),
-                    ],
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8, runSpacing: 6,
+                      children: [
+                        if (m['form'] != null)
+                          _InfoPill(m['form'] as String, Icons.medication_liquid_outlined),
+                        if (m['quantity'] != null)
+                          _InfoPill('${m['quantity']} units', Icons.numbers_rounded),
+                        if (m['api_source'] == 'openfda')
+                          _InfoPill('OpenFDA ✓', Icons.verified_rounded, color: AppColors.success),
+                        _InfoPill('Active', Icons.circle, color: AppColors.success),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -208,9 +200,9 @@ class _DetailViewState extends ConsumerState<_DetailView> {
           const SizedBox(height: 10),
           Container(
             decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(AppColors.cardRadius),
+              boxShadow: AppColors.cardShadow,
             ),
             child: Column(
               children: [
@@ -266,9 +258,9 @@ class _DetailViewState extends ConsumerState<_DetailView> {
                 ? Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.border),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(AppColors.cardRadius),
+                      boxShadow: AppColors.cardShadow,
                     ),
                     child: const Column(children: [
                       Icon(Icons.alarm_off_rounded,
@@ -288,9 +280,9 @@ class _DetailViewState extends ConsumerState<_DetailView> {
                       margin: const EdgeInsets.only(bottom: 8),
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.border),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: AppColors.cardShadow,
                       ),
                       child: Row(children: [
                         Container(
@@ -339,9 +331,9 @@ class _DetailViewState extends ConsumerState<_DetailView> {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(AppColors.cardRadius),
+                boxShadow: AppColors.cardShadow,
               ),
               child: Text(m['notes'] as String,
                   style: const TextStyle(
@@ -398,6 +390,35 @@ class _DetailViewState extends ConsumerState<_DetailView> {
     final svc = ref.read(supabaseDataServiceProvider);
     await svc.deleteReminder(reminderId);
     ref.invalidate(remindersForMedicineProvider(widget.medicineId));
+  }
+}
+
+// ── Info Pill ─────────────────────────────────────────────────────────────────
+class _InfoPill extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color? color;
+  const _InfoPill(this.label, this.icon, {this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = color ?? AppColors.textSecondary;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(50)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 11, color: c),
+          const SizedBox(width: 4),
+          Text(label,
+            style: TextStyle(
+              fontSize: 11, fontWeight: FontWeight.w600, color: c)),
+        ],
+      ),
+    );
   }
 }
 

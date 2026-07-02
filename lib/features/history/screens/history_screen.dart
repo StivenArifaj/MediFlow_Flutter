@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -14,57 +15,59 @@ class HistoryScreen extends ConsumerStatefulWidget {
 }
 
 class _HistoryScreenState extends ConsumerState<HistoryScreen> {
-  String _dateFilter = '30';
-  String _statusFilter = 'all';
+  String _period = '7d';
 
   int _calculateStreak(List<Map<String, dynamic>> allEntries) {
     if (allEntries.isEmpty) return 0;
-
     final byDay = <String, List<Map<String, dynamic>>>{};
     for (final e in allEntries) {
       final dt = DateTime.parse(e['scheduled_time'] as String);
       final dayKey = '${dt.year}-${dt.month}-${dt.day}';
       byDay.putIfAbsent(dayKey, () => []).add(e);
     }
-
     int streak = 0;
     DateTime day = DateTime.now();
-
     for (int i = 0; i < 365; i++) {
       final key = '${day.year}-${day.month}-${day.day}';
       final dayEntries = byDay[key];
-
       if (dayEntries == null) {
-        if (i == 0) {
-          day = day.subtract(const Duration(days: 1));
-          continue;
-        }
+        if (i == 0) { day = day.subtract(const Duration(days: 1)); continue; }
         break;
       }
-
-      final hasMissed = dayEntries.any((e) => e['status'] == 'missed');
-      if (hasMissed) break;
-
+      if (dayEntries.any((e) => e['status'] == 'missed')) break;
       streak++;
       day = day.subtract(const Duration(days: 1));
     }
-
     return streak;
   }
 
-  String get _selectedPeriodLabel {
-    switch (_dateFilter) {
-      case '1': return 'Today';
-      case '7': return 'Last 7 days';
-      case '30': return 'Last 30 days';
-      default: return 'All time';
-    }
+  List<Map<String, dynamic>> _filterByPeriod(List<Map<String, dynamic>> all) {
+    final now = DateTime.now();
+    return all.where((h) {
+      final dt = DateTime.parse(h['scheduled_time'] as String);
+      final days = now.difference(dt).inDays;
+      if (_period == '7d') return days < 7;
+      if (_period == '30d') return days < 30;
+      return true;
+    }).toList();
   }
 
-  Color _adherenceColor(int pct) {
-    if (pct >= 80) return AppColors.success;
-    if (pct >= 50) return AppColors.warning;
-    return AppColors.danger;
+  List<double> _last7DayRates(List<Map<String, dynamic>> all) {
+    final now = DateTime.now();
+    return List.generate(7, (i) {
+      final day = now.subtract(Duration(days: 6 - i));
+      final dayKey = '${day.year}-${day.month}-${day.day}';
+      final entries = all.where((h) {
+        final dt = DateTime.parse(h['scheduled_time'] as String);
+        return '${dt.year}-${dt.month}-${dt.day}' == dayKey;
+      }).toList();
+      if (entries.isEmpty) return 0.0;
+      final taken = entries.where((h) {
+        final s = h['status'] as String;
+        return s == 'taken' || s == 'taken_late';
+      }).length;
+      return taken / entries.length;
+    });
   }
 
   @override
@@ -72,211 +75,228 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     final histAsync = ref.watch(historyProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text(
-          'History',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary),
-        ),
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Divider(height: 1, color: AppColors.border),
-        ),
-      ),
+      backgroundColor: AppColors.pageBackground,
       body: histAsync.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2)),
-        error: (_, __) => const Center(
-            child: Text('Error loading history')),
+        error: (_, __) => const Center(child: Text('Error loading history')),
         data: (history) {
-          final now = DateTime.now();
-          final filtered = history.where((h) {
-            final dt = DateTime.parse(h['scheduled_time'] as String);
-            final daysDiff = now.difference(dt).inDays;
-            final dateOk = _dateFilter == 'all'
-                ? true
-                : daysDiff <= int.parse(_dateFilter);
-            final status = h['status'] as String;
-            final statusOk = _statusFilter == 'all' || status == _statusFilter;
-            return dateOk && statusOk;
-          }).toList();
-
+          final filtered = _filterByPeriod(history);
           final taken = filtered.where((h) {
             final s = h['status'] as String;
             return s == 'taken' || s == 'taken_late';
           }).length;
-          final skipped =
-              filtered.where((h) => h['status'] == 'skipped').length;
-          final missed =
-              filtered.where((h) => h['status'] == 'missed').length;
+          final missed = filtered.where((h) => h['status'] == 'missed').length;
           final total = filtered.length;
           final pct = total > 0 ? (taken / total * 100).round() : 0;
           final streak = _calculateStreak(history);
+          final last7 = _last7DayRates(history);
+          final now = DateTime.now();
+          final weekLabels = List.generate(7, (i) =>
+            DateFormat('E').format(now.subtract(Duration(days: 6 - i))));
 
           return CustomScrollView(
             slivers: [
-              // ── Adherence summary card ──────────────────────────────────
+              // Header
               SliverToBoxAdapter(
-                child: Container(
-                  margin: const EdgeInsets.all(16),
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            '$pct%',
-                            style: TextStyle(
-                              fontSize: 48,
-                              fontWeight: FontWeight.w800,
-                              color: _adherenceColor(pct),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('adherence',
-                                  style: TextStyle(
-                                      fontSize: 14,
-                                      color: AppColors.textSecondary)),
-                              Text(_selectedPeriodLabel,
-                                  style: const TextStyle(
-                                      fontSize: 13,
-                                      color: AppColors.textTertiary)),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          _StatBox('Taken', taken, AppColors.success),
-                          const SizedBox(width: 8),
-                          _StatBox('Skipped', skipped, AppColors.textSecondary),
-                          const SizedBox(width: 8),
-                          _StatBox('Missed', missed, AppColors.warning),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryLight,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text('🔥',
-                                style: TextStyle(fontSize: 16)),
-                            const SizedBox(width: 8),
-                            Text(
-                              '$streak day streak',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ).animate().fadeIn(duration: 400.ms),
-              ),
-
-              // ── Filter chips ────────────────────────────────────────────
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-                  child: Column(
-                    children: [
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: [
-                            _buildFilterChip('Today', '1', _dateFilter,
-                                (v) => setState(() => _dateFilter = v)),
-                            const SizedBox(width: 8),
-                            _buildFilterChip('7 Days', '7', _dateFilter,
-                                (v) => setState(() => _dateFilter = v)),
-                            const SizedBox(width: 8),
-                            _buildFilterChip('30 Days', '30', _dateFilter,
-                                (v) => setState(() => _dateFilter = v)),
-                            const SizedBox(width: 8),
-                            _buildFilterChip('All Time', 'all', _dateFilter,
-                                (v) => setState(() => _dateFilter = v)),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: [
-                            _buildFilterChip('All', 'all', _statusFilter,
-                                (v) => setState(() => _statusFilter = v)),
-                            const SizedBox(width: 8),
-                            _buildFilterChip('Taken', 'taken', _statusFilter,
-                                (v) => setState(() => _statusFilter = v)),
-                            const SizedBox(width: 8),
-                            _buildFilterChip('Skipped', 'skipped', _statusFilter,
-                                (v) => setState(() => _statusFilter = v)),
-                            const SizedBox(width: 8),
-                            _buildFilterChip('Missed', 'missed', _statusFilter,
-                                (v) => setState(() => _statusFilter = v)),
-                          ],
-                        ),
-                      ),
-                    ],
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('History',
+                          style: TextStyle(
+                            fontSize: 28, fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary, letterSpacing: -0.5)),
+                        const SizedBox(height: 2),
+                        const Text('Your medication journey',
+                          style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
+                      ],
+                    ),
                   ),
                 ),
               ),
 
-              const SliverToBoxAdapter(child: SizedBox(height: 16)),
+              // Period pill tabs
+              SliverToBoxAdapter(
+                child: Container(
+                  margin: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(AppColors.chipRadius),
+                    boxShadow: AppColors.cardShadow,
+                  ),
+                  child: Row(
+                    children: [
+                      _PeriodTab('7 Days', _period == '7d', () => setState(() => _period = '7d')),
+                      _PeriodTab('30 Days', _period == '30d', () => setState(() => _period = '30d')),
+                      _PeriodTab('All Time', _period == 'all', () => setState(() => _period = 'all')),
+                    ],
+                  ),
+                ).animate().fadeIn(duration: 300.ms),
+              ),
 
-              // ── History list ────────────────────────────────────────────
+              // Adherence card with bar chart
+              SliverToBoxAdapter(
+                child: Container(
+                  margin: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                  padding: const EdgeInsets.all(22),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(AppColors.cardRadius),
+                    boxShadow: AppColors.cardShadow,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Adherence Rate',
+                            style: TextStyle(
+                              fontSize: 14, color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w500)),
+                          if (pct >= 70)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.successLight,
+                                borderRadius: BorderRadius.circular(50)),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.trending_up_rounded, size: 14, color: AppColors.success),
+                                  const SizedBox(width: 4),
+                                  Text('$pct%',
+                                    style: const TextStyle(
+                                      fontSize: 12, fontWeight: FontWeight.w700,
+                                      color: AppColors.success)),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text('$pct%',
+                        style: const TextStyle(
+                          fontSize: 56, fontWeight: FontWeight.w900,
+                          color: AppColors.textPrimary, letterSpacing: -2, height: 1.0)),
+                      const SizedBox(height: 4),
+                      const Text('of doses taken on time',
+                        style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        height: 100,
+                        child: BarChart(
+                          BarChartData(
+                            barTouchData: BarTouchData(enabled: false),
+                            titlesData: const FlTitlesData(show: false),
+                            borderData: FlBorderData(show: false),
+                            gridData: const FlGridData(show: false),
+                            barGroups: last7.asMap().entries.map((e) {
+                              return BarChartGroupData(
+                                x: e.key,
+                                barRods: [
+                                  BarChartRodData(
+                                    toY: e.value * 100,
+                                    gradient: const LinearGradient(
+                                      colors: [AppColors.primary, AppColors.primaryDark],
+                                      begin: Alignment.bottomCenter,
+                                      end: Alignment.topCenter,
+                                    ),
+                                    width: e.key == 6 ? 24 : 20,
+                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                                    backDrawRodData: BackgroundBarChartRodData(
+                                      show: true,
+                                      toY: 100,
+                                      color: AppColors.surfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: weekLabels.map((d) => Text(d,
+                          style: const TextStyle(
+                            fontSize: 10, color: AppColors.textTertiary,
+                            fontWeight: FontWeight.w500))).toList(),
+                      ),
+                    ],
+                  ),
+                ).animate().fadeIn(delay: 100.ms, duration: 400.ms),
+              ),
+
+              // 3 stat boxes
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+                  child: Row(
+                    children: [
+                      _StatBox(
+                        value: '$taken', label: 'Doses Taken',
+                        color: AppColors.success,
+                        icon: Icons.check_circle_outline_rounded),
+                      const SizedBox(width: 12),
+                      _StatBox(
+                        value: '$streak', label: 'Day Streak',
+                        color: AppColors.primary,
+                        icon: Icons.local_fire_department_outlined),
+                      const SizedBox(width: 12),
+                      _StatBox(
+                        value: '$missed', label: 'Missed',
+                        color: missed > 0 ? AppColors.warning : AppColors.textTertiary,
+                        icon: Icons.warning_amber_rounded),
+                    ],
+                  ),
+                ).animate().fadeIn(delay: 150.ms, duration: 300.ms),
+              ),
+
+              // Recent header
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(24, 20, 24, 10),
+                  child: Text('Recent Activity',
+                    style: TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary)),
+                ),
+              ),
+
+              // History list
               if (filtered.isEmpty)
                 SliverFillRemaining(
                   child: Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text('💊', style: TextStyle(fontSize: 52)),
-                        const SizedBox(height: 20),
-                        const Text('No history yet',
-                            style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textPrimary)),
-                        const SizedBox(height: 8),
-                        const Text('Your dose history will appear here',
-                            style: TextStyle(
-                                fontSize: 14, color: AppColors.textSecondary)),
+                      children: const [
+                        Text('💊', style: TextStyle(fontSize: 52)),
+                        SizedBox(height: 20),
+                        Text('No history yet',
+                          style: TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary)),
+                        SizedBox(height: 8),
+                        Text('Your dose history will appear here',
+                          style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
                       ],
                     ),
                   ),
                 )
               else
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 100),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate(
-                      (ctx, i) => _HistoryEntryCard(entry: filtered[i])
+                      (ctx, i) => _HistoryRow(entry: filtered[i])
                           .animate()
-                          .fadeIn(delay: Duration(milliseconds: i * 30),
-                              duration: 250.ms),
+                          .fadeIn(delay: Duration(milliseconds: i * 30), duration: 250.ms),
                       childCount: filtered.length,
                     ),
                   ),
@@ -287,62 +307,68 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       ),
     );
   }
+}
 
-  Widget _buildFilterChip(
-      String label, String value, String current, ValueChanged<String> onSelect) {
-    final selected = current == value;
-    return FilterChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: (_) => onSelect(value),
-      selectedColor: AppColors.primaryLight,
-      checkmarkColor: AppColors.primary,
-      labelStyle: TextStyle(
-        color: selected ? AppColors.primary : AppColors.textSecondary,
-        fontSize: 13,
-        fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+// ── Period Tab ────────────────────────────────────────────────────────────────
+class _PeriodTab extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _PeriodTab(this.label, this.selected, this.onTap);
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.darkButton : Colors.transparent,
+            borderRadius: BorderRadius.circular(AppColors.chipRadius)),
+          child: Text(label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13, fontWeight: FontWeight.w600,
+              color: selected ? Colors.white : AppColors.textSecondary)),
+        ),
       ),
-      side: BorderSide(
-        color: selected ? AppColors.primary : AppColors.border,
-      ),
-      backgroundColor: AppColors.surface,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
     );
   }
 }
 
 // ── Stat Box ──────────────────────────────────────────────────────────────────
 class _StatBox extends StatelessWidget {
-  final String label;
-  final int count;
+  final String value, label;
   final Color color;
-  const _StatBox(this.label, this.count, this.color);
+  final IconData icon;
+  const _StatBox({required this.value, required this.label, required this.color, required this.icon});
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(10),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: AppColors.cardShadow,
         ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              '$count',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: color,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
+            Icon(icon, color: color, size: 20),
+            const SizedBox(height: 10),
+            Text(value,
               style: const TextStyle(
-                  fontSize: 12, color: AppColors.textSecondary),
-            ),
+                fontSize: 24, fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary, letterSpacing: -0.5)),
+            const SizedBox(height: 2),
+            Text(label,
+              style: const TextStyle(
+                fontSize: 11, color: AppColors.textSecondary,
+                fontWeight: FontWeight.w500)),
           ],
         ),
       ),
@@ -350,111 +376,85 @@ class _StatBox extends StatelessWidget {
   }
 }
 
-// ── History Entry Card ────────────────────────────────────────────────────────
-class _HistoryEntryCard extends StatelessWidget {
+// ── History Row ───────────────────────────────────────────────────────────────
+class _HistoryRow extends StatelessWidget {
   final Map<String, dynamic> entry;
-  const _HistoryEntryCard({required this.entry});
+  const _HistoryRow({required this.entry});
 
-  Color _statusColor(String status) {
-    switch (status) {
+  Color _statusColor(String s) {
+    switch (s) {
       case 'taken':
       case 'taken_late': return AppColors.success;
       case 'skipped': return AppColors.textTertiary;
-      case 'missed': return AppColors.warning;
+      case 'missed': return AppColors.danger;
       default: return AppColors.warning;
     }
   }
 
-  String _statusLabel(String status) {
-    if (status == 'taken_late') return 'Late';
-    return status[0].toUpperCase() + status.substring(1);
+  IconData _statusIcon(String s) {
+    switch (s) {
+      case 'taken': return Icons.check_circle_rounded;
+      case 'taken_late': return Icons.schedule_rounded;
+      case 'skipped': return Icons.skip_next_rounded;
+      default: return Icons.cancel_rounded;
+    }
+  }
+
+  String _statusLabel(String s) {
+    if (s == 'taken_late') return 'Late';
+    return s[0].toUpperCase() + s.substring(1);
   }
 
   @override
   Widget build(BuildContext context) {
     final status = entry['status'] as String;
-    final scheduledTime =
-        DateTime.parse(entry['scheduled_time'] as String);
-    final actualTimeRaw = entry['actual_time'] as String?;
-    final actualTime =
-        actualTimeRaw != null ? DateTime.parse(actualTimeRaw) : null;
+    final scheduledTime = DateTime.parse(entry['scheduled_time'] as String);
     final medicineName =
-        (entry['medicines'] as Map<String, dynamic>?)?['verified_name']
-            as String? ??
-            '—';
+        (entry['medicines'] as Map<String, dynamic>?)?['verified_name'] as String? ?? '—';
     final color = _statusColor(status);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border(
-          left: BorderSide(color: color, width: 4),
-          top: const BorderSide(color: AppColors.border),
-          right: const BorderSide(color: AppColors.border),
-          bottom: const BorderSide(color: AppColors.border),
-        ),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: AppColors.cardShadow,
       ),
       child: Row(
         children: [
+          Container(
+            width: 44, height: 44,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              shape: BoxShape.circle),
+            child: Icon(_statusIcon(status), color: color, size: 20),
+          ),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  medicineName,
+                Text(medicineName,
                   style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
+                    fontSize: 15, fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary)),
                 const SizedBox(height: 3),
-                Text(
-                  DateFormat('d MMM, HH:mm').format(scheduledTime),
-                  style: const TextStyle(
-                      fontSize: 13, color: AppColors.textSecondary),
-                ),
-                if (actualTime != null)
-                  Text(
-                    'Taken: ${DateFormat('HH:mm').format(actualTime)}',
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.textTertiary),
-                  ),
+                Text(DateFormat('d MMM, HH:mm').format(scheduledTime),
+                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
               ],
             ),
           ),
-          _StatusBadge(status: status, color: color, label: _statusLabel(status)),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(50)),
+            child: Text(_statusLabel(status),
+              style: TextStyle(
+                fontSize: 12, fontWeight: FontWeight.w700, color: color)),
+          ),
         ],
-      ),
-    );
-  }
-}
-
-class _StatusBadge extends StatelessWidget {
-  final String status;
-  final Color color;
-  final String label;
-  const _StatusBadge(
-      {required this.status, required this.color, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: color,
-        ),
       ),
     );
   }

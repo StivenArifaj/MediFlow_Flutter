@@ -3,6 +3,40 @@
 Append one entry per session, right before /clear. Keep entries short — 
 3-5 lines. This is a changelog, not a transcript.
 
+## 2026-07-01 — UI Overhaul v3: floating nav + home rewrite
+- main_tab_screen: floating dark pill nav (left:20, right:20, bottom:20, height:68, color #1A2332)
+- app_background: radial gradient blobs (primary top-left, caregiver top-right)
+- home_screen: header→32px w800 name + notification bell + avatar; progress card→white with % + 3 stat pills; pending card→medication icon + dark "Took It" pill; taken card→clean success card; health tip→purple gradient (#667EEA→#764BA2); FAB→dark circle
+- app_theme: ElevatedButton global→#1A2332 dark; OutlinedButton→#E8ECF0 border + textPrimary
+- app_colors: softShadow→#1A2332 base (was primary blue)
+- flutter analyze: 0 errors
+
+## 2026-07-01 — Premium visual upgrade
+- AppColors: softShadow/strongShadow/coloredShadow/gradientCard/card/pill depth system added
+- Home progress card: 56px number display + "Complete ✓" pill badge
+- Schedule cards: time in pill, StadiumBorder buttons, taken → pill badge, staggered slideX entry
+- Health cards: circular icon, 26px bold values, scale animations
+- Profile hero: Column → Row (avatar + info side-by-side); all section cards → shadow-based
+- Buttons: StadiumBorder globally in AppTheme
+- Welcome blobs: solid → RadialGradient; AppBackground stop: 0.5 → 0.55
+- 0 errors; next: OpenCode visual re-audit
+
+## 2026-07-01 — UI fixes from audit P0+P1
+- Email Confirmation: full light rewrite (StatefulWidget, _isResending)
+- Linked Patient Home: _LP class deleted, light theme, AppColors throughout
+- History cards: radius standardized to 16px; all loading indicators → AppColors.primary
+- Dark mode toggle removed (non-functional); password reset: real Supabase flow
+- ponytail comments removed; 0 errors; next: OpenCode re-audit + P2 fixes
+
+## 2026-07-01 — Screen Redesign Pass 5: Reference-image dashboard redesign
+- AppColors: pageBackground (0xFFF4F6FA), cardRadius (24.0), chipRadius (50.0), darkButton (0xFF1A1A1A), cardShadow updated to #1A2332 base
+- Health: inline title, Health Overview summary card (40px number + "Updated today" pill), metric cards 28px value + column-bottom layout, childAspectRatio 0.95, CustomScrollView with SliverGrid
+- History: full dashboard rewrite — period pill tabs (dark selected), 52px adherence number card with fl_chart BarChart (7-day bars), 3 stat boxes (Taken/Streak/Missed), history rows with status icon circle + pill badge
+- Profile: SliverAppBar hero kept; _StatsGrid → _StatsRow (3-column: Medicines/Adherence/Streak) shadow card; all section cards 20px margin + shadow-only; Delete button → StadiumBorder
+- Add Medicine: circle back button, pageBackground AppBar/Scaffold, section cards shadow-only (24px radius), form type chips → dark pill selected, preset time tiles → dark selected, confirm button → darkButton StadiumBorder 56px
+- Medicine Detail: circle back + circle delete buttons, hero card 28px radius with _InfoPill chips row, details/reminders/notes cards shadow-only
+- flutter analyze: 0 errors
+
 ## 2026-07-01 — UI Redesign Pass 4 (final)
 - health_detail: full light rewrite — surface cards, primary chart, latest value card, light sheet
 - scan_screen: neonCyan → scanAccent (0xFF00D4D4) for camera overlay visibility
@@ -132,3 +166,26 @@ Append one entry per session, right before /clear. Keep entries short —
 - 4 auth screens redesigned (welcome, login, register, role_selection)
 - 0 errors on flutter analyze
 - Next: Pass 2 (Home screen + bottom nav)
+
+## 2026-07-01 — Visual system upgrade (Warm Medical Premium)
+- AppBackground: soft 3-color gradient (F0F7FF → F8FAFB → F5F0FF)
+- AppColors: cardShadow, elevatedCardShadow (static finals), gradientCardDecoration, heroCardDecoration, gradientStart/Mid/End added; old ctx-based cardShadow() removed
+- Home progress card: blue gradient hero card (2D7DD2 → 1A5BA8) with TweenAnimationBuilder progress bar
+- Home header: gradient Container + avatar gradient ring
+- Home schedule cards: AppColors.cardShadow, no flat border
+- Profile: SliverAppBar expandedHeight:220 with 3-color gradient hero (2D7DD2→1A5BA8→5B6EF5); SingleChildScrollView → CustomScrollView
+- Health metric cards: shadows + 48px icon container with border + 24px w800 bold value + colored unit
+- Welcome screen: 2 decorative blob circles (opacity 0.08 / 0.06)
+- Animations: flutter_animate on home header + progress card + schedule header; spring entry
+- 0 errors
+
+## 2026-07-02 — World-class UI overhaul (all screens)
+- AppColors rebuilt per new spec: pageBackground F2F4F8, darkButton 141B2D, xs/sm/md/lg shadow scale, card/cardLg/gradientCard/pill helpers; legacy aliases trimmed to only what's referenced
+- AppTheme: 56px dark stadium ElevatedButton, transparent centered AppBar, filled 14px inputs
+- New CircleButton shared widget (white circle back/action buttons) used in login, register, health detail, reminder setup
+- Home progress card → blue gradient hero (52px doses count, white progress bar, Complete ✓ / missed pills)
+- Reminder setup screen fully rewritten from leftover neon-dark theme to light design system
+- Caregiver dashboard: gradient patient card, shadow cards; linked patient home: stadium buttons, shadow cards
+- Profile: in-flow gradient hero card replaces pinned SliverAppBar
+- Nav active item → white pill with dark icon/label
+- flutter analyze: 0 errors

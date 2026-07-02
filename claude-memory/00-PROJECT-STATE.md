@@ -32,6 +32,66 @@ Migrating from Firebase + Drift/SQLite to Supabase (single backend).
 - Account deletion must cascade through all 5 tables + remove the Auth user
 
 ## What's Done
+- [x] WORLD-CLASS UI OVERHAUL — all screens (2026-07-02)
+  - AppColors fully rebuilt: pageBackground #F2F4F8, darkButton #141B2D, xs/sm/md/lg shadows, card/cardLg/gradientCard/pill decorations, minimal legacy aliases kept
+  - AppTheme: dark pill ElevatedButton (56px StadiumBorder), transparent centered AppBar, 14px-radius filled inputs
+  - AppBackground: static radial blobs (primary 0.08 top-left, caregiver 0.06 bottom-right)
+  - Floating nav: darkButton bg, active item = white pill with dark icon+label
+  - New shared widget: lib/core/widgets/circle_button.dart (white circle back/action buttons)
+  - Auth: welcome gradient logo + shadow feature pills + outlined Sign In; login circle back + stadium Google button; register circle back; role selection 28px cards with 56px circle icons + empty-circle indicator + dark Continue
+  - Home: gradient hero progress card (#1E40AF→#3B82F6, 52px count, white bar, Complete ✓ pill, missed footer), "Today" header + outline Add pill, dark FAB, health tip #7C3AED→#4F46E5
+  - Health: subtitle added, 26px w900 values; health detail: circle back, cardLg latest reading, shadow chart card, dark FAB, dark save pill
+  - History: 56px adherence number, primary→primaryDark gradient bars (today wider), "Recent Activity"
+  - Profile: gradient hero card (#1E3A5F→#2D7DD2, 28px radius, in-flow card replacing SliverAppBar), invite code 36px w900 spacing 10 on caregiverLight 24px, stadium Copy/Rotate, entry animation
+  - Reminder setup: FULL REWRITE from old neon-dark to light system (was last dark screen) — section cards with accent bars, dark-selected chips, stadium save
+  - Caregiver dashboard: gradient patient connection card (caregiver indigo), all cards shadow-based, stadium buttons, transparent AppBar
+  - Linked patient home: shadow cards, stadium Skip/green Took It, success left-border taken cards
+  - Medicine detail: last hardcoded pill color → surfaceVariant
+  - flutter analyze: 0 errors
+- [x] UI OVERHAUL v3 — 2026-07-01 (floating nav + home rewrite)
+  - Floating dark pill bottom nav (#1A2332, height 68, left/right 20, bottom 20)
+  - AppBackground: radial gradient blobs (not full-screen gradient)
+  - Home header: 32px w800 name + notification bell + gradient avatar
+  - Progress card: white card, % top-right, 3 stat pills (Taken/Left/Missed)
+  - Pending dose: medication icon + time pill + dark "Took It" ElevatedButton
+  - Taken dose: clean green check card, no buttons
+  - Health tip: purple gradient (#667EEA→#764BA2)
+  - FAB: dark circle #1A2332 with shadow
+  - Global ElevatedButton: #1A2332 dark (screens needing blue override locally)
+  - Global OutlinedButton: #E8ECF0 border + textPrimary
+  - softShadow: #1A2332 base
+  - 0 errors
+- [x] PREMIUM VISUAL UPGRADE (2026-07-01)
+  - Background: 3-color gradient (EEF4FF → F8FAFB → F3F0FF), stop 0.55
+  - AppColors: softShadow/strongShadow/coloredShadow/gradientCard/card/pill helpers added
+  - Progress card: gradient hero with 56px number display + "Complete ✓" pill
+  - Schedule cards: time in pill badge, StadiumBorder buttons, taken → pill badge, staggered slideX animations
+  - Health cards: circular icon (BoxShape.circle), 26px bold values, unit w700, scale animations
+  - Profile hero: Column → Row layout (avatar left, name/email/role pill right)
+  - Section cards (profile): border-only → AppColors.card (shadow-based)
+  - Welcome blobs: solid circle → RadialGradient
+  - App theme: ElevatedButton + OutlinedButton → StadiumBorder globally
+  - Empty state + AddOptionTile: border-only → AppColors.card
+  - 0 errors
+- [x] VISUAL SYSTEM UPGRADE — Warm Medical Premium (2026-07-01)
+  - AppBackground: 3-color soft gradient
+  - AppColors: cardShadow/elevatedCardShadow static finals, gradientCardDecoration, heroCardDecoration
+  - Home: gradient hero progress card, gradient header, avatar gradient ring, elevated schedule cards
+  - Profile: SliverAppBar gradient hero (expandedHeight: 220)
+  - Health: metric cards with real shadows, 24px bold values, colored units, bordered icon containers
+  - Welcome: decorative blob circles behind content
+  - Animations: flutter_animate on home header/progress/schedule; TweenAnimationBuilder on progress bar
+  - 0 errors
+- [x] P0+P1 AUDIT FIXES (2026-07-01, commit aea6c44)
+  - Email Confirmation: full light theme rewrite (StatefulWidget, _isResending state)
+  - Linked Patient Home: _LP class deleted, AppColors throughout, light theme
+  - History card radius: 12 → 16px
+  - Loading indicators: standardized to AppColors.primary across all screens
+  - Dark mode toggle: removed from Profile (non-functional, darkTheme = lightTheme)
+  - Password reset: real Supabase resetPasswordForEmail dialog (was "contact support")
+  - Disclaimer font: 10px → 12px
+  - ponytail comments removed from production code
+  - 0 errors
 - [x] UI REDESIGN PASS 2: Home + bottom nav (2026-07-01)
   - NavigationBar: Material 3, light, blue indicator (already correct, no change)
   - Home: progress card shows "X of Y" header + "X remaining"/"On track ✓" footer
@@ -100,6 +160,15 @@ Migrating from Firebase + Drift/SQLite to Supabase (single backend).
   - OpenFDA barcode lookup implemented (openfda_service.dart)
   - Barcode scan → OpenFDA lookup → add_medicine prefill wired
   - Banner shown in add_medicine_screen when data from barcode scan
+
+- [x] SCREEN REDESIGNS based on reference images (2026-07-01):
+  - Health: dashboard with inline title, Health Overview summary card (40px number), metric cards 28px values + column-bottom layout
+  - History: full dashboard — period pill tabs, 52px adherence + fl_chart BarChart, 3 stat boxes, history rows with icon circle + badge pills
+  - Profile: _StatsGrid → _StatsRow (3-col shadow card), all section cards shadow-only 20px, StadiumBorder delete button
+  - Add Medicine: circle back button, dark pill confirm button 56px, dark-selected form chips + preset tiles, shadow-only section cards
+  - Medicine Detail: circle back + delete, hero card with _InfoPill chips, all cards shadow-only
+  - AppColors: pageBackground (0xFFF4F6FA), cardRadius (24.0), chipRadius (50.0), darkButton (0xFF1A1A1A)
+  - 0 errors
 
 ## What's NOT Done Yet
 - [ ] Full QA pass on all 3 roles (OpenCode)

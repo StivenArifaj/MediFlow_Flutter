@@ -25,26 +25,9 @@ class CaregiverDashboardScreen extends ConsumerWidget {
     final isLoading = userAsync.isLoading || patientAsync.isLoading || dataAsync.isLoading;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.pageBackground,
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('My Patient Dashboard'),
-            if (!isLoading)
-              Text(
-                patientAsync.value?['name'] as String? ?? 'No patient linked',
-                style: const TextStyle(fontSize: 13, color: AppColors.caregiver, fontWeight: FontWeight.w400),
-              ),
-          ],
-        ),
-        backgroundColor: AppColors.surface,
-        foregroundColor: AppColors.textPrimary,
-        elevation: 0,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Divider(height: 1, color: AppColors.border),
-        ),
+        title: const Text('My Patient Dashboard'),
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
@@ -91,7 +74,7 @@ class CaregiverDashboardScreen extends ConsumerWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.caregiver,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: const StadiumBorder(),
                         elevation: 0,
                       ),
                     ),
@@ -134,7 +117,7 @@ class CaregiverDashboardScreen extends ConsumerWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.caregiver,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: const StadiumBorder(),
                 ),
                 child: const Text('Go to Export', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
               ),
@@ -159,55 +142,73 @@ class _ConnectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasPatient = patientName != null && patientName!.isNotEmpty;
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: hasPatient ? AppColors.success.withValues(alpha: 0.3) : AppColors.caregiver.withValues(alpha: 0.3),
-        ),
-      ),
+      padding: const EdgeInsets.all(20),
+      decoration: AppColors.gradientCard(
+          const [Color(0xFF5B6EF5), Color(0xFF7C8AFF)]),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
-            Container(
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: hasPatient ? AppColors.success : AppColors.warning,
+            Expanded(
+              child: Text(
+                hasPatient ? patientName! : 'No patient yet',
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
               ),
             ),
-            const SizedBox(width: 8),
-            Text(
-              hasPatient ? 'Patient Connected' : 'Waiting for Patient',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: hasPatient ? AppColors.success : AppColors.warning,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.18),
+                borderRadius: BorderRadius.circular(50),
               ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: hasPatient
+                        ? const Color(0xFF4ADE80)
+                        : AppColors.warning,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  hasPatient ? 'Connected' : 'Waiting',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ]),
             ),
           ]),
+          const SizedBox(height: 4),
+          Text('Linked Patient',
+              style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.white.withValues(alpha: 0.75))),
           if (inviteCode != null && inviteCode!.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Text('Invite Code', style: AppTypography.bodySmall(color: AppColors.textSecondary)),
-            const SizedBox(height: 6),
+            const SizedBox(height: 14),
             Row(children: [
               Expanded(
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                   decoration: BoxDecoration(
-                    color: AppColors.caregiverLight,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.caregiver.withValues(alpha: 0.3)),
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                   child: Text(
                     inviteCode!,
                     style: const TextStyle(
                       fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.caregiver,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
                       letterSpacing: 8,
                     ),
                   ),
@@ -222,11 +223,10 @@ class _ConnectionCard extends StatelessWidget {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: AppColors.caregiverLight,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.caregiver.withValues(alpha: 0.3)),
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  child: const Icon(Icons.share_rounded, color: AppColors.caregiver, size: 20),
+                  child: const Icon(Icons.share_rounded, color: Colors.white, size: 20),
                 ),
               ),
             ]),
@@ -262,8 +262,8 @@ class _AdherenceCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: AppColors.md,
       ),
       child: Column(children: [
         Text('30-Day Adherence', style: AppTypography.titleMedium(color: AppColors.textPrimary)),
@@ -325,8 +325,8 @@ class _TodayScheduleCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: AppColors.md,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -390,7 +390,6 @@ class _ScheduleRow extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surfaceVariant,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
       ),
       child: Row(children: [
         Container(
@@ -435,8 +434,8 @@ class _MedicineListCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: AppColors.md,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -469,7 +468,6 @@ class _MedicineListCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppColors.surfaceVariant,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
                 ),
                 child: Row(children: [
                   Container(
@@ -558,8 +556,8 @@ class _CalendarCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: AppColors.md,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
