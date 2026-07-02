@@ -55,10 +55,10 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
   ];
 
   static const _presetTimes = [
-    ('☀️', 'Morning', '08:00'),
-    ('🌤️', 'Afternoon', '14:00'),
-    ('🌙', 'Evening', '20:00'),
-    ('🛏️', 'Bedtime', '22:00'),
+    (Icons.wb_sunny_rounded, 'Morning', '08:00'),
+    (Icons.wb_twilight_rounded, 'Afternoon', '14:00'),
+    (Icons.nights_stay_rounded, 'Evening', '20:00'),
+    (Icons.bedtime_rounded, 'Bedtime', '22:00'),
   ];
 
   static const _days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -176,7 +176,7 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: const Text('Medicine added! ✅'),
+          content: const Text('Medicine added'),
           backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
         ));
@@ -394,7 +394,7 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
                   spacing: 10,
                   runSpacing: 10,
                   children: _presetTimes.map((p) {
-                    final (emoji, label, time) = p;
+                    final (icon, label, time) = p;
                     final added = _reminderTimes.contains(time);
                     return GestureDetector(
                       onTap: () => _addPresetTime(time),
@@ -414,7 +414,11 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
                         ),
                         child: Column(
                           children: [
-                            Text(emoji, style: const TextStyle(fontSize: 20)),
+                            Icon(icon,
+                                size: 20,
+                                color: added
+                                    ? Colors.white
+                                    : AppColors.warning),
                             const SizedBox(height: 4),
                             Text(label, style: TextStyle(
                               fontSize: 11, fontWeight: FontWeight.w600,
@@ -662,7 +666,7 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
                     Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 18),
                     SizedBox(width: 10),
                     Expanded(child: Text(
-                      '⚠️ MediFlow is a medication organization tool only. We do NOT provide medical advice. Always follow your doctor\'s instructions.',
+                      'MediFlow is a medication organization tool only. We do NOT provide medical advice. Always follow your doctor\'s instructions.',
                       style: TextStyle(fontSize: 12, color: AppColors.warning, height: 1.5),
                     )),
                   ],

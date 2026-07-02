@@ -49,7 +49,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         );
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('✅  ${slot.medicineName} marked as taken'),
+        content: Text('${slot.medicineName} marked as taken'),
         backgroundColor: AppColors.success,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -200,7 +200,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Hello, $name 👋',
+                            'Hello, $name',
                             style: const TextStyle(
                               fontSize: 14,
                               color: AppColors.textSecondary,
@@ -493,7 +493,7 @@ class _ProgressCard extends StatelessWidget {
                 top: -50, right: -40, child: DecorCircle(size: 160)),
             const Positioned(
                 bottom: -70, right: 40,
-                child: DecorCircle(size: 140, opacity: 0.05)),
+                child: DecorCircle(size: 140, opacity: 0.08)),
             Padding(
               padding: const EdgeInsets.all(22),
               child: _content(),
@@ -529,7 +529,7 @@ class _ProgressCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(50),
                 ),
                 child: Text(
-                  complete ? 'Complete ✓' : '$taken / $total',
+                  complete ? 'Complete' : '$taken / $total',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
@@ -589,7 +589,7 @@ class _ProgressCard extends StatelessWidget {
                 missed > 0
                     ? '$missed doses missed'
                     : complete
-                        ? 'All done! Great job 🎉'
+                        ? 'All done — great job!'
                         : '${total - taken} remaining',
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.85),

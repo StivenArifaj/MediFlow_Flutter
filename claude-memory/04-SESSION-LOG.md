@@ -205,3 +205,15 @@ Append one entry per session, right before /clear. Keep entries short —
 - REQUIRED: run supabase/emergency_alerts.sql in Supabase SQL editor (table + RLS + realtime publication) before the feature works
 - Health tip card → pastel AI-suggestion style (peach→lavender→blue, sparkle icon, dark text)
 - 0 errors
+
+## 2026-07-02 — Emergency Alert hardening + history dashboard + icon sweep
+- AlertService rewritten with AlertResult type; rate limit trigger in SQL (3 per 10 min); schema now is_acknowledged + acknowledged_at + profiles join
+- SOS bottom sheet replaces dialog on patient home; dangerLight pill SOS button; 1s debounce after failed send
+- Realtime subscription hardened in main_tab (AlertService.subscribeToAlerts, channel unsubscribe on dispose)
+- Immediate heads-up notification (NotificationService.showImmediateNotification, emergency_alerts channel) fired when alert arrives
+- Alert history card (Resolved/Pending) added to caregiver dashboard
+- EMOJI SWEEP: all emoji/keyboard glyphs replaced with Material icons or plain text (history/health empty states → icon circles, add-medicine presets → sun/twilight/moon/bed icons, status labels, snackbars, notification titles)
+- History screen: NEW 30-day adherence line chart + NEW tappable month calendar (day → bottom sheet with that day's doses + taken/skipped/missed stats)
+- DecorCircle default opacity 0.08→0.14 (card depth effects now visible)
+- 0 errors
+- Pending: SQL must be run in Supabase dashboard

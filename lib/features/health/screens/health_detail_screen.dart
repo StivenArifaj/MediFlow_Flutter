@@ -252,7 +252,16 @@ class _Body extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('📊', style: TextStyle(fontSize: 44)),
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: const BoxDecoration(
+                      color: AppColors.primaryLight,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.insights_rounded,
+                        size: 34, color: AppColors.primary),
+                  ),
                   const SizedBox(height: 16),
                   Text('No readings yet',
                       style: AppTypography.titleMedium()

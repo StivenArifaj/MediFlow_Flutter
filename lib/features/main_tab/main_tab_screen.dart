@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 import '../../core/constants/app_colors.dart';
-import '../../core/supabase/supabase_client.dart';
 import '../../core/widgets/app_background.dart';
 import '../../core/widgets/emergency_alert_dialog.dart';
 import '../../data/services/alert_service.dart';
@@ -45,34 +44,25 @@ class _MainTabScreenState extends ConsumerState<MainTabScreen> {
 
     // Anything sent while the app was closed
     try {
-      final pending = await AlertService.pendingAlertsFor(user.id);
+      final pending = await AlertService.getPendingAlerts();
       if (mounted && pending.isNotEmpty) {
         await showEmergencyAlert(context, pending.first);
       }
     } catch (_) {}
+    if (!mounted) return;
 
     // Live alerts while the app is open
-    _alertChannel = supabase
-        .channel('emergency-alerts-${user.id}')
-        .onPostgresChanges(
-          event: sb.PostgresChangeEvent.insert,
-          schema: 'public',
-          table: 'emergency_alerts',
-          filter: sb.PostgresChangeFilter(
-            type: sb.PostgresChangeFilterType.eq,
-            column: 'caregiver_id',
-            value: user.id,
-          ),
-          callback: (payload) {
-            if (mounted) showEmergencyAlert(context, payload.newRecord);
-          },
-        )
-        .subscribe();
+    _alertChannel = AlertService.subscribeToAlerts(
+      caregiverId: user.id,
+      onAlert: (alert) {
+        if (mounted) showEmergencyAlert(context, alert);
+      },
+    );
   }
 
   @override
   void dispose() {
-    if (_alertChannel != null) supabase.removeChannel(_alertChannel!);
+    _alertChannel?.unsubscribe();
     super.dispose();
   }
 

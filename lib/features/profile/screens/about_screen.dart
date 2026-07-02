@@ -116,7 +116,7 @@ class AboutScreen extends StatelessWidget {
             const SizedBox(height: AppDimensions.xxl),
 
             Text(
-              'Made with 💙 for better health',
+              'Made with care for better health',
               style: AppTypography.bodySmall(color: AppColors.textSecondary),
             ),
             const SizedBox(height: AppDimensions.lg),

@@ -183,7 +183,7 @@ class _DetailViewState extends ConsumerState<_DetailView> {
                         if (m['quantity'] != null)
                           _InfoPill('${m['quantity']} units', Icons.numbers_rounded),
                         if (m['api_source'] == 'openfda')
-                          _InfoPill('OpenFDA ✓', Icons.verified_rounded, color: AppColors.success),
+                          _InfoPill('OpenFDA Verified', Icons.verified_rounded, color: AppColors.success),
                         _InfoPill('Active', Icons.circle, color: AppColors.success),
                       ],
                     ),
@@ -374,7 +374,7 @@ class _DetailViewState extends ConsumerState<_DetailView> {
                 SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    '⚠️ MediFlow is a medication organization tool only. Always follow your doctor\'s instructions.',
+                    'MediFlow is a medication organization tool only. Always follow your doctor\'s instructions.',
                     style: TextStyle(fontSize: 12, color: AppColors.warning, height: 1.5),
                   ),
                 ),

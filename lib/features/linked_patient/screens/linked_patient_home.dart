@@ -75,82 +75,111 @@ class _LinkedPatientHomeState extends ConsumerState<LinkedPatientHome> {
     );
   }
 
-  Future<void> _alertCaregiver() async {
-    final user = await ref.read(currentUserProvider.future);
-    if (user?.caregiverId == null) {
-      _snack('No caregiver linked yet.', AppColors.warning);
-      return;
-    }
-
+  void _showAlertSheet() {
+    if (_sendingAlert) return;
     final messageCtrl = TextEditingController();
-    final confirmed = await showDialog<bool>(
+
+    showModalBottomSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Row(children: const [
-          Icon(Icons.sos_rounded, color: AppColors.danger, size: 26),
-          SizedBox(width: 10),
-          Expanded(
-            child: Text('Alert your caregiver?',
-                style: TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary)),
-          ),
-        ]),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'They will receive an emergency alert immediately.',
-              style: TextStyle(
-                  fontSize: 14, color: AppColors.textSecondary, height: 1.5),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: messageCtrl,
-              maxLines: 2,
-              decoration: const InputDecoration(
-                hintText: 'Optional message (e.g. "I feel dizzy")',
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+          bool sending = false;
+          return StatefulBuilder(builder: (ctx, setInner) {
+            Future<void> send() async {
+              if (sending) return;
+              setInner(() => sending = true);
+              final result =
+                  await AlertService.sendAlert(message: messageCtrl.text);
+              if (ctx.mounted) Navigator.pop(ctx);
+              if (!mounted) return;
+              if (result.sent) {
+                _snack('Alert sent — your caregiver was notified',
+                    AppColors.success);
+              } else {
+                _snack(result.errorMessage ?? 'Could not send alert',
+                    AppColors.danger);
+                // brief debounce after a failed attempt
+                setState(() => _sendingAlert = true);
+                Future.delayed(const Duration(seconds: 1), () {
+                  if (mounted) setState(() => _sendingAlert = false);
+                });
+              }
+            }
+
+            return Container(
+              decoration: const BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
               ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel',
-                style: TextStyle(color: AppColors.textSecondary)),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.danger,
-              minimumSize: const Size(140, 44),
-            ),
-            child: const Text('Send Alert'),
-          ),
-        ],
-      ),
+              padding: EdgeInsets.fromLTRB(
+                  24, 12, 24, MediaQuery.of(ctx).viewInsets.bottom + 32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: const BoxDecoration(
+                      color: AppColors.dangerLight,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.sos_rounded,
+                        color: AppColors.danger, size: 32),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('Alert Your Caregiver',
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary)),
+                  const SizedBox(height: 6),
+                  const Text('Your caregiver will be notified immediately',
+                      style: TextStyle(
+                          fontSize: 14, color: AppColors.textSecondary)),
+                  const SizedBox(height: 20),
+                  TextFormField(
+                    controller: messageCtrl,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      hintText: 'I feel dizzy / I need help / ...',
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: sending ? null : send,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.danger,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: sending
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                                color: Colors.white, strokeWidth: 2))
+                        : const Text('Send Alert'),
+                  ),
+                  const SizedBox(height: 10),
+                  OutlinedButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Cancel'),
+                  ),
+                ],
+              ),
+            );
+          });
+      },
     );
-
-    if (confirmed != true || !mounted) return;
-
-    setState(() => _sendingAlert = true);
-    try {
-      await AlertService.sendEmergencyAlert(
-        patientId: user!.id,
-        caregiverId: user.caregiverId!,
-        message: messageCtrl.text.trim(),
-      );
-      _snack('🚨 Alert sent to your caregiver', AppColors.success);
-    } catch (_) {
-      _snack('Could not send the alert. Please try again.', AppColors.danger);
-    } finally {
-      if (mounted) setState(() => _sendingAlert = false);
-    }
   }
 
   void _snack(String msg, Color color) {
@@ -175,24 +204,37 @@ class _LinkedPatientHomeState extends ConsumerState<LinkedPatientHome> {
       bottomNavigationBar: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-          child: ElevatedButton.icon(
-            onPressed: _sendingAlert ? null : _alertCaregiver,
-            icon: _sendingAlert
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                        color: Colors.white, strokeWidth: 2))
-                : const Icon(Icons.sos_rounded, size: 22),
-            label: Text(_sendingAlert ? 'Sending…' : 'Alert My Caregiver'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.danger,
-              foregroundColor: Colors.white,
-            ).copyWith(
-              shadowColor: WidgetStatePropertyAll(
-                  AppColors.danger.withValues(alpha: 0.4)),
-              elevation: const WidgetStatePropertyAll(8),
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+          child: GestureDetector(
+            onTap: _sendingAlert ? null : _showAlertSheet,
+            child: Container(
+              height: 52,
+              decoration: BoxDecoration(
+                color: AppColors.dangerLight,
+                borderRadius: BorderRadius.circular(50),
+                border: Border.all(
+                    color: AppColors.danger.withValues(alpha: 0.3),
+                    width: 1.5),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: const BoxDecoration(
+                        color: AppColors.danger, shape: BoxShape.circle),
+                    child: const Icon(Icons.sos_rounded,
+                        color: Colors.white, size: 14),
+                  ),
+                  const SizedBox(width: 10),
+                  const Text('Alert My Caregiver',
+                      style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.danger)),
+                ],
+              ),
             ),
           ),
         ),
@@ -211,7 +253,7 @@ class _LinkedPatientHomeState extends ConsumerState<LinkedPatientHome> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Hello, $firstName 👋',
+                            'Hello, $firstName',
                             style: const TextStyle(
                                 fontSize: 14,
                                 color: AppColors.textSecondary,
@@ -597,7 +639,7 @@ class _AllDoneState extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Great job keeping up with\nyour medicines 🎉',
+            'Great job keeping up with\nyour medicines',
             style: TextStyle(
               fontSize: 15,
               color: AppColors.textSecondary,

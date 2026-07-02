@@ -80,6 +80,33 @@ class NotificationService {
     _initialised = true;
   }
 
+  /// Heads-up notification shown immediately (used for emergency alerts).
+  Future<void> showImmediateNotification({
+    required String title,
+    required String body,
+    required int id,
+  }) async {
+    const androidDetails = AndroidNotificationDetails(
+      'emergency_alerts',
+      'Emergency Alerts',
+      channelDescription: 'Patient emergency alerts',
+      importance: Importance.max,
+      priority: Priority.high,
+      playSound: true,
+      enableVibration: true,
+      color: Color(0xFFEF4444),
+      icon: '@mipmap/ic_launcher',
+    );
+    if (!_initialised) await init();
+    await _plugin.show(
+      id: id,
+      title: title,
+      body: body,
+      notificationDetails:
+          const NotificationDetails(android: androidDetails, iOS: _iosDetails),
+    );
+  }
+
   static Future<void> requestPermission() async {
     await _plugin
         .resolvePlatformSpecificImplementation<
@@ -106,7 +133,7 @@ class NotificationService {
 
     await _plugin.zonedSchedule(
       id: notificationId,
-      title: '💊 $medicineName',
+      title: 'Time for $medicineName',
       body: notes ?? 'Time to take your medicine',
       scheduledDate: _nextInstanceOf(hour, minute),
       notificationDetails: _notificationDetails,
@@ -131,7 +158,7 @@ class NotificationService {
 
     await _plugin.zonedSchedule(
       id: notificationId,
-      title: '💊 $medicineName',
+      title: 'Time for $medicineName',
       body: notes ?? 'Time to take your medicine',
       scheduledDate: _nextInstanceOfWeekly(hour, minute, dayOfWeek),
       notificationDetails: _notificationDetails,
@@ -184,7 +211,7 @@ class NotificationService {
         tz.TZDateTime.now(tz.local).add(Duration(minutes: snoozeMinutes));
     await _plugin.zonedSchedule(
       id: notificationId + 100000,
-      title: '💊 $medicineName (snoozed)',
+      title: '$medicineName (snoozed)',
       body: notes ?? 'Snoozed reminder — time to take your medicine',
       scheduledDate: snoozeTime,
       notificationDetails: _notificationDetails,

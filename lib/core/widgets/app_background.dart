@@ -72,7 +72,7 @@ class _Blob extends StatelessWidget {
 class DecorCircle extends StatelessWidget {
   final double size;
   final double opacity;
-  const DecorCircle({required this.size, this.opacity = 0.08, super.key});
+  const DecorCircle({required this.size, this.opacity = 0.14, super.key});
 
   @override
   Widget build(BuildContext context) {

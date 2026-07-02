@@ -5,6 +5,18 @@ import 'package:intl/intl.dart';
 import '../constants/app_colors.dart';
 import '../supabase/supabase_client.dart';
 import '../../data/services/alert_service.dart';
+import '../../data/services/notification_service.dart';
+
+String _formatAlertTime(DateTime dt) {
+  final local = dt.toLocal();
+  final now = DateTime.now();
+  final isToday = local.year == now.year &&
+      local.month == now.month &&
+      local.day == now.day;
+  return isToday
+      ? 'Today at ${DateFormat('HH:mm').format(local)}'
+      : DateFormat('d MMM yyyy · HH:mm').format(local);
+}
 
 /// Full emergency alert form shown to the caregiver when a linked
 /// patient sends an SOS. Resolves the patient's name, then presents
@@ -14,20 +26,38 @@ Future<void> showEmergencyAlert(
   Map<String, dynamic> alert, {
   VoidCallback? onAcknowledged,
 }) async {
-  String patientName = 'Your patient';
-  try {
-    final row = await supabase
-        .from('profiles')
-        .select('name')
-        .eq('id', alert['patient_id'] as String)
-        .maybeSingle();
-    patientName = row?['name'] as String? ?? patientName;
-  } catch (_) {}
-
-  if (!context.mounted) return;
+  // Name comes with the profiles join when loaded via AlertService;
+  // realtime payloads don't include it, so fall back to a lookup.
+  String patientName =
+      (alert['profiles'] as Map?)?['name'] as String? ?? '';
+  if (patientName.isEmpty) {
+    try {
+      final row = await supabase
+          .from('profiles')
+          .select('name')
+          .eq('id', alert['patient_id'] as String)
+          .maybeSingle();
+      patientName = row?['name'] as String? ?? '';
+    } catch (_) {}
+  }
+  if (patientName.isEmpty) patientName = 'Your patient';
 
   final message = alert['message'] as String?;
   final createdAt = DateTime.tryParse(alert['created_at'] as String? ?? '');
+  final alertId = alert['id'] as String? ?? '';
+
+  // Heads-up notification so the alert is heard even if the
+  // caregiver isn't looking at the screen.
+  try {
+    await NotificationService.instance.showImmediateNotification(
+      title: 'Emergency Alert',
+      body: '$patientName needs help!'
+          '${message != null && message.isNotEmpty ? ': $message' : ''}',
+      id: alertId.hashCode.abs() % 2147483647,
+    );
+  } catch (_) {}
+
+  if (!context.mounted) return;
 
   await showDialog(
     context: context,
@@ -80,7 +110,7 @@ Future<void> showEmergencyAlert(
             if (createdAt != null) ...[
               const SizedBox(height: 6),
               Text(
-                DateFormat('d MMM · HH:mm').format(createdAt.toLocal()),
+                _formatAlertTime(createdAt),
                 style: const TextStyle(
                     fontSize: 13, color: AppColors.textSecondary),
               ),
@@ -110,7 +140,7 @@ Future<void> showEmergencyAlert(
             ElevatedButton(
               onPressed: () async {
                 try {
-                  await AlertService.acknowledge(alert['id'] as String);
+                  await AlertService.acknowledgeAlert(alertId);
                 } catch (_) {}
                 if (ctx.mounted) Navigator.pop(ctx);
                 onAcknowledged?.call();

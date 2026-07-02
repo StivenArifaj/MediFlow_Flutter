@@ -50,7 +50,7 @@ class PdfExportService {
             pw.Divider(),
             pw.SizedBox(height: 4),
             pw.Text(
-              '⚠️ MEDICAL DISCLAIMER: MediFlow is a medication organization tool only. '
+              'MEDICAL DISCLAIMER: MediFlow is a medication organization tool only. '
               'It does not provide medical advice, diagnosis, or treatment. '
               'Always consult your healthcare provider.',
               style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey600),

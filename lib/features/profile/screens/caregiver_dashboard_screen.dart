@@ -26,6 +26,7 @@ class CaregiverDashboardScreen extends ConsumerStatefulWidget {
 class _CaregiverDashboardScreenState
     extends ConsumerState<CaregiverDashboardScreen> {
   List<Map<String, dynamic>> _pendingAlerts = [];
+  List<Map<String, dynamic>> _alertHistory = [];
 
   @override
   void initState() {
@@ -34,11 +35,15 @@ class _CaregiverDashboardScreenState
   }
 
   Future<void> _loadAlerts() async {
-    final user = await ref.read(currentUserProvider.future);
-    if (user == null) return;
     try {
-      final alerts = await AlertService.pendingAlertsFor(user.id);
-      if (mounted) setState(() => _pendingAlerts = alerts);
+      final pending = await AlertService.getPendingAlerts();
+      final history = await AlertService.getAlertHistory();
+      if (mounted) {
+        setState(() {
+          _pendingAlerts = pending;
+          _alertHistory = history;
+        });
+      }
     } catch (_) {}
   }
 
@@ -98,6 +103,10 @@ class _CaregiverDashboardScreenState
                   _CalendarCard(
                     history: (dataAsync.value?['recentHistory'] as List?)?.cast<Map<String, dynamic>>() ?? [],
                   ),
+                  const SizedBox(height: AppDimensions.md),
+
+                  // Alert history
+                  _AlertHistoryCard(history: _alertHistory),
                   const SizedBox(height: AppDimensions.md),
 
                   // Generate report
@@ -242,6 +251,134 @@ class _AlertBanner extends StatelessWidget {
         ),
       ),
     ).animate().fadeIn(duration: 250.ms).shake(hz: 3, duration: 500.ms);
+  }
+}
+
+// ── Alert History Card ──────────────────────────────────────────────────────
+
+class _AlertHistoryCard extends StatelessWidget {
+  final List<Map<String, dynamic>> history;
+  const _AlertHistoryCard({required this.history});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: AppColors.card,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [
+              const Text('Alert History',
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary)),
+              const Spacer(),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: AppColors.pill(
+                    history.isEmpty
+                        ? AppColors.textTertiary
+                        : AppColors.danger,
+                    filled: false),
+                child: Text('${history.length}',
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: history.isEmpty
+                            ? AppColors.textTertiary
+                            : AppColors.danger)),
+              ),
+            ]),
+            const SizedBox(height: 14),
+            if (history.isEmpty)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Text('No alerts yet',
+                      style: TextStyle(
+                          fontSize: 14, color: AppColors.textTertiary)),
+                ),
+              )
+            else
+              ...history.take(5).map((alert) => _AlertHistoryRow(alert: alert)),
+          ],
+        ),
+      ),
+    ).animate().fadeIn(delay: 380.ms, duration: 400.ms);
+  }
+}
+
+class _AlertHistoryRow extends StatelessWidget {
+  final Map<String, dynamic> alert;
+  const _AlertHistoryRow({required this.alert});
+
+  @override
+  Widget build(BuildContext context) {
+    final acknowledged = alert['is_acknowledged'] == true;
+    final message = alert['message'] as String?;
+    final createdAt = DateTime.tryParse(alert['created_at'] as String? ?? '');
+    final formattedTime = createdAt != null
+        ? DateFormat('d MMM · HH:mm').format(createdAt.toLocal())
+        : '';
+    final statusColor =
+        acknowledged ? AppColors.success : AppColors.danger;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: acknowledged
+                ? AppColors.successLight
+                : AppColors.dangerLight,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+              acknowledged ? Icons.check_rounded : Icons.sos_rounded,
+              size: 16,
+              color: statusColor),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                message != null && message.isNotEmpty
+                    ? message
+                    : 'Emergency alert',
+                style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(formattedTime,
+                  style: const TextStyle(
+                      fontSize: 11, color: AppColors.textSecondary)),
+            ],
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: AppColors.pill(statusColor, filled: false),
+          child: Text(
+            acknowledged ? 'Resolved' : 'Pending',
+            style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: statusColor),
+          ),
+        ),
+      ]),
+    );
   }
 }
 
@@ -489,11 +626,11 @@ class _ScheduleRow extends StatelessWidget {
 
   String get _statusLabel {
     switch (slot.status) {
-      case DoseStatus.taken: return '✅ Taken';
-      case DoseStatus.takenLate: return '✅ Taken Late';
-      case DoseStatus.skipped: return '⏭️ Skipped';
-      case DoseStatus.missed: return '❌ Missed';
-      case DoseStatus.pending: return '⏳ Pending';
+      case DoseStatus.taken: return 'Taken';
+      case DoseStatus.takenLate: return 'Taken Late';
+      case DoseStatus.skipped: return 'Skipped';
+      case DoseStatus.missed: return 'Missed';
+      case DoseStatus.pending: return 'Pending';
     }
   }
 

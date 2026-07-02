@@ -57,7 +57,7 @@ class ProfileScreen extends ConsumerWidget {
                               child: DecorCircle(size: 170)),
                           const Positioned(
                               bottom: -80, left: -30,
-                              child: DecorCircle(size: 150, opacity: 0.05)),
+                              child: DecorCircle(size: 150, opacity: 0.08)),
                           Padding(
                             padding: const EdgeInsets.all(24),
                             child: Row(

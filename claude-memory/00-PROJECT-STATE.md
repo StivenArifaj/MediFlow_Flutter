@@ -32,6 +32,15 @@ Migrating from Firebase + Drift/SQLite to Supabase (single backend).
 - Account deletion must cascade through all 5 tables + remove the Auth user
 
 ## What's Done
+- [x] Emergency Alert feature — fully functional (2026-07-02)
+  - emergency_alerts table with RLS + rate limit (supabase/emergency_alerts.sql — uses is_acknowledged + acknowledged_at)
+  - AlertService: sendAlert/getPendingAlerts/getAlertHistory/acknowledgeAlert/subscribeToAlerts
+  - AlertResult typed return (no silent failures), rate-limit error surfaced to user
+  - Linked patient: bottom sheet SOS flow with optional message + 1s debounce after failure
+  - Caregiver: realtime subscription in MainTabScreen + full-screen acknowledge dialog
+  - Immediate heads-up notification (emergency_alerts channel, Importance.max) on alert receipt
+  - Alert history section (last 30 days, Resolved/Pending pills) in caregiver dashboard
+  - Rate limit: max 3 alerts per 10 minutes (SQL trigger)
 - [x] WORLD-CLASS UI OVERHAUL — all screens (2026-07-02)
   - AppColors fully rebuilt: pageBackground #F2F4F8, darkButton #141B2D, xs/sm/md/lg shadows, card/cardLg/gradientCard/pill decorations, minimal legacy aliases kept
   - AppTheme: dark pill ElevatedButton (56px StadiumBorder), transparent centered AppBar, 14px-radius filled inputs
@@ -171,6 +180,7 @@ Migrating from Firebase + Drift/SQLite to Supabase (single backend).
   - 0 errors
 
 ## What's NOT Done Yet
+- [ ] Run supabase/emergency_alerts.sql in Supabase dashboard (manual step required — feature errors until then)
 - [ ] Full QA pass on all 3 roles (OpenCode)
 - [x] UI REDESIGN PASS 4 — FINAL (2026-07-01): All screens light, zero neon
   - health_detail: light AppBar, surface cards, primary chart/dots, latest value card

@@ -135,7 +135,7 @@ class _ReminderSetupScreenState extends ConsumerState<ReminderSetupScreen> {
       ref.invalidate(remindersForMedicineProvider(widget.medicineId));
 
       if (mounted) {
-        _snack('✅ Reminders saved & scheduled!');
+        _snack('Reminders saved & scheduled');
         context.pop();
       }
     } catch (e) {
